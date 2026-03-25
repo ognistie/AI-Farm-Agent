@@ -1,4 +1,4 @@
-<p align="center">
+_<p align="center">
   <img src="https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python&logoColor=white" />
   <img src="https://img.shields.io/badge/Claude_API-Anthropic-purple?style=for-the-badge&logo=anthropic&logoColor=white" />
   <img src="https://img.shields.io/badge/Flask-SocketIO-black?style=for-the-badge&logo=flask&logoColor=white" />
@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" />
 </p>
 
-<h1 align="center">⚡ AI Farm Agent</h1>
+<h1 align="center">⚡ AI Agent Farm</h1>
 
 <p align="center">
   <b>Um agente de IA que executa tarefas no seu computador como se fosse uma pessoa sentada na sua frente.</b><br>
@@ -275,3 +275,4 @@ Este projeto é de código aberto. Desenvolvido por [@ognistie](https://github.c
 <p align="center">
   <b>⚡ AI Farm Agent — Automação inteligente para o dia a dia.</b>
 </p>
+_ 
