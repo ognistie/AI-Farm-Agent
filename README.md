@@ -425,7 +425,7 @@ ai-farm-agent/
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGh2Mmp3ZXF0NXdtYmYzN3VwdTluMTdsNnRhdXZnczByaXV6a2ZwcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btNhMBytxAM6YBa/giphy.gif" width="300" />
+<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
 
 <br>
 
