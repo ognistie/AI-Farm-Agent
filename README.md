@@ -1,307 +1,423 @@
-<div align="center">
-
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="400" />
-
-<br><br>
-
-# 🤖 AI Farm Agent
-
-**Autonomous multi-agent system that operates your computer through natural language.**
-
-*You talk. It thinks. It acts. It verifies.*
-
-<br>
-
-<img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/Claude_API-Anthropic-6B4FBB?style=for-the-badge&logo=anthropic&logoColor=white" />
-<img src="https://img.shields.io/badge/Platform-Windows_10%2F11-0078D6?style=for-the-badge&logo=windows&logoColor=white" />
-<img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
-<img src="https://img.shields.io/badge/Status-Active_Development-orange?style=for-the-badge" />
-
-<br><br>
-
-[Quick Start](#-quick-start) · [Architecture](#-system-architecture) · [Agents](#-agent-system) · [Interaction Layer](#-interaction-layer) · [Roadmap](#-roadmap) · [Contributing](#-contributing)
-
-</div>
-
----
-
-<br>
-
-## 🔍 What is AI Farm Agent?
-
-AI Farm Agent transforms natural language commands into real actions on your Windows PC. It doesn't simulate — it **actually opens apps, clicks buttons, types text, creates files, and navigates interfaces** just like a human would.
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                                                                      │
-│   You say:  "Crie uma planilha de vendas Q1-Q4 e abra no Excel"     │
-│                                                                      │
-│   Agent:    ✅ Generates Python code with openpyxl                   │
-│             ✅ Creates formatted .xlsx with headers, borders, data   │
-│             ✅ Saves to Desktop                                      │
-│             ✅ Opens file in Excel                                   │
-│             ✅ Reports success via WebSocket                         │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### How does it decide?
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║              AI FARM AGENT — README                        ║ -->
+<!-- ║              github.com/ognistie/AI-Farm-Agent              ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmRubGhkOWd6ZXl2bm5pNTRpZnRxNHJ0OWR3aWl3eDdzZ3F3aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/VHrFbmOtBwyMXyNMXn/giphy.gif" width="250" />
+<!-- MATRIX RAIN HEADER -->
+<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
 
 <br>
 
-*Like the red pill — once the agent sees the system, there's no going back.*
+<!-- ASCII LOGO -->
+```
+     █████╗ ██╗    ███████╗ █████╗ ██████╗ ███╗   ███╗
+    ██╔══██╗██║    ██╔════╝██╔══██╗██╔══██╗████╗ ████║
+    ███████║██║    █████╗  ███████║██████╔╝██╔████╔██║
+    ██╔══██║██║    ██╔══╝  ██╔══██║██╔══██╗██║╚██╔╝██║
+    ██║  ██║██║    ██║     ██║  ██║██║  ██║██║ ╚═╝ ██║
+    ╚═╝  ╚═╝╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
+                    A  G  E  N  T       v1.0
+```
+
+<h3>🟢 An autonomous multi-agent system that operates your computer.</h3>
+<p><i>Natural language in → Real-world actions out.</i></p>
+
+<br>
+
+<!-- BADGES -->
+<a href="#-quick-start"><img src="https://img.shields.io/badge/⚡_QUICK_START-00FF41?style=for-the-badge&labelColor=000000" /></a>
+<a href="#-architecture"><img src="https://img.shields.io/badge/🏛_ARCHITECTURE-00FF41?style=for-the-badge&labelColor=000000" /></a>
+<a href="#-agents"><img src="https://img.shields.io/badge/🤖_AGENTS-00FF41?style=for-the-badge&labelColor=000000" /></a>
+<a href="#-roadmap"><img src="https://img.shields.io/badge/🗺️_ROADMAP-00FF41?style=for-the-badge&labelColor=000000" /></a>
+
+<br><br>
+
+<img src="https://img.shields.io/badge/Python-3.11+-00FF41?style=flat-square&logo=python&logoColor=00FF41&labelColor=0a0a0a" />
+<img src="https://img.shields.io/badge/Claude_API-Anthropic-00FF41?style=flat-square&logo=anthropic&logoColor=00FF41&labelColor=0a0a0a" />
+<img src="https://img.shields.io/badge/Windows-10%2F11-00FF41?style=flat-square&logo=windows&logoColor=00FF41&labelColor=0a0a0a" />
+<img src="https://img.shields.io/badge/MIT-License-00FF41?style=flat-square&labelColor=0a0a0a" />
+
+</div>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
+## 🟢 What is this?
+
+> **AI Farm Agent** sees your computer not as pixels — but as a structured world of windows, buttons, fields, and workflows that can be understood and controlled.
+
+You speak naturally. The system **thinks**, **plans**, **executes**, and **verifies** — creating spreadsheets in Excel, sending messages on Teams, building websites in VS Code, organizing files, and navigating the web. Autonomously.
+
+```
+ ╭──────────────────────────────────────────────────────────────╮
+ │                                                              │
+ │  💬 "Crie uma planilha de vendas Q1-Q4 e abra no Excel"     │
+ │                                                              │
+ │      ┌─────────────────────────────────────────────┐         │
+ │      │ 1. 🧠 Maestro routes → DATA AGENT           │         │
+ │      │ 2. 📊 Data Agent generates openpyxl code     │         │
+ │      │ 3. ⚡ Execution engine runs Python            │         │
+ │      │ 4. 📂 .xlsx saved to Desktop                 │         │
+ │      │ 5. 🖥️  Excel opens with formatted data       │         │
+ │      │ 6. 👁️ Vision Maestro confirms success        │         │
+ │      │ 7. ✅ "task_complete" → WebSocket             │         │
+ │      └─────────────────────────────────────────────┘         │
+ │                                                              │
+ │  ⏱ ~4s  ·  💰 ~$0.002  ·  🎯 Method: L1 (API direct)       │
+ │                                                              │
+ ╰──────────────────────────────────────────────────────────────╯
+```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
+## 🏛 Architecture
+
+<div align="center">
+
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3V1ZTV3a3ZtajR5eGFlb2xhN2FxcHJuaW8wajlkdHVkYWprcHB0dSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l46Cy1rHbQ92uuLXa/giphy.gif" width="500" />
 
 </div>
 
 <br>
 
-## 🏛 System Architecture
-
-The system uses a **hierarchical multi-agent architecture** where a central orchestrator (Maestro) delegates tasks to specialized agents. Each agent is domain-expert and uses the optimal AI model for its complexity level.
-
 ```
-                              ┌─────────────┐
-                              │   👤 USER    │
-                              │  (PT-BR NL)  │
-                              └──────┬───────┘
-                                     │ WebSocket
-                                     ▼
-                        ┌────────────────────────┐
-                        │      MAESTRO           │
-                        │  ┌──────────────────┐  │
-                        │  │ Task Analyzer     │  │
-                        │  │ Agent Router      │  │
-                        │  │ Model: Haiku 4.5  │  │
-                        │  └──────────────────┘  │
-                        └────────────┬───────────┘
-                                     │
-          ┌──────────┬───────────────┼───────────────┬──────────┐
-          ▼          ▼               ▼               ▼          ▼
-   ┌────────┐ ┌──────────┐  ┌────────────┐  ┌──────────┐ ┌────────┐
-   │  DATA  │ │   WEB    │  │    CODE    │  │ DESKTOP  │ │  FILE  │
-   │ Agent  │ │  Agent   │  │   Agent    │  │  Agent   │ │ Agent  │
-   │        │ │          │  │            │  │          │ │        │
-   │Haiku4.5│ │ Haiku4.5 │  │ Sonnet 4   │  │ Sonnet 4 │ │Haiku4.5│
-   │openpyxl│ │Playwright│  │ subprocess │  │pywinauto │ │os/shutil│
-   └────────┘ └──────────┘  └────────────┘  └──────────┘ └────────┘
-          │          │               │               │          │
-          └──────────┴───────────────┼───────────────┴──────────┘
-                                     ▼
-                        ┌────────────────────────┐
-                        │   INTERACTION LAYER     │
-                        │                         │
-                        │  L1: API/Code  → 99%    │
-                        │  L2: UIA       → 95%    │
-                        │  L3: Vision    → 80%    │
-                        └────────────┬────────────┘
-                                     ▼
-                        ┌────────────────────────┐
-                        │  SUPPORT SYSTEMS       │
-                        │                         │
-                        │  👁️ Vision Maestro      │
-                        │  🔄 Retry Engine        │
-                        │  🧠 Memory Agent        │
-                        │  📝 Action Logger       │
-                        │  ⏳ Wait Engine         │
-                        └────────────────────────┘
+                              USER
+                           "do X..."
+                               │
+                               ▼
+                 ╔═══════════════════════════╗
+                 ║        🧠 MAESTRO         ║
+                 ║    Haiku 4.5 · ~$0.001    ║
+                 ║    Analyze → Decompose    ║
+                 ║    → Route to Agent       ║
+                 ╚═════════════╤═════════════╝
+                               │
+         ┌─────────┬───────────┼───────────┬─────────┐
+         ▼         ▼           ▼           ▼         ▼
+     ┌───────┐ ┌───────┐ ┌─────────┐ ┌────────┐ ┌───────┐
+     │  📊   │ │  🌐   │ │   💻    │ │  🖥️    │ │  📁   │
+     │ DATA  │ │  WEB  │ │  CODE   │ │DESKTOP │ │ FILE  │
+     │       │ │       │ │         │ │        │ │       │
+     │Haiku  │ │Haiku  │ │Sonnet 4 │ │Sonnet 4│ │Haiku  │
+     │$0.001 │ │$0.001 │ │ $0.01   │ │ $0.01  │ │$0.001 │
+     └───┬───┘ └───┬───┘ └────┬────┘ └───┬────┘ └───┬───┘
+         └─────────┴──────────┼──────────┴─────────┘
+                              ▼
+                ╔══════════════════════════╗
+                ║  ⚡ INTERACTION LAYER    ║
+                ║                          ║
+                ║  L1 ██████████████ 99%   ║ ← API/Code
+                ║  L2 ████████████░░ 95%   ║ ← UIA
+                ║  L3 ████████░░░░░░ 80%   ║ ← Vision
+                ╚═════════════╤════════════╝
+                              │
+                ┌─────────────┼─────────────┐
+                ▼             ▼             ▼
+          ┌──────────┐ ┌──────────┐ ┌──────────┐
+          │ 👁️ VISION│ │ 🔄 RETRY │ │ 🧠MEMORY │
+          │ MAESTRO  │ │  ENGINE  │ │  AGENT   │
+          │ validate │ │ 5 strats │ │  cache   │
+          └──────────┘ └──────────┘ └──────────┘
 ```
 
 <br>
 
-## 🤖 Agent System
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
-### Agent Registry
+<br>
 
-| Agent | Model | Cost | Responsibility | Trigger Examples |
-|:------|:------|:-----|:---------------|:----------------|
-| **Maestro** | Haiku 4.5 | 💲 | Analyzes task, routes to correct agent | Every task |
-| **Vision Maestro** | Haiku 4.5 | 💲 | Validates screen state before/after actions | Visual actions |
-| **Data Agent** | Haiku 4.5 | 💲 | Excel, charts, data analysis via openpyxl | *"planilha", "gráfico", "Excel"* |
-| **Web Agent** | Haiku 4.5 | 💲 | Browser automation via Playwright | *"pesquise", "abra site", "Google"* |
-| **Code Agent** | Sonnet 4 | 💲💲 | Project creation, code generation | *"crie um site", "código", "projeto"* |
-| **Desktop Agent** | Sonnet 4 | 💲💲 | App interaction via UIA + Vision | *"Teams", "WhatsApp", "abra o Word"* |
-| **File Agent** | Haiku 4.5 | 💲 | File organization via os/shutil | *"organize", "mova", "delete"* |
-| **Memory Agent** | Haiku 4.5 | 💲 | Caches successful workflows | Automatic |
+## 🤖 Agents
 
-### Cost Strategy
+### The Team
 
-Using **Haiku** for routing and simple tasks + **Sonnet** only for complex reasoning achieves **~70% cost reduction** compared to a single-model approach.
+<table>
+<tr>
+<td width="50%" valign="top">
+
+#### 🧠 Maestro — _The Brain_
+> Routes every task to the right specialist. Analyzes intent, decomposes complex requests into subtasks, and coordinates execution order.
+>
+> **Model:** `Haiku 4.5` · **Cost:** ~$0.001/call
+
+#### 📊 Data Agent — _The Analyst_
+> Creates Excel spreadsheets, charts, and data analysis using `openpyxl`. Generates complete Python code that runs on first attempt.
+>
+> **Model:** `Haiku 4.5` · **Trigger:** _planilha, dados, Excel_
+
+#### 🌐 Web Agent — _The Navigator_
+> Browses the web using `Playwright`. Handles cookies, popups, form submissions, and complex navigation sequences.
+>
+> **Model:** `Haiku 4.5` · **Trigger:** _pesquise, site, Google_
+
+#### 📁 File Agent — _The Organizer_
+> Manages files and folders using `os`/`shutil`. Organizes downloads, moves files, creates directory structures.
+>
+> **Model:** `Haiku 4.5` · **Trigger:** _organize, mova, copie_
+
+</td>
+<td width="50%" valign="top">
+
+#### 💻 Code Agent — _The Builder_
+> Creates full projects with HTML, CSS, JS, Python. Generates production-quality code with proper structure and separation.
+>
+> **Model:** `Sonnet 4` · **Cost:** ~$0.01/call
+
+#### 🖥️ Desktop Agent — _The Operator_
+> Interacts with any Windows app via UIA + Vision cascade. Has pre-built routines for Teams, WhatsApp, Word, Outlook, Spotify.
+>
+> **Model:** `Sonnet 4` · **Trigger:** _Teams, WhatsApp, abra_
+
+#### 👁️ Vision Maestro — _The Watchdog_
+> Captures and analyzes screenshots before/after every visual action. Detects errors, popups, wrong windows, and loading states.
+>
+> **Model:** `Haiku 4.5` · **Scope:** visual actions only
+
+#### 🧠 Memory Agent — _The Archive_
+> Caches successful workflows as JSON templates. Next time a similar task appears, it skips planning entirely.
+>
+> **Model:** — · **Scope:** automatic
+
+</td>
+</tr>
+</table>
+
+### 💰 Why Two Models?
 
 ```
-Haiku 4.5  →  Fast, cheap       →  Routing, data, web, files
-Sonnet 4   →  Powerful, precise  →  Code generation, desktop interaction, vision analysis
+ ┌──────────────────────────────────────────────────────────┐
+ │                                                          │
+ │  HAIKU 4.5  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  80%      │
+ │  Fast · Cheap · Routing, data, web, files                │
+ │                                                          │
+ │  SONNET 4   ━━━━━━━━━━━━  20%                           │
+ │  Powerful · Precise · Code, desktop, vision, retry       │
+ │                                                          │
+ │  Result: ~70% cost reduction vs single-model approach    │
+ │                                                          │
+ └──────────────────────────────────────────────────────────┘
 ```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
 <br>
 
 ## ⚡ Interaction Layer
 
-This is the core innovation. Instead of blindly clicking pixels, the system chooses the **most reliable method** for each interaction, cascading through 3 levels:
-
-<div align="center">
+**The core innovation.** The system cascades through 3 reliability levels — only falling to the next when the current one fails:
 
 ```
-┌───────────────────────────────────────────────────────┐
-│                                                       │
-│   LEVEL 1 ━━━ API / Direct Code ━━━ 99% reliable    │
-│   │          openpyxl, Playwright, subprocess         │
-│   │          Cost: $0  ·  Speed: instant              │
-│   │                                                   │
-│   │ fallback                                          │
-│   ▼                                                   │
-│   LEVEL 2 ━━━ UI Automation (UIA) ━━━ 95% reliable   │
-│   │          pywinauto accessibility tree              │
-│   │          Cost: $0  ·  Speed: fast                 │
-│   │                                                   │
-│   │ fallback                                          │
-│   ▼                                                   │
-│   LEVEL 3 ━━━ Vision + PyAutoGUI ━━━ 80% reliable    │
-│              Claude Vision + screenshot analysis      │
-│              Cost: API tokens  ·  Speed: slow         │
-│                                                       │
-└───────────────────────────────────────────────────────┘
+ ╔══════════════════════════════════════════════════════════════╗
+ ║                                                              ║
+ ║  🟢 LEVEL 1 ─── API / Direct Code ──── 99% reliable         ║
+ ║  │                                                           ║
+ ║  │  openpyxl creates .xlsx directly                          ║
+ ║  │  Playwright navigates with selectors                      ║
+ ║  │  subprocess runs commands                                 ║
+ ║  │  Cost: $0 · Speed: <1s                                    ║
+ ║  │                                                           ║
+ ║  │  ↓ if not possible                                        ║
+ ║  │                                                           ║
+ ║  🟡 LEVEL 2 ─── UI Automation (UIA) ── 95% reliable         ║
+ ║  │                                                           ║
+ ║  │  pywinauto reads Windows accessibility tree               ║
+ ║  │  Clicks buttons by name, not coordinates                  ║
+ ║  │  No screenshots needed                                    ║
+ ║  │  Cost: $0 · Speed: ~2s                                    ║
+ ║  │                                                           ║
+ ║  │  ↓ if UIA fails                                           ║
+ ║  │                                                           ║
+ ║  🔴 LEVEL 3 ─── Vision + PyAutoGUI ─── 80% reliable         ║
+ ║                                                              ║
+ ║     Claude Vision analyzes screenshot                        ║
+ ║     Identifies target element coordinates                    ║
+ ║     PyAutoGUI performs the click                              ║
+ ║     Cost: ~$0.01 · Speed: ~5s                                ║
+ ║                                                              ║
+ ╚══════════════════════════════════════════════════════════════╝
 ```
-
-</div>
-
-### When is each level used?
-
-| Scenario | Level | Method |
-|:---------|:------|:-------|
-| Create/edit spreadsheet | L1 - API | openpyxl generates .xlsx directly |
-| Navigate website | L1 - API | Playwright with CSS selectors |
-| Click Teams button | L2 - UIA | pywinauto accessibility tree |
-| Type in Notepad | L2 - UIA | pywinauto window focus + send text |
-| App without UIA support | L3 - Vision | Claude Vision locates + PyAutoGUI clicks |
 
 <br>
 
-## 🔄 Pipeline Flow
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
+## 🔄 Pipeline
 
 ```python
-# 1. User sends task via WebSocket
-"Crie uma planilha de vendas e abra no Excel"
+# ── 1. User sends task via WebSocket ──────────────────────────
+task = "Crie uma planilha de vendas e abra no Excel"
 
-# 2. Memory Agent checks for cached workflow
-memory.find_template(task)  # → Found? Skip planning. Not found? Continue.
+# ── 2. Memory check ──────────────────────────────────────────
+cached = memory_agent.find_template(task)
+if cached: skip_to_execution(cached)
 
-# 3. Maestro analyzes and routes
-maestro.analyze(task)
-# → {"agent": "DATA", "subtasks": [{"task": "criar planilha vendas"}]}
+# ── 3. Maestro analyzes ──────────────────────────────────────
+plan = maestro.analyze(task)
+# → {"agent": "DATA", "subtasks": [...]}
 
-# 4. Agent generates execution plan
-data_agent.plan(subtask)
-# → {"steps": [{"action": "run_python", "code": "import openpyxl..."}]}
+# ── 4. Agent generates steps ─────────────────────────────────
+steps = data_agent.plan(subtask)
+# → {"steps": [{"action": "run_python", "code": "..."}]}
 
-# 5. Each step executes through the pipeline
+# ── 5. Execute with full pipeline ────────────────────────────
 for step in steps:
-    state_machine.identify_state(app)      # Where are we?
-    interaction_layer.execute(step)         # API → UIA → Vision
-    wait_engine.wait_for_condition(...)     # Conditional wait
-    retry_engine.handle_failure(...)        # Self-healing if needed
-    action_logger.log(step, result)         # JSONL logging
-    socketio.emit("step_result", result)    # Real-time UI update
+    state   = state_machine.identify(app)        # Where are we?
+    result  = interaction_layer.execute(step)     # L1 → L2 → L3
+    wait    = wait_engine.until(condition)        # Smart wait
+    recover = retry_engine.on_failure(result)     # Self-heal
+    log     = action_logger.record(step, result)  # JSONL
+    emit    = socketio.emit("progress", result)   # Real-time UI
 
-# 6. On success
-memory_agent.save_workflow(task, steps)     # Cache for reuse
-narrator.generate_report(task, results)     # Skill-builder report
-socketio.emit("task_complete")
+# ── 6. Success ───────────────────────────────────────────────
+memory_agent.save(task, steps)                    # Cache workflow
+narrator.report(task, results)                    # Generate report
+socketio.emit("task_complete")                    # ✅ Done
 ```
 
 <br>
 
-## 🛡️ Self-Healing — Retry Engine
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
-When a step fails, the system doesn't just retry blindly. It **diagnoses** the failure and picks a recovery strategy:
+<br>
 
-| Strategy | Trigger | Action |
-|:---------|:--------|:-------|
-| `WAIT_AND_RETRY` | Element still loading | Wait 2-3s, try again |
-| `ALTERNATIVE_PATH` | Popup/dialog blocking | Close popup, retry |
-| `RECOVER_STATE` | Wrong window in focus | Alt+Tab, Escape, refocus |
-| `ESCALATE_METHOD` | UIA failed | Escalate to Vision (L3) |
-| `ABORT` | Unrecoverable error | Stop with detailed log |
+## 🛡️ Self-Healing
+
+When a step fails, the **Retry Engine** diagnoses the problem and chooses a recovery strategy:
+
+```
+ FAILURE DETECTED
+       │
+       ▼
+ ┌─────────────────────────────────────────────────────────┐
+ │  🔍 DIAGNOSE                                            │
+ │                                                         │
+ │  "not found" / "timeout"                                │
+ │    → WAIT_AND_RETRY (wait 3s, try again)               │
+ │                                                         │
+ │  "blocked" / "popup" / "dialog"                         │
+ │    → ALTERNATIVE_PATH (close blocker, retry)            │
+ │                                                         │
+ │  "wrong window" / "lost focus"                          │
+ │    → RECOVER_STATE (Alt+Tab, Escape, refocus)           │
+ │                                                         │
+ │  UIA method failed                                      │
+ │    → ESCALATE_METHOD (switch to Vision L3)              │
+ │                                                         │
+ │  "crash" / "permission denied"                          │
+ │    → ABORT (stop + detailed error log)                  │
+ │                                                         │
+ └─────────────────────────────────────────────────────────┘
+```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
 <br>
 
 ## 🗺️ State Machines
 
-Each supported app has a **navigation map** (JSON) that defines states and transitions. The agent knows where it is and how to get where it needs to be — deterministically, not by guessing.
+Each supported app has a **JSON navigation map** — the agent always knows where it is and how to reach the target state:
 
 ```json
-// state_maps/teams.json (simplified)
 {
   "app": "Microsoft Teams",
   "states": {
-    "main":      { "transitions": { "chat_list": ["click Chat"] } },
-    "chat_list": { "transitions": { "chat_open": ["click {contact}"] } },
-    "chat_open": { "transitions": { "message_sent": ["type {msg}", "press Enter"] } }
+    "main":      { "indicators": ["Chat", "Teams", "Calendar"],
+                   "transitions": { "chat_list": [{"action": "uia_click", "target": "Chat"}] }},
+    "chat_list": { "indicators": ["Recent", "Filter"],
+                   "transitions": { "chat_open": [{"action": "uia_click", "target": "{contact}"}] }},
+    "chat_open": { "indicators": ["Type a new message"],
+                   "transitions": { "sent": [{"action": "uia_type", "text": "{msg}"}, 
+                                              {"action": "hotkey", "keys": "Enter"}] }}
   }
 }
 ```
 
-**Supported apps:** Teams, Excel, VS Code, Chrome, Explorer — extensible via JSON.
+**Supported:** `Teams` · `Excel` · `VS Code` · `Chrome` · `Explorer` — extensible via JSON.
 
 <br>
 
-## 📁 Project Structure
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
+## 📁 Structure
 
 ```
 ai-farm-agent/
-├── main.py                          # Entry point — .env, Flask, browser
-├── requirements.txt                 # Dependencies
-├── .env                             # API key (git-ignored)
 │
-├── agents/                          # 🤖 Multi-agent system
-│   ├── maestro.py                   # Orchestrator — routes tasks
-│   ├── vision_maestro.py            # Visual supervisor
-│   ├── data_agent.py                # Excel / data specialist
-│   ├── web_agent.py                 # Playwright browser agent
-│   ├── code_agent.py                # Code generation (Sonnet)
-│   ├── desktop_agent.py             # App interaction (Sonnet)
-│   ├── file_agent.py                # File management
-│   ├── memory_agent.py              # Workflow caching
-│   └── app_routines.py              # Pre-built app routines
+├── main.py                        ← Entry point
+├── requirements.txt               ← Dependencies
+├── .env                           ← API key (git-ignored)
 │
-├── core/                            # ⚙️ Execution engine
-│   ├── automation.py                # Action executor
-│   ├── interaction_layer.py         # L1 → L2 → L3 cascade
-│   ├── uia_driver.py                # pywinauto driver
-│   ├── state_machine.py             # JSON-based navigation
-│   ├── retry_engine.py              # 5-strategy self-healing
-│   ├── wait_engine.py               # Conditional waits
-│   ├── ocr_local.py                 # EasyOCR (no API cost)
-│   ├── vision.py                    # Claude Vision engine
-│   ├── capture.py                   # Screenshot capture
-│   ├── action_logger.py             # JSONL structured logging
-│   ├── narrator.py                  # Skill-builder reports
-│   └── json_validator.py            # Safe JSON parsing
+├── agents/                        ← 🤖 Multi-agent system
+│   ├── maestro.py                    Orchestrator
+│   ├── vision_maestro.py             Visual supervisor
+│   ├── data_agent.py                 Excel specialist
+│   ├── web_agent.py                  Browser specialist
+│   ├── code_agent.py                 Code generator
+│   ├── desktop_agent.py              App controller
+│   ├── file_agent.py                 File manager
+│   ├── memory_agent.py               Workflow cache
+│   └── app_routines.py               Pre-built routines
 │
-├── memory/                          # 🧠 Workflow learning
-│   ├── workflow_store.py            # Save/load templates
-│   └── workflows/                   # Cached workflows (JSON)
+├── core/                          ← ⚙️ Engine
+│   ├── automation.py                 Action executor
+│   ├── interaction_layer.py          L1 → L2 → L3 cascade
+│   ├── uia_driver.py                 pywinauto driver
+│   ├── state_machine.py              JSON navigation
+│   ├── retry_engine.py               Self-healing (5 strategies)
+│   ├── wait_engine.py                Conditional waits
+│   ├── ocr_local.py                  EasyOCR (no API cost)
+│   ├── vision.py                     Claude Vision
+│   ├── capture.py                    Screenshots
+│   ├── action_logger.py              JSONL logging
+│   └── json_validator.py             Safe JSON parsing
 │
-├── state_maps/                      # 🗺️ App navigation maps
-│   ├── teams.json
-│   ├── excel.json
-│   ├── vscode.json
-│   ├── chrome.json
-│   └── explorer.json
+├── memory/                        ← 🧠 Learning
+│   ├── workflow_store.py             Template storage
+│   └── workflows/                    Cached workflows
 │
-├── ui/                              # 🖥️ Web interface
-│   ├── server.py                    # Flask + SocketIO
-│   ├── templates/index.html
-│   └── static/{css,js}
+├── state_maps/                    ← 🗺️ App maps
+│   ├── teams.json                    
+│   ├── excel.json                    
+│   ├── vscode.json                   
+│   ├── chrome.json                   
+│   └── explorer.json                 
 │
-├── logs/actions.jsonl               # Action logs
-├── captures/                        # Screenshots
-└── reports/                         # Task reports
+├── ui/                            ← 🖥️ Interface
+│   ├── server.py                     Flask + SocketIO
+│   ├── templates/index.html          
+│   └── static/{css,js}/              
+│
+├── logs/actions.jsonl             ← 📊 Action logs
+├── captures/                      ← 📸 Screenshots
+└── reports/                       ← 📋 Reports
 ```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
 <br>
 
@@ -309,32 +425,32 @@ ai-farm-agent/
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGh2Mmp3ZXF0NXdtYmYzN3VwdTluMTdsNnRhdXZnczByaXV6a2ZwcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btNhMBytxAM6YBa/giphy.gif" width="350" />
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGh2Mmp3ZXF0NXdtYmYzN3VwdTluMTdsNnRhdXZnczByaXV6a2ZwcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btNhMBytxAM6YBa/giphy.gif" width="300" />
 
 <br>
 
-*Choose your pill. There's no going back.*
+_Take the red pill._
 
 </div>
 
 <br>
 
-### Prerequisites
+### Requirements
 
-| Requirement | Version |
-|:------------|:--------|
-| OS | Windows 10/11 (PT-BR recommended) |
-| Python | 3.11+ |
-| API Key | [Anthropic Console](https://console.anthropic.com/) |
+```
+OS          Windows 10/11 (PT-BR recommended)
+Python      3.11+
+API Key     https://console.anthropic.com/
+```
 
-### Installation
+### Install
 
 ```bash
 # Clone
 git clone https://github.com/ognistie/AI-Farm-Agent.git
 cd AI-Farm-Agent/ai-farm-agent
 
-# Virtual environment
+# Environment
 python -m venv .venv
 .venv\Scripts\activate
 
@@ -343,17 +459,15 @@ pip install -r requirements.txt
 pip install pywinauto easyocr
 python -m playwright install chromium
 
-# Configuration
+# API Key
 copy .env.example .env
-# Edit .env → paste your ANTHROPIC_API_KEY
+# → Edit .env with your ANTHROPIC_API_KEY
 
 # Launch
 python main.py
 ```
 
-Web interface opens at `http://127.0.0.1:5000`
-
-### Test Commands
+### Try It
 
 ```
 📊  "Crie uma planilha com nomes de frutas e preços"
@@ -365,154 +479,203 @@ Web interface opens at `http://127.0.0.1:5000`
 
 <br>
 
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
 ## 📊 Available Actions
 
 <details>
-<summary><b>📊 Data & Code Execution</b></summary>
+<summary>📊 <b>Data & Code</b></summary>
+<br>
 
 ```
-run_python(code, description)    Execute Python with 18 pre-injected modules
-excel_write(data, path)          Create formatted Excel via openpyxl
-pip_install(library)             Auto-install packages
-```
-</details>
-
-<details>
-<summary><b>🌐 Web Automation (Playwright)</b></summary>
-
-```
-web_goto(url)                    Navigate (auto-opens browser)
-web_type(field, text)            Type in form fields
-web_click(target)                Click by text/selector
-web_key(key)                     Keyboard input
-web_read()                       Extract page content
-web_new_tab(url)                 Open new tab
-web_wait_for(selector, timeout)  Wait for element
+run_python(code)                   Execute Python (18 stdlib modules pre-loaded)
+excel_write(data, path)            Create formatted .xlsx via openpyxl
+pip_install(lib)                   Auto-install Python packages
 ```
 </details>
 
 <details>
-<summary><b>🖥️ Desktop Interaction</b></summary>
+<summary>🌐 <b>Web (Playwright)</b></summary>
+<br>
 
 ```
-app_open(name)                   Open application
-uia_click(app, element)          Click via accessibility tree (L2)
-uia_type(app, field, text)       Type via accessibility tree (L2)
-vision_click(description)        AI-guided click (L3)
-vision_type(description, text)   AI-guided type (L3)
-vision_smart(goal)               AI decides best action
-hotkey(keys)                     Keyboard shortcuts
-focus_window(title)              Focus window by title
-```
-</details>
-
-<details>
-<summary><b>📁 File Management</b></summary>
-
-```
-create_folder(path)              Create directory
-write_file(path, content)        Write file
-read_file(path)                  Read content
-move_file(src, dest)             Move/rename
-copy_file(src, dest)             Copy
-find_files(path, pattern)        Search by pattern
-delete_file(path)                Delete (with safety)
+web_goto(url)                      Navigate (auto-opens browser)
+web_type(field, text)              Type in form fields
+web_click(target)                  Click by text/selector
+web_key(key)                       Press keyboard key
+web_read()                         Extract page text
+web_new_tab(url)                   Open new tab
+web_wait_for(selector, timeout)    Wait for element
 ```
 </details>
 
 <details>
-<summary><b>🔧 System & Navigation</b></summary>
+<summary>🖥️ <b>Desktop</b></summary>
+<br>
 
 ```
-wait_for_window(title, timeout)  Conditional window wait
-wait_for_element(app, element)   Wait for UI element
-navigate_to_state(app, state)    State machine navigation
-ocr_read_screen(region)          Local OCR (zero cost)
-screenshot()                     Capture screen
+app_open(name)                     Open application
+uia_click(app, element)            Click via accessibility tree [L2]
+uia_type(app, field, text)         Type via accessibility tree [L2]
+vision_click(description)          AI-guided click [L3]
+vision_type(description, text)     AI-guided type [L3]
+vision_smart(goal)                 AI decides best action [L3]
+hotkey(keys)                       Keyboard shortcut
+focus_window(title)                Focus window by title
+```
+</details>
+
+<details>
+<summary>📁 <b>Files</b></summary>
+<br>
+
+```
+create_folder(path)                Create directory
+write_file(path, content)          Write file
+read_file(path)                    Read content
+move_file(src, dest)               Move/rename
+copy_file(src, dest)               Copy
+find_files(path, pattern)          Search by pattern
+delete_file(path)                  Delete (with safety check)
+```
+</details>
+
+<details>
+<summary>🔧 <b>System</b></summary>
+<br>
+
+```
+wait_for_window(title, timeout)    Wait until window appears
+wait_for_element(app, element)     Wait until UI element exists
+navigate_to_state(app, state)      State machine navigation
+ocr_read_screen(region)            Local OCR (zero API cost)
+screenshot()                       Capture current screen
 ```
 </details>
 
 <br>
 
-## 🗺️ Roadmap
-
-| Version | Status | Features |
-|:--------|:-------|:---------|
-| **v1.0** | ✅ Done | Multi-agent, run_python, Vision Maestro, Web UI |
-| **v1.5** | 🔧 In Progress | Interaction Layer, UIA, Retry Engine, Logging |
-| **v2.0** | 📋 Planned | State Machines, Memory Agent, OCR Local |
-| **v2.5** | 📋 Planned | Metrics Dashboard, Automated Tests, CI/CD |
-| **v3.0** | 🔮 Future | Full Autonomy — task queues, triggers, scheduling |
-| **v4.0** | 🔮 Future | SaaS Platform — multi-user, REST API, installer |
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
 <br>
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology | Purpose |
-|:------|:-----------|:--------|
-| AI Engine | Claude API (Anthropic) | LLM reasoning + computer vision |
-| Backend | Flask + SocketIO | Real-time bidirectional communication |
-| UI Automation | pywinauto | Windows accessibility tree access |
-| Browser | Playwright | Headless web automation |
-| GUI Fallback | PyAutoGUI | Mouse/keyboard simulation |
-| Vision | Claude Vision + EasyOCR | Screenshot analysis + local OCR |
-| Data | openpyxl + pandas | Excel manipulation |
-| Frontend | HTML/CSS/JS | WebSocket-powered live dashboard |
+```
+ LAYER             TECHNOLOGY              PURPOSE
+ ─────────────────────────────────────────────────────────
+ AI Engine         Claude API (Anthropic)   LLM reasoning + vision
+ Backend           Flask + SocketIO         Real-time communication
+ UI Automation     pywinauto                Windows accessibility tree
+ Browser           Playwright               Web automation
+ GUI Fallback      PyAutoGUI                Mouse/keyboard simulation
+ Vision            Claude Vision + EasyOCR  Screen analysis + local OCR
+ Data              openpyxl                 Excel manipulation
+ Frontend          HTML/CSS/JS + WS         Live dashboard
+```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
+
+## 🗺️ Roadmap
+
+```
+ VERSION    STATUS              FEATURES
+ ──────────────────────────────────────────────────────────────────
+ v1.0       ████████████████    Multi-agent, run_python, Vision
+            ✅ DONE              Maestro, Web UI, App Routines
+
+ v1.5       ████████░░░░░░░░    Interaction Layer, UIA Driver,
+            🔧 IN PROGRESS       Retry Engine, Wait Engine, Logging
+
+ v2.0       ░░░░░░░░░░░░░░░░    State Machines, Memory Agent,
+            📋 PLANNED            OCR Local, Workflow Templates
+
+ v2.5       ░░░░░░░░░░░░░░░░    Metrics Dashboard, Tests, CI/CD
+            📋 PLANNED
+
+ v3.0       ░░░░░░░░░░░░░░░░    Full Autonomy — queues, triggers
+            🔮 FUTURE
+
+ v4.0       ░░░░░░░░░░░░░░░░    SaaS — multi-user, REST API,
+            🔮 FUTURE             installer, cloud dashboard
+```
+
+<br>
+
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
 
 <br>
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
 ```bash
-# Quick start for contributors
-git clone https://github.com/ognistie/AI-Farm-Agent.git
+# Fork → Clone → Branch → Code → PR
+git clone https://github.com/YOUR_USER/AI-Farm-Agent.git
 cd AI-Farm-Agent/ai-farm-agent
 pip install -r requirements.txt
 copy .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
 python main.py
 ```
 
-### Adding a new agent
-1. Create `agents/your_agent.py` following existing patterns
-2. Register in `ui/server.py`
-3. Update `agents/maestro.py` prompt to include the new agent
+**Add a new agent:** Create `agents/new.py` → Register in `server.py` → Update `maestro.py` prompt
 
-### Adding support for a new app
-1. Map controls: `uia.list_controls("AppName")`
-2. Create `state_maps/appname.json` with states & transitions
-3. Add controls to `CONTROL_MAPS` in `core/uia_driver.py`
-4. Test each transition before integrating
+**Add a new app:** Run `uia.list_controls("App")` → Create `state_maps/app.json` → Add to `uia_driver.py`
 
 <br>
 
 ## ⚠️ Notes
 
-- **Windows only** — Uses Windows-specific APIs (pywinauto, pygetwindow)
-- **PT-BR optimized** — UI labels and OCR configured for Brazilian Portuguese
-- **API costs** — Vision calls consume tokens; the 3-level cascade minimizes this
-- **Security** — Never commit `.env`. Use `.env.example` as template
+```
+ ⚠ Windows only      Uses pywinauto, pygetwindow (Windows APIs)
+ ⚠ PT-BR optimized   UI labels and OCR tuned for Brazilian Portuguese
+ ⚠ API costs          Vision (L3) consumes tokens — cascade minimizes this
+ ⚠ Security           Never commit .env — use .env.example as template
+```
 
 <br>
 
----
+<!-- GREEN LINE SEPARATOR -->
+<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+
+<br>
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdml5djZ6cnR5anRnbWp2dXJ5dWJyZGV6ZXNxaHdkd2R5Z3R3a3dsaSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/sULKEgDMX8LcI/giphy.gif" width="300" />
-
-<br><br>
-
-**Built by [@ognistie](https://github.com/ognistie)** — Guilherme Moraes Franco
-
-*AI Farm Agent — Teaching computers to operate themselves.*
+<!-- FOOTER GIF -->
+<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
 
 <br>
 
-<img src="https://img.shields.io/badge/Made_with-Python-3776AB?style=flat-square&logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/Powered_by-Claude_AI-6B4FBB?style=flat-square&logo=anthropic&logoColor=white" />
+```
+ ╔══════════════════════════════════════════════════════════╗
+ ║                                                          ║
+ ║   Built by @ognistie — Guilherme Moraes Franco           ║
+ ║                                                          ║
+ ║   "Teaching computers to operate themselves."            ║
+ ║                                                          ║
+ ╚══════════════════════════════════════════════════════════╝
+```
+
+<br>
+
+<img src="https://img.shields.io/badge/MADE_WITH-PYTHON-00FF41?style=for-the-badge&logo=python&logoColor=00FF41&labelColor=000" />
+<img src="https://img.shields.io/badge/POWERED_BY-CLAUDE_AI-00FF41?style=for-the-badge&logo=anthropic&logoColor=00FF41&labelColor=000" />
+<img src="https://img.shields.io/badge/INSPIRED_BY-THE_MATRIX-00FF41?style=for-the-badge&labelColor=000" />
+
+<br><br>
+
+⬡
 
 </div>
