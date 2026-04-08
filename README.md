@@ -83,7 +83,7 @@ You speak naturally. The system **thinks**, **plans**, **executes**, and **verif
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3V1ZTV3a3ZtajR5eGFlb2xhN2FxcHJuaW8wajlkdHVkYWprcHB0dSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l46Cy1rHbQ92uuLXa/giphy.gif" width="500" />
+
 
 </div>
 
