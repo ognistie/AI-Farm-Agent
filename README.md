@@ -425,7 +425,10 @@ ai-farm-agent/
 
 <div align="center">
 
-<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
+<img src="https://img.shields.io/badge/MADE_WITH-PYTHON-00FF41?style=for-the-badge&logo=python&logoColor=00FF41&labelColor=000" />
+<img src="https://img.shields.io/badge/POWERED_BY-CLAUDE_AI-00FF41?style=for-the-badge&logo=anthropic&logoColor=00FF41&labelColor=000" />
+<img src="https://img.shields.io/badge/INSPIRED_BY-THE_MATRIX-00FF41?style=for-the-badge&labelColor=000" />
+
 
 <br>
 
