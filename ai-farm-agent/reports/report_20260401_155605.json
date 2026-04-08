@@ -1,0 +1,87 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu Microsoft Teams via busca de aplicativo.",
+      "concept": "app_search, launch",
+      "insight": "Buscar por nome completo reduz tempo de navegação em sistemas com múltiplos apps.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou carregamento da interface principal do Teams.",
+      "concept": "wait, timing",
+      "insight": "Delays estratégicos evitam cliques em elementos ainda não renderizados.",
+      "difficulty": 1
+    },
+    {
+      "what": "Focalizou a janela ativa do Microsoft Teams.",
+      "concept": "window_focus, ui_control",
+      "insight": "Garantir foco da janela previne comandos executados em aplicativos errados.",
+      "difficulty": 1
+    },
+    {
+      "what": "Acionou a busca rápida de conversas com Ctrl+Shift+F.",
+      "concept": "hotkey, search",
+      "insight": "Atalhos de teclado são mais rápidos que navegação manual em listas longas.",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou o nome 'Jackson Alves Missias' no campo de busca.",
+      "concept": "text_input, search_query",
+      "insight": "Digite nomes completos para resultados mais precisos em buscas de contatos.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no resultado de busca para abrir a conversa com Jackson.",
+      "concept": "vision_click, contact_selection",
+      "insight": "Coordenadas com 95% de confiança indicam precisão alta de localização visual.",
+      "difficulty": 2
+    },
+    {
+      "what": "Localizou e clicou na caixa de composição de mensagem.",
+      "concept": "message_input, ui_navigation",
+      "insight": "Identificar campos de entrada por análise visual evita erros em layouts dinâmicos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou mensagem de apresentação do AI Farm Agent (truncada).",
+      "concept": "message_composition, text_input",
+      "insight": "Mensagens longas podem ser interrompidas; considere validar comprimento antes.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para enviar a mensagem.",
+      "concept": "send_message, hotkey",
+      "insight": "Enter é o método universal para submissão em campos de texto.",
+      "difficulty": 1
+    },
+    {
+      "what": "Pressionou Escape para fechar diálogos/modais pendentes.",
+      "concept": "ui_cleanup, hotkey",
+      "insight": "Escape garante limpeza de estados UI após ações completadas.",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Automatização completa de busca de contato e envio de mensagem no Teams usando visão computacional e hotkeys. Fluxo executado com 100% de sucesso em 9 operações sequenciais.",
+  "skills": [
+    "app_automation",
+    "vision_recognition",
+    "hotkey_mastery",
+    "contact_search",
+    "message_delivery",
+    "timing_control",
+    "ui_navigation"
+  ],
+  "xp_earned": 250,
+  "next_level": "Implemente validação de mensagem enviada antes de fechar, capturando confirmação visual no Teams.",
+  "quality_notes": {
+    "success_rate": "100%",
+    "observations": [
+      "Mensagem foi truncada no passo 15 (faltam palavras finais 'ir realizar...')",
+      "Escape final pode ter cancelado ação se modal estava aberto",
+      "Considere verificação de envio antes de escape"
+    ],
+    "improvement": "Adicionar screenshot de confirmação pós-envio"
+  },
+  "task": "Abra o teams, va ate a conversa com Jackson Alves Missias, e escreva a seguinte mensagem a ele: Olá Mundo, este e uma das função que o AI Farm Agent Consegue realizar, agente desenvolvido por: https://github.com/ognistie, logo apos isso clique em enviar.",
+  "generated_at": "2026-04-01T15:56:05.648091"
+}

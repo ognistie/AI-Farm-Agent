@@ -1,0 +1,57 @@
+{
+  "steps": [
+    {
+      "what": "Clicou no ícone do Teams na barra de tarefas",
+      "concept": "UI Navigation",
+      "insight": "Teams estava fixado na barra inferior, facilitando acesso direto",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para carregamento completo",
+      "concept": "Wait Strategy",
+      "insight": "Aplicações complexas precisam de tempo para renderizar completamente",
+      "difficulty": 2
+    },
+    {
+      "what": "Tentativa de encontrar botão Chat falhou",
+      "concept": "Element Detection",
+      "insight": "Interface do Teams pode variar, nem sempre mostra navegação explícita",
+      "difficulty": 3
+    },
+    {
+      "what": "Clicou diretamente no contato Jackson Missias",
+      "concept": "Direct Selection",
+      "insight": "Atalho eficiente quando o contato já está visível na lista",
+      "difficulty": 2
+    },
+    {
+      "what": "Focou no campo de entrada de mensagem",
+      "concept": "Input Focus",
+      "insight": "Campo com placeholder 'Digite uma mensagem' facilita identificação",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou a mensagem 'Ola, Mundo'",
+      "concept": "Text Input",
+      "insight": "Texto simples sem formatação especial para teste básico",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no botão de enviar (→)",
+      "concept": "Action Trigger",
+      "insight": "Botão de envio com ícone de seta é padrão universal em chats",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Enviou mensagem no Teams navegando direto ao contato e digitando texto simples. Adaptação rápida quando navegação padrão não funcionou.",
+  "skills": [
+    "Teams Navigation",
+    "Chat Interface",
+    "Direct Contact Access",
+    "Message Sending"
+  ],
+  "xp_earned": 180,
+  "next_level": "Tentar enviar anexos ou usar formatação avançada no Teams",
+  "task": "abra o teams, esta fixado na barra de tarefas assim que entrar nele clique em chat, entre na conversa com jacskon missias, e escreva no chat \"Ola, Mundo\" e clique em enviar mensagem. faça simples, veja o teams na barra de tarefas, entre nele, ache o jackson e escreva a mensagem e envie ela.",
+  "generated_at": "2026-03-24T16:19:10.266768"
+}

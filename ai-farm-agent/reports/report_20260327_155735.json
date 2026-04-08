@@ -1,0 +1,58 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar estrutura de colunas A-G com dados de meninos e meninas.",
+      "concept": "Setup, Excel, Estrutura",
+      "insight": "Organizar dados em colunas facilita cálculos automáticos de médias later.",
+      "difficulty": 2
+    },
+    {
+      "what": "Preencher Coluna A com 20 nomes de meninos e Coluna B com suas idades.",
+      "concept": "Input, Dados, Meninos",
+      "insight": "Use nomes variados e idades realistas (8-18 anos) para melhor representatividade.",
+      "difficulty": 1
+    },
+    {
+      "what": "Adicionar altura de cada menino na Coluna C em metros ou cm.",
+      "concept": "Mensuração, Altura, Dados",
+      "insight": "Mantenha formato consistente (ex: 1.75m) para evitar erros em cálculos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Inserir 10 nomes de meninas na Coluna D e suas idades na Coluna E.",
+      "concept": "Input, Dados, Meninas",
+      "insight": "Reduza para 10 meninas conforme solicitado para diferenciar do grupo de meninos.",
+      "difficulty": 1
+    },
+    {
+      "what": "Calcular idade média de meninos e meninas na Coluna F usando função MÉDIA().",
+      "concept": "Fórmula, MÉDIA, Agregação",
+      "insight": "Use =MÉDIA(B2:B21) para meninos e média separada das meninas em célula adicional.",
+      "difficulty": 3
+    },
+    {
+      "what": "Calcular altura média de meninos e meninas na Coluna G com MÉDIA().",
+      "concept": "Fórmula, Altura, Estatística",
+      "insight": "Agrupe cálculos na mesma coluna ou use colunas adicionais para clareza visual.",
+      "difficulty": 3
+    },
+    {
+      "what": "Formatar planilha com cabeçalhos, cores e bordas para melhor legibilidade.",
+      "concept": "Formatação, UI, Polish",
+      "insight": "Headers em negrito e linhas alternadas melhoram leitura de dados grandes.",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Você construiu uma planilha Excel completa com dados biométricos de 30 pessoas (20 meninos + 10 meninas) e calculou médias de idade e altura por gênero usando funções de agregação.",
+  "skills": [
+    "Excel-Avançado",
+    "Fórmulas-MÉDIA",
+    "Organização-Dados",
+    "Formatação-Tabelas",
+    "Estatística-Básica"
+  ],
+  "xp_earned": 280,
+  "next_level": "Crie gráficos comparativos (pizza/barras) das médias entre meninos e meninas usando dados da planilha.",
+  "task": "abra o excel 2013 e  faça uma planilha que a coluna A tenha nome de 20 meninos, na Coluna B tenha idade de todos eles e na C Altura deles. \nNa Coluna D coloque 10 nomes de meninas, na coluna E coloque idade de todas elas e na F coloque qual a idade media de meninos e meninas, na colouna G coloque altura media de meninos e meninas",
+  "generated_at": "2026-03-27T15:57:35.789759"
+}

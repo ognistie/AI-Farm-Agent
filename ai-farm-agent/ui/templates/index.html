@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Farm Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="crt"></div>
+<div class="scanlines"></div>
+<canvas id="stars"></canvas>
+
+<div class="app">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div class="tb-left">
+            <span class="tb-icon">◈</span>
+            <span class="tb-title">AI FARM AGENT</span>
+            <span class="tb-ver">v9</span>
+        </div>
+        <div class="tb-right">
+            <button id="btn-stop" class="tb-stop" onclick="forceStop()" style="display:none">■ ABORT</button>
+            <div class="tb-status"><span class="led" id="dot"></span><span id="status-txt">BOOT</span></div>
+        </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+        <!-- LEFT: Command + API -->
+        <div class="col-left">
+            <!-- COMMAND -->
+            <section class="panel cmd-panel">
+                <div class="panel-bar"><span class="panel-dot cyan"></span>COMMAND_INPUT</div>
+                <div class="cmd-body">
+                    <h2 class="cmd-title">O que você precisa<br><span class="neon-text">executar hoje?</span></h2>
+                    <textarea id="task-input" class="cmd-textarea" placeholder="// Descreva a tarefa em linguagem natural...&#10;// Ex: Crie uma planilha de vendas com 10 produtos" rows="6"></textarea>
+                    <div class="cmd-controls">
+                        <div class="cmd-toggles">
+                            <label class="toggle" id="c-dry"><input type="checkbox" id="chk-dry" onchange="S.s.dryRun=this.checked;this.parentElement.classList.toggle('on',this.checked)"><span>◇ SIM</span></label>
+                            <label class="toggle on" id="c-rpt"><input type="checkbox" id="chk-report" checked onchange="S.s.genReport=this.checked;this.parentElement.classList.toggle('on',this.checked)"><span>◆ RPT</span></label>
+                        </div>
+                        <button id="btn" class="cmd-exec" onclick="go()">
+                            <span class="exec-text">EXECUTAR</span>
+                            <span class="exec-arrow">►</span>
+                        </button>
+                    </div>
+                    <div class="cmd-quick" id="qas">
+                        <button class="qb" onclick="setEx('Crie uma planilha com frutas e preços')">EXCEL</button>
+                        <button class="qb" onclick="setEx('Organize meus Downloads por tipo')">FILES</button>
+                        <button class="qb" onclick="setEx('Pesquise no Google o que é IA')">WEB</button>
+                        <button class="qb" onclick="setEx('Crie um site bonito com HTML e CSS')">CODE</button>
+                        <button class="qb" onclick="setEx('Abra o Notepad e escreva Olá Mundo')">DESKTOP</button>
+                        <button class="qb" onclick="setEx('Entre no YouTube e pesquise lofi')">MEDIA</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API MONITOR -->
+            <section class="panel api-panel">
+                <div class="panel-bar"><span class="panel-dot amber"></span>API_MONITOR</div>
+                <div class="api-grid">
+                    <div class="api-cell">
+                        <div class="api-label">CALLS</div>
+                        <div class="api-val" id="api-calls">0</div>
+                    </div>
+                    <div class="api-cell">
+                        <div class="api-label">TOKENS</div>
+                        <div class="api-val" id="api-tokens">0k</div>
+                    </div>
+                    <div class="api-cell">
+                        <div class="api-label">RUNS</div>
+                        <div class="api-val" id="tasks-n">0</div>
+                    </div>
+                    <div class="api-cell">
+                        <div class="api-label">CUSTO EST.</div>
+                        <div class="api-val cost" id="api-cost">$0.00</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PLAN -->
+            <section class="panel plan-panel" id="plan-section" style="display:none">
+                <div class="panel-bar"><span class="panel-dot amber"></span>EXECUTION_PLAN</div>
+                <div class="plan-body" id="plan-box"></div>
+            </section>
+        </div>
+
+        <!-- RIGHT: Feed + Report + Logs -->
+        <div class="col-right">
+            <section class="panel live-panel">
+                <div class="panel-bar">
+                    <div class="panel-bar-left">
+                        <span class="panel-dot green" id="live-dot"></span>
+                        <span id="live-label">AWAITING_INPUT</span>
+                    </div>
+                    <div class="panel-tabs">
+                        <button class="ptab active" data-tab="feed">▶ LIVE</button>
+                        <button class="ptab" data-tab="report">◆ REPORT</button>
+                        <button class="ptab" data-tab="logs">▣ LOGS</button>
+                    </div>
+                </div>
+                <div class="live-progress"><div class="live-bar" id="prog"></div></div>
+
+                <div class="tab-pane active" id="tp-feed">
+                    <div class="feed" id="feed">
+                        <div class="feed-empty">
+                            <pre class="ascii-art">
+  ╔══════════════════════════╗
+  ║  READY FOR COMMANDS...   ║
+  ║  Type a task to begin.   ║
+  ╚══════════════════════════╝
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tp-report">
+                    <div class="report-body" id="rpt">
+                        <div class="feed-empty"><pre>No report generated yet.</pre></div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tp-logs">
+                    <div class="log-body" id="logs"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <footer class="foot">
+        <span class="foot-line">◈ DEVELOPED BY <a href="https://github.com/ognistie" target="_blank">@OGNISTIE</a> ◈ AI FARM AGENT v9 ◈</span>
+    </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

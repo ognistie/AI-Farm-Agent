@@ -1,0 +1,35 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu o aplicativo Bloco de Notas através da busca do sistema.",
+      "concept": "app_search, automation",
+      "insight": "Busca eficiente economiza cliques e identifica recursos disponíveis rapidamente.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para o aplicativo carregar completamente antes de prosseguir.",
+      "concept": "timing, sync",
+      "insight": "Delays estratégicos previnem erros de interação com apps ainda em inicialização.",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou a mensagem 'Olá Mundo' no campo de texto do aplicativo aberto.",
+      "concept": "input, text_entry",
+      "insight": "Automação de digitação elimina erros humanos em tarefas repetitivas.",
+      "difficulty": 1
+    }
+  ],
+  "report": {
+    "summary": "Tarefa básica de automação completada com sucesso: abrir app → aguardar → digitar texto.",
+    "skills": [
+      "app_automation",
+      "system_integration",
+      "timing_management",
+      "text_input"
+    ],
+    "xp_earned": 75,
+    "next_level": "Tente salvar o arquivo com nome personalizado e fechar o app programaticamente."
+  },
+  "task": "abra o bloco de notas e escreva a mensagem \"Olá Mundo\"",
+  "generated_at": "2026-03-31T16:37:04.352298"
+}

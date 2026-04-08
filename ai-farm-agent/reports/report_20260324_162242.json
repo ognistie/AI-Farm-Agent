@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "what": "Clicou no Teams na barra de tarefas",
+      "concept": "app-launcher",
+      "insight": "Barra de tarefas é o ponto de partida para abrir aplicações rapidamente.",
+      "difficulty": 1
+    },
+    {
+      "step": 2,
+      "what": "Aguardou 3 segundos para o Teams carregar",
+      "concept": "loading-wait",
+      "insight": "Aplicações corporativas precisam de tempo para inicializar completamente.",
+      "difficulty": 2
+    },
+    {
+      "step": 3,
+      "what": "Tentou localizar conversa com Jackson Missias mas falhou",
+      "concept": "chat-navigation",
+      "insight": "Busca por contatos específicos pode ser inconsistente em interfaces dinâmicas.",
+      "difficulty": 4
+    },
+    {
+      "step": 4,
+      "what": "Aguardou 1 segundo antes de tentar nova ação",
+      "concept": "error-recovery",
+      "insight": "Pausas curtas ajudam a reestabilizar após falhas de navegação.",
+      "difficulty": 2
+    },
+    {
+      "step": 5,
+      "what": "Clicou em área da interface do Teams",
+      "concept": "interface-focus",
+      "insight": "Clicar em áreas neutras pode ativar campos de entrada ou focos.",
+      "difficulty": 3
+    },
+    {
+      "step": 6,
+      "what": "Digitou a mensagem 'Ola Mundo, Sou o Exterminador do Futuro'",
+      "concept": "text-input",
+      "insight": "Entrada de texto funciona mesmo sem localizar conversa específica.",
+      "difficulty": 2
+    },
+    {
+      "step": 7,
+      "what": "Clicou no botão de enviar/encaminhar",
+      "concept": "message-send",
+      "insight": "Interfaces podem ter múltiplas opções de envio (enviar, encaminhar, etc).",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Abriu Teams e tentou enviar mensagem para Jackson Missias, mas teve que improvisar na navegação quando não encontrou o contato específico.",
+  "skills": [
+    "teams-navigation",
+    "chat-messaging",
+    "error-handling",
+    "text-input"
+  ],
+  "xp_earned": 280,
+  "next_level": "Implementar busca de contatos antes de enviar mensagens diretas.",
+  "task": "abra o teams na barra de tarefas, e ainda no teas entre na conversa com jacskon missias, e escreva a mensagem Ola Mundo, Sou o Exterminador do Futuro\"",
+  "generated_at": "2026-03-24T16:22:42.734955"
+}

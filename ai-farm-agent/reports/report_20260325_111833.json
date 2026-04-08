@@ -1,0 +1,70 @@
+{
+  "steps": [
+    {
+      "what": "Clicou no botão Iniciar para abrir o menu do sistema",
+      "concept": "navegação-sistema",
+      "insight": "O menu Iniciar é o ponto de partida para acessar aplicativos no Windows",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'teams' na barra de pesquisa para localizar o aplicativo",
+      "concept": "busca-aplicativo",
+      "insight": "A pesquisa por texto é mais rápida que navegar pelos menus manualmente",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 1 segundo para o sistema processar a pesquisa",
+      "concept": "sincronização-tempo",
+      "insight": "Pequenas pausas garantem que a interface responda adequadamente",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no Microsoft Teams nos resultados da pesquisa",
+      "concept": "seleção-aplicativo",
+      "insight": "Clicar no resultado correto evita abrir aplicativos similares",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperou 5 segundos para o Teams carregar completamente",
+      "concept": "carregamento-app",
+      "insight": "Aplicativos complexos como Teams precisam de mais tempo para inicializar",
+      "difficulty": 2
+    },
+    {
+      "what": "Selecionou o contato Igor Henrique Alves da Silva na lista de conversas",
+      "concept": "navegação-contatos",
+      "insight": "Identificar contatos específicos requer atenção aos nomes completos",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardou 2 segundos para a conversa abrir",
+      "concept": "carregamento-conversa",
+      "insight": "Conversas podem conter histórico extenso que demora para carregar",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou a mensagem de apresentação no campo de texto",
+      "concept": "entrada-texto",
+      "insight": "Mensagens profissionais devem ser claras e seguir protocolos de apresentação",
+      "difficulty": 3
+    },
+    {
+      "what": "Clicou no botão enviar para transmitir a mensagem",
+      "concept": "envio-mensagem",
+      "insight": "Sempre verificar a mensagem antes de enviar para evitar erros de comunicação",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Executou com sucesso uma sequência de comunicação profissional: pesquisou e abriu o Teams, navegou até um contato específico e enviou uma mensagem de apresentação formal.",
+  "skills": [
+    "navegação-sistema",
+    "busca-aplicativo",
+    "comunicação-teams",
+    "entrada-texto",
+    "gestão-tempo"
+  ],
+  "xp_earned": 280,
+  "next_level": "Experimente enviar mensagens com formatação avançada ou anexos no Teams.",
+  "task": "procure pelo teams na barra de pesquisaclique nele para entrar, depois que clicar para entrar clique na conversa com Igor Henrique escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: Ola Mundo Eu sou  o AI Farm Agent, Muito Prazer. clique em enviar apos escrever a mensagem.",
+  "generated_at": "2026-03-25T11:18:33.385981"
+}

@@ -1,0 +1,31 @@
+{
+    "app": "Visual Studio Code",
+    "states": {
+        "welcome": {
+            "description": "Tela de boas-vindas",
+            "indicators_uia": ["Welcome", "Get Started"],
+            "indicators_ocr": ["Welcome", "Get Started"],
+            "transitions": {
+                "editor": [{"action": "hotkey", "keys": "ctrl+n"}]
+            }
+        },
+        "editor": {
+            "description": "Editor com arquivo",
+            "indicators_uia": ["Editor", "Explorer"],
+            "indicators_ocr": [],
+            "transitions": {
+                "terminal": [{"action": "hotkey", "keys": "ctrl+`"}],
+                "new_file": [{"action": "hotkey", "keys": "ctrl+n"}]
+            }
+        },
+        "terminal": {
+            "description": "Terminal integrado",
+            "indicators_uia": ["Terminal"],
+            "indicators_ocr": ["PS ", "C:\\"],
+            "transitions": {
+                "editor": [{"action": "hotkey", "keys": "ctrl+`"}]
+            }
+        }
+    },
+    "workflows": {}
+}

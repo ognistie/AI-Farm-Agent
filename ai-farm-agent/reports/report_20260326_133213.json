@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "what": "Busquei e abri o aplicativo Teams",
+      "concept": "app launcher",
+      "insight": "Usar app_search é mais rápido que navegar por menus",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei 4 segundos para o Teams carregar completamente",
+      "concept": "wait timing",
+      "insight": "Apps corporativos precisam de tempo para carregar recursos",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no campo de mensagem do chat com Jackson",
+      "concept": "vision targeting",
+      "insight": "Vision_click com 95% de confiança garante precisão na interface",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardei 2 segundos para o campo ficar ativo",
+      "concept": "input preparation",
+      "insight": "Pequenas pausas evitam problemas de sincronização",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei 'Ola Mundo' no campo de mensagem",
+      "concept": "text input",
+      "insight": "Vision_type permite digitar em campos identificados visualmente",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionei Enter para enviar a mensagem",
+      "concept": "hotkey send",
+      "insight": "Enter é o atalho universal para enviar mensagens em chats",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Automatizei o envio de mensagem no Teams usando reconhecimento visual e timing adequado. A sequência combinou busca de app, espera inteligente e interação precisa.",
+  "skills": [
+    "app_search",
+    "vision_click",
+    "vision_type",
+    "wait_timing",
+    "hotkey_automation"
+  ],
+  "xp_earned": 180,
+  "next_level": "Experimente automatizar envio de arquivos ou usar @mentions em conversas",
+  "task": "Abra o Teams e mande a mensagem: Ola Mundo para Jackson Alves Missias",
+  "generated_at": "2026-03-26T13:32:13.169594"
+}

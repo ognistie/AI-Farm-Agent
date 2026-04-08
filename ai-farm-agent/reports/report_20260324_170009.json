@@ -1,0 +1,93 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "what": "Clicou na barra de pesquisa do Windows",
+      "concept": "UI Navigation",
+      "insight": "Barra de pesquisa é o ponto de entrada mais rápido para aplicações no Windows",
+      "difficulty": 1
+    },
+    {
+      "step": 2,
+      "what": "Digitou 'teams' na busca",
+      "concept": "Text Input",
+      "insight": "Busca por nome parcial é mais eficiente que navegar por menus",
+      "difficulty": 1
+    },
+    {
+      "step": 3,
+      "what": "Pressionou Enter para abrir o Teams",
+      "concept": "Keyboard Shortcuts",
+      "insight": "Enter executa a primeira sugestão da busca automaticamente",
+      "difficulty": 1
+    },
+    {
+      "step": 4,
+      "what": "Aguardou 4 segundos para o Teams carregar",
+      "concept": "App Loading",
+      "insight": "Tempo de espera estratégico evita clicks em elementos não carregados",
+      "difficulty": 2
+    },
+    {
+      "step": 5,
+      "what": "Clicou no contato Jackson Alves Missias",
+      "concept": "Contact Selection",
+      "insight": "Interface do Teams organiza contatos em lista lateral para acesso rápido",
+      "difficulty": 2
+    },
+    {
+      "step": 6,
+      "what": "Aguardou 2 segundos para carregar a conversa",
+      "concept": "Chat Loading",
+      "insight": "Conversas precisam carregar histórico antes de aceitar input",
+      "difficulty": 2
+    },
+    {
+      "step": 7,
+      "what": "Digitou mensagem no campo de texto da conversa",
+      "concept": "Vision Typing",
+      "insight": "Vision typing permite inserir texto em campos identificados visualmente",
+      "difficulty": 3
+    },
+    {
+      "step": 8,
+      "what": "Clicou no botão de enviar mensagem",
+      "concept": "Message Sending",
+      "insight": "Botão enviar fica ativo apenas quando há conteúdo no campo de mensagem",
+      "difficulty": 2
+    },
+    {
+      "step": 9,
+      "what": "Iniciou chamada de voz clicando no ícone de telefone",
+      "concept": "Voice Call",
+      "insight": "Teams integra chat e chamadas na mesma interface para comunicação fluida",
+      "difficulty": 3
+    },
+    {
+      "step": 10,
+      "what": "Aguardou 5 segundos durante a chamada",
+      "concept": "Call Duration",
+      "insight": "Tempo mínimo de chamada simula interação real e permite estabelecimento da conexão",
+      "difficulty": 2
+    },
+    {
+      "step": 11,
+      "what": "Encerrou a chamada clicando em sair",
+      "concept": "Call Termination",
+      "insight": "Interface de chamada sobrepõe o chat com controles dedicados para encerramento",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Automação completa de comunicação no Teams: busca, mensagem e chamada de voz. Fluxo integrado de chat e telefonia em plataforma corporativa.",
+  "skills": [
+    "Teams Navigation",
+    "Vision Typing",
+    "Voice Calls",
+    "UI Automation",
+    "Contact Management"
+  ],
+  "xp_earned": 285,
+  "next_level": "Automatizar reuniões agendadas e compartilhamento de tela no Teams",
+  "task": "procure pelo teams na barra de pesquisa, entre nele depois entra na conversa com jacskon missias escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: encerra ai o chamado da semp e clique em enviar a mensagem, logo apos clique no canto superior direito em ligar para ele, e depois de 5 segundos desligue",
+  "generated_at": "2026-03-24T17:00:09.011466"
+}

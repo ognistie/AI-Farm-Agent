@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "what": "Clicou no ícone do Teams na barra de tarefas",
+      "concept": "UI Navigation",
+      "insight": "Conseguiu identificar e acessar o Teams mesmo sem visualização clara do ícone",
+      "difficulty": 2
+    },
+    {
+      "step": 2,
+      "what": "Aguardou 3 segundos para o Teams carregar",
+      "concept": "Wait Strategy",
+      "insight": "Tempo de espera adequado para aplicações corporativas carregarem",
+      "difficulty": 1
+    },
+    {
+      "step": 3,
+      "what": "Tentou encontrar conversa com Jackson Missias mas falhou",
+      "concept": "Contact Search",
+      "insight": "Visão pode falhar ao identificar contatos específicos em listas dinâmicas",
+      "difficulty": 4
+    },
+    {
+      "step": 4,
+      "what": "Aguardou 1 segundo após falha de busca",
+      "concept": "Error Recovery",
+      "insight": "Pausas curtas ajudam a sincronizar após falhas de identificação",
+      "difficulty": 2
+    },
+    {
+      "step": 5,
+      "what": "Tentou localizar campo de mensagem mas não conseguiu",
+      "concept": "Input Field Detection",
+      "insight": "Campos de texto podem ser difíceis de identificar sem contexto visual claro",
+      "difficulty": 4
+    },
+    {
+      "step": 6,
+      "what": "Digitou 'Ola, Mundo' mesmo sem campo visível",
+      "concept": "Blind Typing",
+      "insight": "Typing funciona se houver foco ativo, mesmo sem confirmação visual",
+      "difficulty": 3
+    },
+    {
+      "step": 7,
+      "what": "Clicou no botão de enviar com 85% de confiança",
+      "concept": "Send Action",
+      "insight": "Conseguiu identificar botão de envio com boa precisão apesar das falhas anteriores",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Abriu Teams e tentou enviar mensagem para Jackson, mas enfrentou dificuldades na identificação visual de elementos específicos da interface.",
+  "skills": [
+    "Teams Navigation",
+    "Contact Management",
+    "Chat Interface",
+    "Error Handling"
+  ],
+  "xp_earned": 280,
+  "next_level": "Melhorar detecção de contatos e campos de entrada em aplicações corporativas",
+  "task": "abra o teams, esta fixado na barra de tarefas, entre na conversa com jacskon missias, e escreva no chat \"Ola, Mundo\" e clique em enviar mensagem. faça simples, veja o teams na barra de tarefas, entre nele, ache o jackson e escreva a mensagem e envie ela.",
+  "generated_at": "2026-03-24T16:17:42.624087"
+}

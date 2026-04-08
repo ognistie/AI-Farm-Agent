@@ -1,0 +1,57 @@
+{
+  "summary": "Automatização completa do Teams para envio de mensagem específica para contato Jackson Missias.",
+  "skills": [
+    "teams-automation",
+    "ui-navigation",
+    "message-sending",
+    "contact-selection"
+  ],
+  "xp_earned": 350,
+  "next_level": "Automatizar envio de arquivos ou mensagens em grupo no Teams",
+  "steps": [
+    {
+      "what": "Navegou para seção Chat do Teams",
+      "concept": "UI Navigation",
+      "insight": "Chat é o hub central de comunicação no Teams",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou interface carregar completamente",
+      "concept": "Wait Strategy",
+      "insight": "3 segundos garante carregamento da lista de contatos",
+      "difficulty": 1
+    },
+    {
+      "what": "Selecionou conversa com Jackson Alves Missias",
+      "concept": "Contact Selection",
+      "insight": "Clique direto no nome do contato abre a conversa",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou conversa carregar",
+      "concept": "Load Wait",
+      "insight": "1 segundo suficiente para carregar histórico de mensagens",
+      "difficulty": 1
+    },
+    {
+      "what": "Focou no campo de entrada de mensagem",
+      "concept": "Input Focus",
+      "insight": "Campo 'Digite uma mensagem' é o ponto de entrada principal",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou mensagem completa conforme solicitado",
+      "concept": "Text Input",
+      "insight": "Teams aceita mensagens longas sem problemas de formatação",
+      "difficulty": 3
+    },
+    {
+      "what": "Enviou mensagem através do botão enviar",
+      "concept": "Message Send",
+      "insight": "Botão seta (→) é o método visual mais confiável para envio",
+      "difficulty": 2
+    }
+  ],
+  "task": "abra o teams, e digite no campo abaixo dentro da conversa com jackson missias a seguinte mensagem : Ola Mundo Eu sou o exterminador do futuro, depois disso clique em enviar a mensagem envie a mensagem para ele",
+  "generated_at": "2026-03-24T16:40:37.359363"
+}

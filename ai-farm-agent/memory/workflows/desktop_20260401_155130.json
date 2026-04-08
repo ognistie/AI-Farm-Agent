@@ -1,0 +1,26 @@
+{
+  "task": "Abra o teams, va ate a conversa com Jackson Alves Missias, e escreva a seguinte mensagem a ele: Olá Mundo, este e uma das função que o AI Farm Agent Consegue realizar, agente desenvolvido por: https://github.com/ognistie, logo apos isso clique em enviar.",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Microsoft Teams",
+    "⏳ 5s",
+    "🎯 Página inicial | Página inicial | Micros",
+    "⏳ 1s",
+    "👁️ (109,264) [95%]",
+    "⏳ 2s",
+    "⌨️ ctrl+shift+f",
+    "⏳ 1s",
+    "Digitado: Jackson Alves Missias",
+    "⏳ 2s",
+    "👁️ (282,500) [95%]",
+    "⏳ 2s",
+    "👁️ (821,668) [95%]",
+    "⏳ 0.5s",
+    "Digitado: Olá Mundo, este e uma das função que o AI Farm Agent Consegu",
+    "⏳ 1s",
+    "⌨️ enter",
+    "⌨️ escape"
+  ],
+  "created_at": "2026-04-01T15:51:30.389253",
+  "success_count": 1,
+  "tags": 

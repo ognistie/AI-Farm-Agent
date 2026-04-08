@@ -1,0 +1,82 @@
+{
+  "steps": [
+    {
+      "what": "Abrir aplicativo Teams via busca do sistema",
+      "concept": "app launch",
+      "insight": "Use busca do sistema para acesso rápido a aplicativos",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardar carregamento completo da interface",
+      "concept": "wait timing",
+      "insight": "Sincronização adequada evita cliques prematuros",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicar na barra de pesquisa do Teams",
+      "concept": "ui navigation",
+      "insight": "Identifique elementos de busca para localizar contatos",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitar nome do contato desejado",
+      "concept": "text input",
+      "insight": "Use nomes completos para melhor precisão na busca",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardar resultados da pesquisa aparecerem",
+      "concept": "search results",
+      "insight": "Permita tempo para sistema processar e exibir resultados",
+      "difficulty": 2
+    },
+    {
+      "what": "Selecionar contato correto nos resultados",
+      "concept": "result selection",
+      "insight": "Verifique informações do perfil antes de selecionar",
+      "difficulty": 2
+    },
+    {
+      "what": "Falha ao localizar elemento da interface corretamente",
+      "concept": "error handling",
+      "insight": "Validação de JSON é crucial para automação confiável",
+      "difficulty": 4
+    },
+    {
+      "what": "Digitar mensagem personalizada no campo de texto",
+      "concept": "message input",
+      "insight": "Campo de mensagem fica ativo após selecionar conversa",
+      "difficulty": 1
+    },
+    {
+      "what": "Enviar mensagem usando tecla Enter",
+      "concept": "send message",
+      "insight": "Enter é método mais confiável que clicar em botões",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardar tempo específico antes da próxima ação",
+      "concept": "timed delay",
+      "insight": "Delays permitem que mensagem seja processada e enviada",
+      "difficulty": 1
+    },
+    {
+      "what": "Iniciar chamada através do botão na interface",
+      "concept": "call initiation",
+      "insight": "Botões de chamada ficam no canto superior das conversas",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Automação completa do Teams: busca de contato, envio de mensagem e iniciação de chamada. Processo demonstra integração de múltiplas funcionalidades de comunicação.",
+  "skills": [
+    "teams automation",
+    "contact search",
+    "messaging",
+    "call initiation",
+    "ui interaction"
+  ],
+  "xp_earned": 320,
+  "next_level": "Implemente tratamento de erros robusto para automações de comunicação complexas",
+  "task": "abra o Tams, procure a conversa com Jackson Missias. apos isso clique no campo de mensagem abaixo e escreva: Ola Mundo, Eu Sou o Exterminador Do Futuro e envie, logo apos isso espere 3 segundo e ligue para ele no botao no canto superior direito",
+  "generated_at": "2026-03-26T13:04:50.807929"
+}

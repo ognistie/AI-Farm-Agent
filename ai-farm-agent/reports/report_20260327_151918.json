@@ -1,0 +1,46 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar novo documento em branco",
+      "concept": "Setup, Excel Básico",
+      "insight": "Sempre iniciar com ambiente limpo garante dados consistentes sem herança de formatações antigas",
+      "difficulty": 1
+    },
+    {
+      "what": "Inserir 10 nomes de frutas na coluna A (Maçã, Banana, Laranja, Morango, Uva, Pêssego, Melancia, Abacaxi, Kiwi, Manga)",
+      "concept": "Input de Dados, Coluna",
+      "insight": "Ordem alfabética facilita busca posterior e organização lógica dos dados",
+      "difficulty": 1
+    },
+    {
+      "what": "Inserir preços correspondentes na coluna B com valores numéricos em reais",
+      "concept": "Formatação Numérica, Planilha",
+      "insight": "Usar formato de moeda (R$) melhora legibilidade e evita erros de cálculo",
+      "difficulty": 1
+    },
+    {
+      "what": "Validar estrutura: 10 linhas de dados com duas colunas preenchidas",
+      "concept": "Validação, QA",
+      "insight": "Verificação manual antes de processos automáticos previne propagação de erros",
+      "difficulty": 2
+    },
+    {
+      "what": "Salvar arquivo em formato .xlsx com nomenclatura clara (frutas_precos.xlsx)",
+      "concept": "Persistência, Nomenclatura",
+      "insight": "Nomes descritivos facilitam identificação e gerenciamento em lotes de arquivos",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Criação bem-sucedida de planilha Excel com 10 frutas e preços, estruturada em duas colunas para análise e manipulação de dados. Fundação sólida para operações de cálculo e formatação avançadas.",
+  "skills": [
+    "Excel Básico",
+    "Input de Dados",
+    "Formatação Numérica",
+    "Organização de Planilhas",
+    "Salvamento de Arquivos"
+  ],
+  "xp_earned": 120,
+  "next_level": "Adicione fórmulas de soma total e margens de lucro em coluna C para praticar cálculos automáticos",
+  "task": "Abra o excel 2013, abra um documento em branco e Crie uma planilha com 10 nomes de frutas na coluna A e preços na coluna B",
+  "generated_at": "2026-03-27T15:19:18.101112"
+}

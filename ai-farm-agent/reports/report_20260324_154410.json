@@ -1,0 +1,63 @@
+{
+  "steps": [
+    {
+      "what": "Pressionou tecla Windows para abrir menu iniciar",
+      "concept": "Windows Key",
+      "insight": "Tecla Win é o atalho mais rápido para acessar busca do sistema.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 1 segundo para menu carregar",
+      "concept": "Wait Timer",
+      "insight": "Pequenas pausas garantem que a interface responda adequadamente.",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'bloco de notas' na barra de pesquisa",
+      "concept": "Search Query",
+      "insight": "Windows busca aplicativos instantaneamente ao digitar.",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 2 segundos para resultados aparecerem",
+      "concept": "Search Results",
+      "insight": "Tempo suficiente para sistema indexar e exibir opções.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para abrir primeiro resultado",
+      "concept": "Default Selection",
+      "insight": "Enter sempre seleciona o primeiro resultado da busca.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para aplicativo inicializar",
+      "concept": "App Launch",
+      "insight": "Aplicativos nativos do Windows carregam rapidamente.",
+      "difficulty": 2
+    },
+    {
+      "what": "Focou na janela do Bloco de Notas aberta",
+      "concept": "Window Focus",
+      "insight": "Garantir foco evita digitar em local errado.",
+      "difficulty": 3
+    },
+    {
+      "what": "Digitou título e artista da música solicitada",
+      "concept": "Text Input",
+      "insight": "Começar com título organiza o conteúdo desde o início.",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Abriu Bloco de Notas via busca do Windows e iniciou documento com título da música. Processo eficiente usando atalhos nativos do sistema.",
+  "skills": [
+    "Windows Search",
+    "Keyboard Shortcuts",
+    "Text Editing",
+    "App Navigation"
+  ],
+  "xp_earned": 180,
+  "next_level": "Explorar funcionalidades avançadas do Bloco de Notas como formatação e salvamento.",
+  "task": "pesquisa na barra de tarefas o bloco de notas, abra ele e escreva a musica de O Rappa, Vapor barato",
+  "generated_at": "2026-03-24T15:44:10.681545"
+}

@@ -1,0 +1,71 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar estrutura com dados de 20 meninos (nome, idade, altura) nas colunas A-C.",
+      "concept": [
+        "spreadsheet-setup",
+        "data-entry"
+      ],
+      "insight": "Organizar dados em colunas facilita cálculos posteriores e análise visual.",
+      "difficulty": 2
+    },
+    {
+      "what": "Preencher colunas D-E com 20 nomes de meninas e suas respectivas idades.",
+      "concept": [
+        "data-consistency",
+        "parallel-datasets"
+      ],
+      "insight": "Manter mesma quantidade de registros em ambos os grupos permite comparações válidas.",
+      "difficulty": 2
+    },
+    {
+      "what": "Adicionar coluna C com altura de todos os meninos e coluna F com altura das meninas.",
+      "concept": [
+        "data-completion",
+        "attribute-columns"
+      ],
+      "insight": "Três atributos (nome, idade, altura) por grupo criam base robusta para análises.",
+      "difficulty": 2
+    },
+    {
+      "what": "Usar função AVERAGE() na coluna G para calcular idade média de meninos e meninas combinadas.",
+      "concept": [
+        "formulas",
+        "aggregate-functions"
+      ],
+      "insight": "A função AVERAGE automatiza cálculos e reduz erros de arredondamento manual.",
+      "difficulty": 3
+    },
+    {
+      "what": "Usar função AVERAGE() na coluna H para calcular altura média de meninos e meninas combinadas.",
+      "concept": [
+        "formula-reuse",
+        "statistical-analysis"
+      ],
+      "insight": "Reutilizar a mesma fórmula em diferentes contextos consolida padrões.",
+      "difficulty": 3
+    },
+    {
+      "what": "Formatar planilha com headers, cores e alinhamento para melhor legibilidade.",
+      "concept": [
+        "formatting",
+        "ux-presentation"
+      ],
+      "insight": "Boa apresentação visual facilita interpretação de dados complexos.",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Criou planilha Excel com dataset dual (meninos/meninas) e calculou médias agregadas de idade e altura usando funções spreadsheet.",
+  "skills": [
+    "excel-2013",
+    "data-entry",
+    "spreadsheet-structure",
+    "average-function",
+    "data-analysis",
+    "formatting"
+  ],
+  "xp_earned": 250,
+  "next_level": "Crie gráficos (colunas/pizza) para visualizar distribuição de idades e comparar alturas médias entre os grupos.",
+  "task": "abra o excel 2013 e  faça uma planilha que a coluna A tenha nome de 20 meninos, na Coluna B tenha idade de todos eles e na C Altura deles. \nNa Coluna D coloque 20 nomes de meninas, na coluna E coloque idade de todas elas e na F coloque qual a idade media de meninos e meninas, na colouna G coloque altura media de meninos e meninas",
+  "generated_at": "2026-03-27T15:59:13.470065"
+}

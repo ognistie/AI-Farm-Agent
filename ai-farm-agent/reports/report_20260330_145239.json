@@ -1,0 +1,66 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu o Microsoft Teams pela busca do sistema.",
+      "concept": "App Search, Launch",
+      "insight": "Usar a busca de aplicativos economiza cliques e é mais rápido que ícones na barra de tarefas.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou o carregamento completo da interface do Teams.",
+      "concept": "Wait, Load Time",
+      "insight": "Pausas estratégicas evitam cliques em elementos ainda não renderizados.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no contato Jackson Alves Missias na lista lateral de chats.",
+      "concept": "Vision Click, Navigation",
+      "insight": "A visão computacional localizou o perfil com 95% de confiança pelo ícone e nome.",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperou a conversa abrir e exibir o histórico de mensagens.",
+      "concept": "Wait, UI Render",
+      "insight": "Chats corporativos precisam de tempo para sincronizar histórico na nuvem.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no campo de input de mensagem na base da tela.",
+      "concept": "Vision Click, Text Field",
+      "insight": "O campo detectado estava ativo (borda azul visível) e pronto para digitação.",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou a mensagem 'Olá!' usando OCR visual de campo de texto.",
+      "concept": "Vision Type, Input",
+      "insight": "Vision type garante digitação mesmo com teclado customizado ou layouts alterados.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para enviar a mensagem instantaneamente.",
+      "concept": "Hotkey, Submit",
+      "insight": "Hotkeys (Enter/Ctrl+Enter) são mais rápidos que clicar botão de envio.",
+      "difficulty": 1
+    },
+    {
+      "what": "Verificou confirmação visual do envio (mensagem aparece no chat).",
+      "concept": "Wait, Feedback",
+      "insight": "A pausa final permite o servidor processar e exibir a mensagem antes do próximo passo.",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Automação completa de envio de mensagem no Teams usando visão computacional e hotkeys. Sequência de 10 ações executadas com 100% de sucesso.",
+  "skills": [
+    "App Launcher",
+    "Vision Click Detection",
+    "Text Input Automation",
+    "Hotkey Execution",
+    "UI Wait Synchronization",
+    "Chat Navigation",
+    "Message Sending"
+  ],
+  "xp_earned": 250,
+  "next_level": "Tente automatizar envio de mensagens para múltiplos contatos com loop e variáveis dinâmicas.",
+  "task": "Entre no teams entre na conversa com Jackson Missias e envie esta mensagem: Ola Mundo",
+  "generated_at": "2026-03-30T14:52:39.902795"
+}

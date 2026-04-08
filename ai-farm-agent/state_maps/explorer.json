@@ -1,0 +1,12 @@
+{
+    "app": "File Explorer",
+    "states": {
+        "main": {
+            "description": "Explorer aberto",
+            "indicators_uia": ["Navigation", "Address"],
+            "indicators_ocr": ["Este Computador", "Downloads", "Desktop"],
+            "transitions": {}
+        }
+    },
+    "workflows": {}
+}

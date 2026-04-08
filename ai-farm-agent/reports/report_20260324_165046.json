@@ -1,0 +1,63 @@
+{
+  "steps": [
+    {
+      "what": "Cliquei na barra de pesquisa do Windows",
+      "concept": "Windows Search",
+      "insight": "A barra de pesquisa é o ponto de entrada principal para aplicativos no Windows",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei 'Teams' na pesquisa",
+      "concept": "App Search",
+      "insight": "Busca por nome parcial já filtra resultados relevantes",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no Microsoft Teams nos resultados",
+      "concept": "App Launch",
+      "insight": "Reconhecer ícones de aplicativos acelera navegação",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei o Teams carregar completamente",
+      "concept": "Loading State",
+      "insight": "Aplicativos corporativos podem demorar para inicializar",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei na conversa com Jackson Alves Missias",
+      "concept": "Chat Navigation",
+      "insight": "Contatos recentes ficam visíveis na sidebar do Teams",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei a conversa carregar",
+      "concept": "Chat Loading",
+      "insight": "Transições de chat precisam de tempo para sincronizar",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei mensagem no campo de texto",
+      "concept": "Message Input",
+      "insight": "Campo de mensagem fica na parte inferior da conversa",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no botão enviar",
+      "concept": "Send Action",
+      "insight": "Botão de envio fica próximo ao campo de texto",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Abri o Teams via pesquisa Windows e enviei mensagem específica para Jackson Missias. Processo completo de comunicação corporativa.",
+  "skills": [
+    "Windows Search",
+    "Teams Navigation",
+    "Chat Messaging",
+    "App Launch"
+  ],
+  "xp_earned": 320,
+  "next_level": "Automatizar envio de mensagens em massa no Teams",
+  "task": "procure pelo teams na barra de pesquisa, entre nele depois entra na conversa com jacskon missias escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: Ola Mundo Eu sou o exterminador do fururo e clique em enviar",
+  "generated_at": "2026-03-24T16:50:46.530142"
+}

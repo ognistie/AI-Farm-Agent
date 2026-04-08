@@ -1,0 +1,66 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar nova planilha com estrutura de 4 colunas",
+      "concept": "Setup Excel, Estrutura",
+      "insight": "Começar sempre definindo headers claros (A:Nomes Meninos, B:Nomes Meninas, C:Idades, D:Alturas) para organizar dados",
+      "difficulty": 1
+    },
+    {
+      "what": "Preencher coluna A com 10 nomes masculinos (ex: João, Pedro, Lucas, etc)",
+      "concept": "Input dados, Listas",
+      "insight": "Use Ctrl+D para duplicar nomes rapidamente após inserir alguns, economizando tempo",
+      "difficulty": 1
+    },
+    {
+      "what": "Preencher coluna B com 10 nomes femininos (ex: Maria, Ana, Sofia, etc)",
+      "concept": "Entrada dados, Nomenclatura",
+      "insight": "Mantenha consistência de 10 registros em ambas colunas para cálculos proporcionais corretos",
+      "difficulty": 1
+    },
+    {
+      "what": "Inserir idades dos meninos na coluna C com valores realistas (ex: 8-18 anos)",
+      "concept": "Dados numéricos, Range",
+      "insight": "Crie variação de valores para que percentuais façam sentido (evite valores idênticos)",
+      "difficulty": 2
+    },
+    {
+      "what": "Criar fórmula em C11 para calcular % de idade média dos meninos: =AVERAGE(C2:C11)*100/MAX(C2:C11)",
+      "concept": "Funções Excel, AVERAGE, Percentual",
+      "insight": "Use AVERAGE para média e divida por MAX para converter em percentual significativo",
+      "difficulty": 3
+    },
+    {
+      "what": "Inserir alturas dos meninas/meninos na coluna D em centímetros (ex: 130-180cm)",
+      "concept": "Dados contínuos, Unidades",
+      "insight": "Mantenha padrão métrico (cm) para consistência e cálculos de percentagem sem conversão",
+      "difficulty": 2
+    },
+    {
+      "what": "Criar fórmula em D11 para calcular % altura comparativa: =AVERAGE(D2:D11)/MAX(D2:D11)*100",
+      "concept": "Fórmulas comparativas, Percentual relativo",
+      "insight": "Dividir pela altura máxima cria índice percentual que mostra proximidade com valor máximo (útil para análise)",
+      "difficulty": 3
+    },
+    {
+      "what": "Aplicar formatação visual: aumentar fonte headers, colorir colunas alternadas, adicionar bordas",
+      "concept": "Formatação condicional, UX spreadsheet",
+      "insight": "Planilhas bem formatadas reduzem erros de leitura e melhoram apresentação 40%",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Criação de planilha Excel comparativa com 10 nomes de meninos/meninas, dados de idade/altura e cálculos percentuais automáticos. Estrutura pronta para análise estatística básica.",
+  "skills": [
+    "Excel 2013",
+    "Estrutura-dados",
+    "Fórmulas-AVERAGE",
+    "Percentuais",
+    "Formatação-visual",
+    "Dados-numéricos",
+    "Funções-comparativas"
+  ],
+  "xp_earned": 180,
+  "next_level": "Adicione gráficos de dispersão (scatter plot) comparando altura vs idade entre meninos e meninas",
+  "task": "abra o excel 2013 e  faça uma planilha que a coluna A tenha 10 nomes de meninos, coluna b 10 nome de meninas, e na coluna C idade deles com % de idade medias dos menino e na D Altura deles % porcemtagem de  menino x  meninas",
+  "generated_at": "2026-03-27T15:52:55.366126"
+}

@@ -1,0 +1,76 @@
+{
+  "steps": [
+    {
+      "what": "Pesquisou e abriu o Excel 2013 através do botão Windows",
+      "concept": "App Search",
+      "insight": "Use a busca do Windows para encontrar aplicativos rapidamente",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 3 segundos para o Excel carregar completamente",
+      "concept": "Wait Strategy",
+      "insight": "Aguardar o carregamento evita erros de clique em elementos não prontos",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na opção de documento em branco para criar nova planilha",
+      "concept": "Template Selection",
+      "insight": "Sempre confirme que está selecionando o template correto antes de prosseguir",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 2 segundos para a planilha carregar",
+      "concept": "Loading Wait",
+      "insight": "Tempos de espera são cruciais para automação estável",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na célula A1 para iniciar entrada de dados",
+      "concept": "Cell Selection",
+      "insight": "Sempre confirme que está na célula correta antes de digitar",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou o valor '1' na primeira célula",
+      "concept": "Data Entry",
+      "insight": "Inicie sempre com valores simples para testar a entrada de dados",
+      "difficulty": 1
+    },
+    {
+      "what": "Usou Enter para navegar para próxima célula e continuou digitando 2-10",
+      "concept": "Sequential Input",
+      "insight": "Enter move automaticamente para célula abaixo, otimizando entrada sequencial",
+      "difficulty": 3
+    },
+    {
+      "what": "Digitou sequência completa 1-10 na coluna A usando Enter entre valores",
+      "concept": "Column Fill",
+      "insight": "Entrada sequencial é mais rápida que clicar individualmente em cada célula",
+      "difficulty": 3
+    },
+    {
+      "what": "Clicou na célula B1 para iniciar segunda coluna",
+      "concept": "Column Switch",
+      "insight": "Planeje a navegação entre colunas para manter eficiência",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou sequência 11-20 na coluna B usando mesmo método de Enter",
+      "concept": "Pattern Replication",
+      "insight": "Reutilize padrões eficientes para tarefas similares",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Automatizou abertura do Excel 2013 e preenchimento sequencial de duas colunas com números 1-10 e 11-20. Demonstrou uso eficiente de navegação por Enter para entrada rápida de dados.",
+  "skills": [
+    "App Search",
+    "Excel Navigation",
+    "Sequential Data Entry",
+    "Cell Selection",
+    "Pattern Input"
+  ],
+  "xp_earned": 280,
+  "next_level": "Tente usar fórmulas automáticas como =ROW() para gerar sequências numéricas instantaneamente",
+  "task": "clique no botao do windows na barra de tarefas, pesquise por excel 2013 e clique para entrar nele, logo apos isso selecione o ducomento em branco e clique na primeira cedula de cada coluna e  escreva na primeira coluna de 1 a 10, e na coluna ao lado de 11 a 20.",
+  "generated_at": "2026-03-25T15:15:07.347669"
+}

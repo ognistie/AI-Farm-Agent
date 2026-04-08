@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu o aplicativo Microsoft Teams",
+      "concept": "app_search",
+      "insight": "Buscar por nome exato economiza cliques versus navegação manual",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou carregamento completo da interface",
+      "concept": "timing_optimization",
+      "insight": "Pausas estratégicas evitam erros de clique em elementos não carregados",
+      "difficulty": 1
+    },
+    {
+      "what": "Focou a janela ativa do Teams",
+      "concept": "window_management",
+      "insight": "Garantir foco evita digitar em janelas erradas",
+      "difficulty": 1
+    },
+    {
+      "what": "Acionou a busca rápida com Ctrl+E",
+      "concept": "keyboard_shortcuts",
+      "insight": "Atalhos de teclado são 3x mais rápidos que navegação com mouse",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou o nome completo do contato na busca",
+      "concept": "contact_search",
+      "insight": "Nome completo evita resultados ambíguos ou parciais",
+      "difficulty": 1
+    },
+    {
+      "what": "Confirmou seleção do contato com Enter",
+      "concept": "navigation_confirm",
+      "insight": "Enter é mais rápido que clicar em resultados da busca",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou a mensagem 'Olá Mundo' na caixa de texto",
+      "concept": "message_composition",
+      "insight": "Verificar destino correto antes de digitar evita envios para chat errado",
+      "difficulty": 1
+    },
+    {
+      "what": "Enviou a mensagem com Enter",
+      "concept": "message_send",
+      "insight": "Enter envia em Teams; Ctrl+Enter em alguns apps requer atenção extra",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Completou tarefa de mensagem direta no Teams com fluxo eficiente usando busca rápida e atalhos de teclado. Todos os passos foram bem-sucedidos sem erros.",
+  "skills": [
+    "app_navigation",
+    "keyboard_shortcuts",
+    "contact_search",
+    "message_sending",
+    "window_focus"
+  ],
+  "xp_earned": 75,
+  "next_level": "Pratique usar Ctrl+Shift+X para iniciar nova mensagem direta sem busca prévia",
+  "task": "abra o Teams, va ate o chat procure por Jackson Alves Missias e escreva a mensagem, Olá Mundo e clique em enviar",
+  "generated_at": "2026-04-01T10:52:43.968264"
+}

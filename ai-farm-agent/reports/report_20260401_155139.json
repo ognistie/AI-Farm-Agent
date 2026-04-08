@@ -1,0 +1,127 @@
+{
+  "session": {
+    "task": "Enviar mensagem via Teams para Jackson Alves Missias",
+    "status": "⚠️ PARCIALMENTE CONCLUÍDO",
+    "completion": "85%"
+  },
+  "steps": [
+    {
+      "what": "Localizou e abriu aplicação Microsoft Teams",
+      "concept": [
+        "app-search",
+        "launch"
+      ],
+      "insight": "Busca por aplicação é método eficiente para iniciar programas",
+      "difficulty": 1
+    },
+    {
+      "what": "Navegou até janela principal do Teams",
+      "concept": [
+        "window-focus",
+        "navigation"
+      ],
+      "insight": "Foco correto na janela evita cliques em elementos errados",
+      "difficulty": 1
+    },
+    {
+      "what": "Acionou busca avançada com atalho Ctrl+Shift+F",
+      "concept": [
+        "hotkey-usage",
+        "search-function"
+      ],
+      "insight": "Atalhos de teclado aceleram fluxo e reduzem cliques",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou nome 'Jackson Alves Missias' no campo de busca",
+      "concept": [
+        "text-input",
+        "contact-search"
+      ],
+      "insight": "Busca por nome completo aumenta precisão do resultado",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no resultado de contato correspondente",
+      "concept": [
+        "vision-click",
+        "result-selection"
+      ],
+      "insight": "Coordenadas precisas (282,500) indicam elemento correto encontrado",
+      "difficulty": 2
+    },
+    {
+      "what": "Acionou campo de mensagem na conversa",
+      "concept": [
+        "ui-interaction",
+        "message-box"
+      ],
+      "insight": "Clique em (821,668) localizou caixa de composição de mensagem",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou mensagem com informações sobre AI Farm Agent",
+      "concept": [
+        "text-composition",
+        "message-crafting"
+      ],
+      "insight": "Mensagem incompleta - faltaram últimos caracteres 'ir realizad...'",
+      "difficulty": 2,
+      "warning": "❌ Texto cortado na execução"
+    },
+    {
+      "what": "Pressionou Enter para enviar mensagem",
+      "concept": [
+        "hotkey-send",
+        "message-delivery"
+      ],
+      "insight": "Enter é atalho padrão para envio, mas mensagem estava incompleta",
+      "difficulty": 1
+    },
+    {
+      "what": "Pressionou Escape para finalizar sessão",
+      "concept": [
+        "session-close",
+        "cleanup"
+      ],
+      "insight": "Encerramento apropriado, mas sem confirmação de entrega",
+      "difficulty": 1
+    }
+  ],
+  "issues": [
+    {
+      "type": "TEXTO TRUNCADO",
+      "description": "Mensagem foi interrompida em 'Consegu' em vez de 'Consegue realizar'",
+      "cause": "Limite de caracteres ou timeout no passo 15",
+      "severity": "🔴 ALTA",
+      "impact": "Mensagem incompleta enviada ao destinatário"
+    },
+    {
+      "type": "SEM CONFIRMAÇÃO",
+      "description": "Não há log de confirmação que mensagem foi enviada com sucesso",
+      "cause": "Ausência de validação visual pós-envio",
+      "severity": "🟡 MÉDIA",
+      "impact": "Incerteza se mensagem realmente foi entregue"
+    }
+  ],
+  "summary": "Bot navegou corretamente até conversa com Jackson Alves Missias e acionou envio, porém mensagem foi truncada durante digitação, resultando em texto incompleto.",
+  "skills": [
+    "app-automation",
+    "ui-navigation",
+    "hotkey-usage",
+    "text-input",
+    "vision-click",
+    "contact-search",
+    "message-composition"
+  ],
+  "xp_earned": 280,
+  "performance": {
+    "accuracy": "85%",
+    "speed": "14.5s",
+    "errors": 1,
+    "recovery_needed": true
+  },
+  "next_level": "Reexecute com validação de comprimento máximo de texto e confirmação visual de entrega antes de finalizar.",
+  "task": "Abra o teams, va ate a conversa com Jackson Alves Missias, e escreva a seguinte mensagem a ele: Olá Mundo, este e uma das função que o AI Farm Agent Consegue realizar, agente desenvolvido por: https://github.com/ognistie, logo apos isso clique em enviar.",
+  "generated_at": "2026-04-01T15:51:39.657659"
+}

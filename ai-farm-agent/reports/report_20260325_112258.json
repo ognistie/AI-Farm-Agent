@@ -1,0 +1,69 @@
+{
+  "steps": [
+    {
+      "what": "Clicou na barra de pesquisa do Windows",
+      "concept": "interface-navigation",
+      "insight": "Usar a barra de pesquisa é o método mais direto para encontrar aplicativos",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'teams' na barra de pesquisa",
+      "concept": "text-input",
+      "insight": "Pesquisar por palavras-chave parciais economiza tempo e é mais eficiente",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 2 segundos para carregar resultados",
+      "concept": "wait-strategy",
+      "insight": "Pausas estratégicas garantem que a interface responda adequadamente",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no Microsoft Teams nos resultados da pesquisa",
+      "concept": "app-selection",
+      "insight": "Identificar visualmente o aplicativo correto nos resultados de pesquisa",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperou 5 segundos para o Teams carregar completamente",
+      "concept": "loading-patience",
+      "insight": "Aplicações pesadas como Teams precisam de tempo para inicializar",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no contato Igor Henrique Alves da Silva",
+      "concept": "contact-selection",
+      "insight": "Navegar pela lista de contatos requer reconhecimento visual preciso",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardou 2 segundos para abrir a conversa",
+      "concept": "ui-response",
+      "insight": "Interfaces de chat precisam de tempo para carregar histórico de mensagens",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou a mensagem de apresentação no campo de texto",
+      "concept": "message-composition",
+      "insight": "Escrever mensagens claras e profissionais estabelece boa comunicação",
+      "difficulty": 3
+    },
+    {
+      "what": "Clicou no botão Enviar para transmitir a mensagem",
+      "concept": "message-delivery",
+      "insight": "Confirmar o envio garante que a mensagem chegue ao destinatário",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Executou com sucesso uma sequência completa de comunicação: abrir Teams, localizar contato específico e enviar mensagem profissional de apresentação.",
+  "skills": [
+    "windows-search",
+    "teams-navigation",
+    "contact-management",
+    "professional-messaging"
+  ],
+  "xp_earned": 320,
+  "next_level": "Tente gerenciar múltiplas conversas simultâneas ou configurar notificações personalizadas no Teams.",
+  "task": "procure pelo teams na barra de pesquis depois clique nele para entrar, depois que clicar para entrar clique na conversa com Igor Henrique e escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: Ola Mundo Eu sou  o AI Farm Agent, Muito Prazer. clique em enviar apos escrever a mensagem.",
+  "generated_at": "2026-03-25T11:22:58.725786"
+}

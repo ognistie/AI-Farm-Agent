@@ -1,0 +1,69 @@
+{
+  "steps": [
+    {
+      "what": "Clicou na barra de pesquisa do Windows",
+      "concept": "interface-windows",
+      "insight": "A barra de pesquisa é o ponto de partida para encontrar aplicativos",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'Excel 2013' na barra de pesquisa",
+      "concept": "busca-aplicativo",
+      "insight": "Pesquisar por nome específico acelera a localização de programas",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou os resultados da pesquisa aparecerem",
+      "concept": "tempo-resposta",
+      "insight": "Esperar é crucial para que o sistema processe a busca corretamente",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no Excel 2013 nos resultados da pesquisa",
+      "concept": "seleção-aplicativo",
+      "insight": "Identificar visualmente o aplicativo correto evita abrir programas errados",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperou o Excel carregar completamente",
+      "concept": "carregamento-aplicativo",
+      "insight": "Aplicativos pesados como Office precisam de tempo para inicializar",
+      "difficulty": 1
+    },
+    {
+      "what": "Selecionou 'Pasta de trabalho em branco'",
+      "concept": "template-excel",
+      "insight": "Começar com documento em branco oferece máxima flexibilidade",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou a planilha abrir",
+      "concept": "inicialização-documento",
+      "insight": "Documentos precisam carregar antes de aceitar entrada de dados",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na célula A1 para posicionar o cursor",
+      "concept": "navegação-células",
+      "insight": "Sempre começar pela célula A1 é boa prática em planilhas",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou sequência numérica de 1-10 em 3 colunas",
+      "concept": "entrada-dados",
+      "insight": "Usar Tab para mover entre células agiliza a entrada de dados tabulares",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Executou busca, abertura do Excel 2013 e criação de planilha com dados numéricos organizados. Demonstrou domínio básico de navegação no Windows e Excel.",
+  "skills": [
+    "busca-windows",
+    "excel-básico",
+    "entrada-dados",
+    "navegação-interface"
+  ],
+  "xp_earned": 180,
+  "next_level": "Experimente usar fórmulas para calcular somas ou médias dos números inseridos",
+  "task": "pesquise excel 2013 na barra de tarefas, entre nele, e depois selecione um documento em branco e preencha 3 fileras de numero de 1 a 10.",
+  "generated_at": "2026-03-25T14:33:17.108286"
+}

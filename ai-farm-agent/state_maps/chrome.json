@@ -1,0 +1,12 @@
+{
+    "app": "Google Chrome",
+    "states": {
+        "browser": {
+            "description": "Browser aberto",
+            "indicators_uia": ["Address and search bar"],
+            "indicators_ocr": ["Google"],
+            "transitions": {}
+        }
+    },
+    "workflows": {}
+}

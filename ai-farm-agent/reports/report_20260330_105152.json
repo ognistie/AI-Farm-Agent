@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "what": "Pesquisou e abriu Microsoft Teams na máquina.",
+      "concept": "App Launch",
+      "insight": "Usar app_search economiza cliques versus navegação manual.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou carregamento da aplicação por 4 segundos.",
+      "concept": "Wait Timing",
+      "insight": "Pausas estratégicas evitam erros de timing em interfaces lentas.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no contato 'Jackson Alves Missias' na lista de chats.",
+      "concept": "Contact Selection",
+      "insight": "Vision_click com 95% confiança garante precisão em elementos pequenos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 2 segundos para a conversa carregar completamente.",
+      "concept": "Load Buffer",
+      "insight": "Pequenas pausas entre ações evitam cliques em elementos não-renderizados.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na caixa de texto de composição de mensagem.",
+      "concept": "Input Focus",
+      "insight": "Identificar o campo correto por coordenadas visuais é mais robusto que IDs.",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou renderização do campo de input.",
+      "concept": "Ready State",
+      "insight": "Confirmação visual antes de digitar reduz erros de digitação perdida.",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'Ola Mundo' no campo de mensagem com 90% confiança visual.",
+      "concept": "Text Input",
+      "insight": "Vision_type valida o campo antes de escrever, evitando mensagens erradas.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para enviar a mensagem.",
+      "concept": "Submit Action",
+      "insight": "Hotkey 'enter' é mais rápido e confiável que clicar botão enviar.",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Automatizou envio de mensagem no Teams com sucesso. Navegou contato, digitou texto e enviou usando combinação de vision_click, vision_type e hotkey.",
+  "skills": [
+    "App Automation",
+    "Contact Navigation",
+    "Text Input Precision",
+    "Timing Synchronization",
+    "Hotkey Shortcuts"
+  ],
+  "xp_earned": 120,
+  "next_level": "Tente enviar mensagens para múltiplos contatos em sequência usando loops de automação.",
+  "task": "entre no teams e escreva a seguinte mensagem para Jackson Missias ALves: Ola Mundo e clique em enviar",
+  "generated_at": "2026-03-30T10:51:52.798747"
+}

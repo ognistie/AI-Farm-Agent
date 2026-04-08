@@ -1,0 +1,93 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "what": "Clicou na barra de pesquisa do Windows",
+      "concept": "Windows Search",
+      "insight": "A barra de pesquisa é o ponto de entrada universal para aplicativos no Windows.",
+      "difficulty": 1
+    },
+    {
+      "step": 2,
+      "what": "Digitou 'teams' na pesquisa",
+      "concept": "App Search",
+      "insight": "Busca por nome é mais rápida que navegar por menus.",
+      "difficulty": 1
+    },
+    {
+      "step": 3,
+      "what": "Clicou no Microsoft Teams nos resultados",
+      "concept": "App Launch",
+      "insight": "Primeiro resultado é geralmente o mais relevante.",
+      "difficulty": 1
+    },
+    {
+      "step": 4,
+      "what": "Aguardou 4 segundos para o Teams carregar",
+      "concept": "Loading Wait",
+      "insight": "Aplicativos corporativos precisam de tempo para inicialização completa.",
+      "difficulty": 2
+    },
+    {
+      "step": 5,
+      "what": "Clicou no contato Jackson Alves Missias",
+      "concept": "Contact Selection",
+      "insight": "Lista de contatos fica na sidebar esquerda do Teams.",
+      "difficulty": 2
+    },
+    {
+      "step": 6,
+      "what": "Aguardou 2 segundos para conversa carregar",
+      "concept": "Chat Loading",
+      "insight": "Threads de conversas precisam tempo para sincronizar.",
+      "difficulty": 1
+    },
+    {
+      "step": 7,
+      "what": "Digitou 'Eu vou te ligar' no campo de mensagem",
+      "concept": "Message Typing",
+      "insight": "Campo de texto fica na parte inferior da interface de chat.",
+      "difficulty": 1
+    },
+    {
+      "step": 8,
+      "what": "Clicou no botão enviar (➤)",
+      "concept": "Message Send",
+      "insight": "Botão de envio é representado pelo ícone de seta à direita.",
+      "difficulty": 1
+    },
+    {
+      "step": 9,
+      "what": "Clicou no botão de chamada no canto superior direito",
+      "concept": "Voice Call",
+      "insight": "Controles de chamada ficam no header da conversa.",
+      "difficulty": 2
+    },
+    {
+      "step": 10,
+      "what": "Aguardou 5 segundos durante a chamada",
+      "concept": "Call Duration",
+      "insight": "Teams mostra status 'Ligando...' enquanto conecta a chamada.",
+      "difficulty": 1
+    },
+    {
+      "step": 11,
+      "what": "Falhou ao tentar desligar a chamada",
+      "concept": "Call Termination",
+      "insight": "Erro interno do sistema impediu finalização da tarefa.",
+      "difficulty": 5
+    }
+  ],
+  "summary": "Completou fluxo completo de comunicação no Teams: busca, acesso, mensagem e chamada. Falhou apenas na finalização por erro técnico.",
+  "skills": [
+    "windows-search",
+    "teams-navigation",
+    "chat-messaging",
+    "voice-calling",
+    "ui-automation"
+  ],
+  "xp_earned": 350,
+  "next_level": "Implementar gerenciamento robusto de chamadas e estados de aplicação.",
+  "task": "procure pelo teams na barra de pesquisa, entre nele depois entra na conversa com jacskon missias escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: Eu vou te ligar e clique em enviar a mensagem, logo apos clique no canto superior direito em ligar para ele, e depois de 5 segundos desligue",
+  "generated_at": "2026-03-24T16:54:31.076326"
+}

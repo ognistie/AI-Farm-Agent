@@ -1,0 +1,63 @@
+{
+  "steps": [
+    {
+      "what": "Cliquei na barra de pesquisa do Windows",
+      "concept": "interface navegação",
+      "insight": "A barra de pesquisa é o ponto de entrada universal no Windows",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei 'teams' para localizar o aplicativo",
+      "concept": "busca aplicativo",
+      "insight": "Buscar por nome é mais eficiente que navegar menus",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no Microsoft Teams nos resultados",
+      "concept": "seleção resultado",
+      "insight": "Reconhecer o ícone correto economiza tempo na busca",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei o Teams carregar completamente",
+      "concept": "loading wait",
+      "insight": "Paciência é essencial para aplicações que demoram a carregar",
+      "difficulty": 2
+    },
+    {
+      "what": "Localizei e cliquei no contato Igor Henrique",
+      "concept": "navegação contatos",
+      "insight": "Lista de contatos é organizada alfabeticamente para facilitar busca",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperei a conversa abrir",
+      "concept": "interface loading",
+      "insight": "Cada tela nova precisa de tempo para carregar completamente",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei a mensagem no campo de texto",
+      "concept": "input texto",
+      "insight": "Campo de mensagem fica sempre na parte inferior da tela de chat",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no botão enviar",
+      "concept": "submit ação",
+      "insight": "Botão enviar confirma e executa a ação de mensagem",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Executei com sucesso uma tarefa de comunicação completa no Teams, desde abertura até envio da mensagem.",
+  "skills": [
+    "navegação-windows",
+    "busca-aplicativo",
+    "teams-chat",
+    "comunicação-digital"
+  ],
+  "xp_earned": 280,
+  "next_level": "Tente automatizar respostas baseadas no conteúdo recebido no chat.",
+  "task": "Clique na barra de pesquisa e procure pelo teams, apos isso clique para entrar nele e localize e entre na conversa com igor henrique, apos isso escreva no campo de mensagem abaixo a seguinte frase: Olá, Eu sou o AI Farm Agent. e clique em enviar ao lado",
+  "generated_at": "2026-03-25T11:33:35.586716"
+}

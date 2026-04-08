@@ -1,0 +1,39 @@
+{
+  "steps": [
+    {
+      "what": "Comando para abrir aplicativo Bloco de Notas foi executado",
+      "concept": "app-automation",
+      "insight": "AI agents podem inicializar aplicações do sistema operacional através de comandos específicos",
+      "difficulty": 2
+    },
+    {
+      "what": "Sistema aguardou 2 segundos para carregamento completo",
+      "concept": "wait-strategy",
+      "insight": "Aguardar é essencial para sincronização entre comando e resposta do sistema",
+      "difficulty": 1
+    },
+    {
+      "what": "Tentativa de focar janela específica falhou mas aplicativo abriu",
+      "concept": "error-handling",
+      "insight": "Sistemas robustos continuam execução mesmo quando comandos específicos falham",
+      "difficulty": 3
+    },
+    {
+      "what": "Texto 'Olá Mundo' foi digitado com sucesso no editor",
+      "concept": "text-input",
+      "insight": "Automação de entrada de texto funciona independente do foco específico da janela",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Automação básica de desktop executada com sucesso. Bloco de Notas foi aberto e texto digitado, mesmo com falha no comando de foco.",
+  "skills": [
+    "app-launch",
+    "text-automation",
+    "error-recovery",
+    "system-integration"
+  ],
+  "xp_earned": 180,
+  "next_level": "Implementar salvamento automático de arquivos",
+  "task": "Abra o Bloco de Notas e escreva Olá Mundo",
+  "generated_at": "2026-03-24T15:37:34.625696"
+}

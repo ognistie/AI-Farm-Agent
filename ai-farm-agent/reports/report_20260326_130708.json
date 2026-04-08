@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "what": "Busquei e abri o aplicativo Microsoft Teams",
+      "concept": "app launch",
+      "insight": "Usar busca do sistema é mais eficiente que navegar manualmente",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardei 4 segundos para o Teams carregar completamente",
+      "concept": "wait timing",
+      "insight": "Aplicações corporativas precisam de tempo para inicializar",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei na conversa com Jackson Alves Missias na lista de chats",
+      "concept": "chat navigation",
+      "insight": "Reconhecimento visual permite localizar contatos específicos",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei 2 segundos para a conversa abrir",
+      "concept": "ui loading",
+      "insight": "Interfaces de chat precisam carregar histórico de mensagens",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei a mensagem no campo de texto da conversa",
+      "concept": "text input",
+      "insight": "Coordenadas precisas garantem foco no elemento correto",
+      "difficulty": 2
+    },
+    {
+      "what": "Enviei a mensagem pressionando Enter",
+      "concept": "hotkey action",
+      "insight": "Teclas de atalho são mais rápidas que cliques em botões",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardei 3 segundos antes de iniciar a chamada",
+      "concept": "task timing",
+      "insight": "Pausas estratégicas melhoram a experiência do usuário",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no botão de chamada no canto superior direito",
+      "concept": "call initiation",
+      "insight": "Controles de comunicação ficam em posições padronizadas",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Automatizei uma interação completa no Teams: abertura do app, navegação até conversa específica, envio de mensagem e início de chamada de voz.",
+  "skills": [
+    "app-automation",
+    "chat-interaction",
+    "ui-navigation",
+    "timing-control",
+    "voice-calling"
+  ],
+  "xp_earned": 280,
+  "next_level": "Automatizar chamadas em grupo com compartilhamento de tela",
+  "task": "abra o Tams, entre na conversa com Jackson Alves Missias. apos isso clique no campo de mensagem abaixo e escreva: Ola Mundo, Eu Sou o Exterminador Do Futuro e envie, logo apos isso espere 3 segundo e ligue para ele no botao no canto superior direito",
+  "generated_at": "2026-03-26T13:07:08.604345"
+}

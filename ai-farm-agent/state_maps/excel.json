@@ -1,0 +1,22 @@
+{
+    "app": "Microsoft Excel",
+    "states": {
+        "start_screen": {
+            "description": "Tela inicial do Excel",
+            "indicators_uia": ["Blank workbook", "Recent"],
+            "indicators_ocr": ["Pasta de trabalho em branco", "Recente"],
+            "transitions": {
+                "spreadsheet": [
+                    {"action": "uia_click", "target": "Blank workbook"}
+                ]
+            }
+        },
+        "spreadsheet": {
+            "description": "Planilha aberta",
+            "indicators_uia": ["Name Box", "Formula Bar"],
+            "indicators_ocr": ["Pagina Inicial", "Inserir"],
+            "transitions": {}
+        }
+    },
+    "workflows": {}
+}

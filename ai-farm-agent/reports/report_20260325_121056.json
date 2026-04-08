@@ -1,0 +1,51 @@
+{
+  "steps": [
+    {
+      "what": "Clicou na barra de pesquisa da taskbar",
+      "concept": "interface navigation",
+      "insight": "A barra de pesquisa é o ponto de entrada mais eficiente para encontrar aplicativos",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'bloco de notas' na busca",
+      "concept": "search query",
+      "insight": "Usar termos específicos acelera a localização de aplicativos nativos",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 1 segundo para resultados aparecerem",
+      "concept": "timing control",
+      "insight": "Pequenas pausas garantem que a interface responda adequadamente",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no aplicativo Bloco de Notas nos resultados",
+      "concept": "app selection",
+      "insight": "Reconhecimento visual de ícones facilita a seleção correta",
+      "difficulty": 2
+    },
+    {
+      "what": "Esperou 2 segundos para o aplicativo carregar completamente",
+      "concept": "load timing",
+      "insight": "Tempos de espera maiores são necessários para inicialização de apps",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou sequência numérica de 1 a 10 com quebras de linha",
+      "concept": "text input",
+      "insight": "Formatação com quebras de linha organiza melhor listas numeradas",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Executou busca eficiente por aplicativo nativo e criou lista numerada estruturada. Demonstrou controle preciso de timing e formatação de texto.",
+  "skills": [
+    "system navigation",
+    "search optimization",
+    "text formatting",
+    "timing control"
+  ],
+  "xp_earned": 180,
+  "next_level": "Tente criar um documento mais complexo com formatação avançada e salvá-lo em local específico",
+  "task": "pesquisa na barra de tarefas bloco de notas, abra ele e escreva de 1 a 10",
+  "generated_at": "2026-03-25T12:10:56.633818"
+}

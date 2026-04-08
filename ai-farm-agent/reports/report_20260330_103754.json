@@ -1,0 +1,79 @@
+{
+  "steps": [
+    {
+      "what": "Importou biblioteca openpyxl para manipular arquivos Excel em Python.",
+      "concept": [
+        "importação",
+        "biblioteca-excel"
+      ],
+      "insight": "openpyxl é o padrão para automação de planilhas .xlsx sem precisar do Excel instalado.",
+      "difficulty": 1
+    },
+    {
+      "what": "Criou novo workbook e acessou a planilha ativa para adicionar dados.",
+      "concept": [
+        "criação-arquivo",
+        "workbook"
+      ],
+      "insight": "Uma planilha nova sempre tem uma sheet padrão que pode ser reutilizada diretamente.",
+      "difficulty": 1
+    },
+    {
+      "what": "Adicionou cabeçalhos formatados nas células A1 e B1 com estilo negrito.",
+      "concept": [
+        "headers",
+        "formatação-células"
+      ],
+      "insight": "Cabeçalhos bem formatados melhoram leitura e profissionalismo da planilha em uma linha.",
+      "difficulty": 2
+    },
+    {
+      "what": "Preencheu coluna A com nomes de frutas (Maçã, Banana, Laranja, etc).",
+      "concept": [
+        "dados-textuais",
+        "população-coluna"
+      ],
+      "insight": "Dados bem organizados em colunas específicas facilitam filtros e análises futuras.",
+      "difficulty": 1
+    },
+    {
+      "what": "Inseriu preços correspondentes na coluna B com formato numérico.",
+      "concept": [
+        "dados-numéricos",
+        "pareamento-dados"
+      ],
+      "insight": "Manter dados relacionados lado a lado evita erros de sincronização e facilita cálculos.",
+      "difficulty": 1
+    },
+    {
+      "what": "Ajustou largura das colunas automaticamente para melhor visualização.",
+      "concept": [
+        "auto-ajuste",
+        "UX-planilha"
+      ],
+      "insight": "Colunas bem dimensionadas eliminam necessidade de scroll horizontal e melhoram leitura.",
+      "difficulty": 2
+    },
+    {
+      "what": "Salvou arquivo como 'frutas.xlsx' no diretório do projeto.",
+      "concept": [
+        "persistência",
+        "exportação"
+      ],
+      "insight": "Sempre especificar extensão .xlsx garante compatibilidade e reconhecimento automático.",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Automatizou criação de planilha Excel com dados estruturados, cabeçalhos formatados e exportação pronta para uso. Dominou fluxo completo de criação → população → formatação → persistência.",
+  "skills": [
+    "automação-excel",
+    "openpyxl",
+    "formatação-dados",
+    "estruturação-informação",
+    "exportação-arquivos"
+  ],
+  "xp_earned": 120,
+  "next_level": "Adicione coluna C com cálculo de desconto (10%) e formate valores monetários com símbolo R$",
+  "task": "Crie uma planilha com nomes de frutas na coluna A e preços na coluna B",
+  "generated_at": "2026-03-30T10:37:54.246582"
+}

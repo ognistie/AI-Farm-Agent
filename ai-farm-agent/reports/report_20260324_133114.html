@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Farm Agent — Relatório</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'VT323', monospace;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 18px;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            color: #00E676;
+            font-size: 20px;
+            text-align: center;
+            padding: 20px;
+            text-shadow: 2px 2px 0 #004D40;
+        }
+        .summary {
+            background: #16213e;
+            border: 2px solid #00E676;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .step-card {
+            background: #0f3460;
+            border-left: 4px solid #00BCD4;
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 0 4px 4px 0;
+        }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .step-num {
+            font-family: 'Press Start 2P', cursive;
+            color: #F9A825;
+            font-size: 12px;
+        }
+        .step-diff { font-size: 16px; }
+        h3 { color: #00BCD4; margin: 10px 0 6px; font-size: 20px; }
+        .tip-box {
+            background: #1a1a2e;
+            border: 1px solid #F9A825;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .tip-box h4 { color: #F9A825; }
+        .fun-box {
+            background: #1a1a2e;
+            border: 1px solid #00E676;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .fun-box h4 { color: #00E676; }
+        .skills { margin: 20px 0; }
+        .skill-tag {
+            display: inline-block;
+            background: #00E676;
+            color: #1a1a2e;
+            padding: 4px 12px;
+            margin: 4px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+        .next-steps {
+            background: #16213e;
+            border: 2px solid #F9A825;
+            padding: 16px 16px 16px 36px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .next-steps li { margin: 6px 0; color: #F9A825; }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #555;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 AI FARM AGENT — RELATÓRIO</h1>
+        <p style="text-align:center;color:#888;">Tarefa: Entre no MercadoLivre, pesquise o preço de 10 placas de vídeo e salve num excel</p>
+        <p style="text-align:center;color:#555;font-size:14px;">Gerado em: 2026-03-24T13:31:14.818908</p>
+
+        <div class="summary">
+            <h3>📊 Resumo</h3>
+            <p>Tentamos automatizar uma pesquisa de preços no MercadoLivre, mas enfrentamos problemas técnicos de conexão web. No entanto, conseguimos criar uma planilha Excel com estrutura profissional e inserir um exemplo de dados. É como tentar plantar sementes em terreno difícil - mesmo sem conseguir colher todos os dados do site, preparamos um solo fértil (a planilha) para futuras colheitas!</p>
+        </div>
+
+        <h2 style="color:#00E676;margin:20px 0 10px;">📝 Passos Detalhados</h2>
+        
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 1</span>
+                    <span class="step-diff">⭐⭐⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Tentamos acessar o MercadoLivre mas encontramos erro de thread - o navegador perdeu conexão com nosso sistema de automação. É como tentar dirigir um trator que perdeu contato com o motor!</p>
+                <h3>🧠 Conceito: Gerenciamento de Threads em Automação Web</h3>
+                <p>Threads são linhas de execução paralelas que permitem que programas façam múltiplas tarefas simultaneamente. Em automação web, uma thread controla o navegador enquanto outra executa nossos comandos. Quando essa comunicação falha, perdemos controle sobre o navegador, resultando no erro 'cannot switch to a different thread'. Isso pode acontecer por instabilidade do sistema, conflitos de recursos ou problemas de sincronização entre processos.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Para evitar erros de thread, sempre inclua comandos 'wait' entre ações e verifique se apenas uma instância do navegador está rodando antes de iniciar a automação.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>É como dois fazendeiros tentando operar o mesmo trator ao mesmo tempo - eventualmente um perde o controle! Por isso sistemas modernos usam 'mutexes' (mutual exclusion) para evitar conflitos.</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 8</span>
+                    <span class="step-diff">⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Criamos um arquivo CSV temporário com cabeçalhos para estruturar nossos dados. Mesmo com problemas na web, plantamos a semente da organização!</p>
+                <h3>🧠 Conceito: Estruturas de Dados CSV</h3>
+                <p>CSV (Comma-Separated Values) é um formato simples para armazenar dados tabulares, onde cada linha representa um registro e vírgulas separam os campos. É amplamente usado porque é legível tanto por humanos quanto por máquinas, compatível com Excel, bancos de dados e linguagens de programação. O formato é eficiente para transferir dados entre diferentes sistemas sem perder a estrutura organizacional.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Sempre defina cabeçalhos claros no CSV - eles servem como 'mapa' para quem for analisar os dados depois, seja você ou outro programa.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>CSV existe desde 1972 e ainda é o 'canivete suíço' dos dados - simples, confiável e funciona em qualquer lugar, como uma boa enxada que nunca sai de moda!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 9</span>
+                    <span class="step-diff">⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Abrimos o Excel com sucesso, nossa ferramenta confiável para organizar dados. Como um celeiro bem estruturado, pronto para receber a colheita!</p>
+                <h3>🧠 Conceito: Automação de Aplicativos Desktop</h3>
+                <p>A automação de aplicativos desktop usa APIs do sistema operacional para controlar programas como se fosse um usuário humano. O comando 'open_app' comunica-se com o Windows Registry e Process Manager para localizar e executar o aplicativo desejado. Isso envolve resolução de caminhos, alocação de memória, criação de janelas e inicialização da interface gráfica - um processo complexo que o SO simplifica para nós.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Sempre aguarde alguns segundos após abrir um aplicativo antes de tentar interagir - programas precisam de tempo para carregar completamente na memória.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>Abrir um programa é como acordar uma fazenda inteira: primeiro acende as luzes (interface), depois chama os trabalhadores (processos) e prepara as ferramentas (recursos)!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 11</span>
+                    <span class="step-diff">⭐⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Garantimos foco na janela do Excel, essencial para que nossos comandos sejam direcionados corretamente. É como apontar o holofote para o palco certo!</p>
+                <h3>🧠 Conceito: Gerenciamento de Janelas no SO</h3>
+                <p>O foco de janela é controlado pelo Window Manager do sistema operacional, que mantém uma pilha Z-order das janelas abertas. Quando mudamos o foco, o SO atualiza registros internos sobre qual janela deve receber input do teclado e mouse. Isso envolve manipulação de handles (identificadores únicos), eventos de ativação/desativação e sincronização entre threads de interface gráfica.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Use títulos específicos ao buscar janelas - 'Excel' é melhor que 'Microsoft' porque é mais preciso e evita conflitos com outras janelas abertas.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>É como um maestro dirigindo uma orquestra - só uma janela pode 'tocar' (receber comandos) por vez, mesmo que várias estejam 'no palco' (visíveis)!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 12</span>
+                    <span class="step-diff">⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Digitamos 'Produto' na primeira célula, criando o cabeçalho da nossa tabela. O primeiro marco na construção da nossa estrutura de dados!</p>
+                <h3>🧠 Conceito: Input de Texto Automatizado</h3>
+                <p>A digitação automatizada simula eventos de teclado através da API SendInput do Windows, que injeta mensagens WM_KEYDOWN e WM_KEYUP na fila de mensagens da janela ativa. Cada caractere é convertido em códigos de tecla virtuais, considerando layout de teclado, modificadores (Shift, Alt) e timing entre pressionamentos para simular digitação humana natural.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Para textos longos, considere usar clipboard (Ctrl+V) ao invés de type_text - é mais rápido e confiável para grandes volumes de dados.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>Cada letra digitada gera pelo menos 2 eventos no sistema (pressionar e soltar) - digitar 'Produto' cria 14 eventos diferentes, como uma dança coordenada de sinais eletrônicos!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 13</span>
+                    <span class="step-diff">⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Usamos Tab para mover para a próxima célula, navegando horizontalmente na planilha. Como pular de um canteiro para o próximo no jardim!</p>
+                <h3>🧠 Conceito: Navegação por Teclado em Interfaces</h3>
+                <p>A tecla Tab implementa um sistema de navegação sequencial baseado em Tab Order - uma sequência predefinida de elementos focalizáveis. O SO mantém um índice dos controles que podem receber foco e Tab percorre essa lista ciclicamente. Em planilhas, Tab tradicionalmente move horizontalmente (próxima coluna) enquanto Enter move verticalmente (próxima linha), seguindo convenções de entrada de dados eficiente.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Memorize os atalhos de navegação: Tab (próxima célula), Shift+Tab (célula anterior), Enter (linha abaixo), Shift+Enter (linha acima) - acelera muito a produtividade!</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>Tab Order existe desde os primeiros formulários em papel! A tecla Tab foi criada para tabulação em máquinas de escrever - daí o nome 'tabulator'!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 27</span>
+                    <span class="step-diff">⭐⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Acionamos Ctrl+S para salvar nossa planilha, preservando nosso trabalho. Como guardar as sementes na dispensa para o próximo plantio!</p>
+                <h3>🧠 Conceito: Atalhos de Teclado e Persistência de Dados</h3>
+                <p>Ctrl+S é um comando universal que aciona a função de salvamento através de accelerator keys (teclas aceleradoras). O SO intercepta essa combinação e a traduz em comandos específicos da aplicação. No Excel, isso ativa rotinas de serialização que convertem dados da memória para formato de arquivo, envolvendo compressão, formatação e escrita no sistema de arquivos com verificação de integridade.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Desenvolva o hábito de salvar frequentemente (Ctrl+S) durante automação - se algo der errado, você não perde todo o progresso.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>Ctrl+S é tão universal que funciona em praticamente qualquer programa no mundo! É o 'por favor' e 'obrigado' do mundo digital - sempre educado e sempre funciona!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 28</span>
+                    <span class="step-diff">⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Definimos um nome descritivo para nosso arquivo: 'Precos_Placas_Video_MercadoLivre'. Um nome que conta uma história sobre seu conteúdo!</p>
+                <h3>🧠 Conceito: Convenções de Nomenclatura de Arquivos</h3>
+                <p>Boas práticas de nomenclatura seguem princípios de clareza, consistência e compatibilidade. Nomes descritivos facilitam busca e organização, enquanto evitar espaços e caracteres especiais garante compatibilidade entre sistemas operacionais. Underscores (_) são preferidos a hífens (-) em muitos contextos técnicos porque são tratados como caracteres de palavra em expressões regulares e busca por texto.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Use formato: Acao_Objeto_Fonte_Data.xlsx (ex: Precos_Notebooks_Amazon_2024-03.xlsx) - fica organizado e autodescritivo!</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>É como dar nome aos filhotes na fazenda - um nome bom ajuda a encontrar rapidamente o que você procura, mesmo depois de anos no 'arquivo'!</p>
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-header">
+                    <span class="step-num">Passo 29</span>
+                    <span class="step-diff">⭐</span>
+                </div>
+                <h3>📋 O que aconteceu</h3>
+                <p>Confirmamos o salvamento com Enter, finalizando nossa tarefa de organização. Nossa planilha agora está segura no 'celeiro digital'!</p>
+                <h3>🧠 Conceito: Confirmação de Operações do Sistema</h3>
+                <p>Enter funciona como confirmação padrão em diálogos de sistema, ativando o botão 'default' (geralmente OK/Salvar). Isso é parte do design de interface que segue princípios de usabilidade: operações comuns devem ser fáceis e rápidas. O sistema operacional trata Enter como sinal de confirmação positiva, executando a ação principal e fechando o diálogo modal.</p>
+                <div class="tip-box">
+                    <h4>💡 Dica</h4>
+                    <p>Enter confirma, Escape cancela - essa é a regra universal! Memorize isso e navegará qualquer interface muito mais rápido.</p>
+                </div>
+                <div class="fun-box">
+                    <h4>🎮 Fato Curioso</h4>
+                    <p>Enter vem de 'carriage return' das máquinas de escrever - quando você chegava no fim da linha, puxava uma alavanca para 'retornar o carro' para o início. Alguns teclados antigos ainda têm ↵ para lembrar disso!</p>
+                </div>
+            </div>
+
+        <div class="skills">
+            <h3>🏆 Habilidades Cultivadas</h3>
+            <span class='skill-tag'>Estruturação de planilhas Excel com cabeçalhos organizados</span><span class='skill-tag'>Navegação eficiente entre células usando Tab</span><span class='skill-tag'>Salvamento de arquivos com nomes descritivos</span><span class='skill-tag'>Tratamento de erros em automação web</span><span class='skill-tag'>Organização de dados para análise de preços</span>
+        </div>
+
+        <div class="next-steps">
+            <h3>🚀 Próximos Passos</h3>
+            <ul><li>Aprender a usar APIs do MercadoLivre para coleta mais estável</li><li>Explorar técnicas de web scraping com Python/Selenium</li><li>Criar fórmulas Excel para análise automática de preços</li><li>Implementar validação de dados em planilhas</li></ul>
+        </div>
+
+        <div class="footer">
+            <p>🌾 AI Farm Agent — Cultivando conhecimento, uma tarefa por vez</p>
+        </div>
+    </div>
+</body>
+</html>

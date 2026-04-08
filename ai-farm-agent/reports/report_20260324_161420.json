@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "what": "Cliquei no ícone do Teams na barra de tarefas",
+      "concept": "Desktop Navigation",
+      "insight": "Ícones fixados na barra de tarefas oferecem acesso rápido a aplicações frequentemente usadas",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardei 3 segundos para o Teams carregar completamente",
+      "concept": "Loading Wait",
+      "insight": "Aplicações corporativas como Teams precisam de tempo para inicialização e sincronização",
+      "difficulty": 2
+    },
+    {
+      "what": "Selecionei o contato Jackson Alves Missias na lista de conversas",
+      "concept": "Contact Selection",
+      "insight": "Interface de chat organiza contatos em lista lateral para navegação eficiente",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no campo de entrada de mensagem",
+      "concept": "Input Focus",
+      "insight": "Campos de texto precisam ser ativados antes da digitação para receber o foco",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei a mensagem 'Ola, Mundo' no campo de texto",
+      "concept": "Text Input",
+      "insight": "Mensagens simples são ideais para testar funcionalidades básicas de comunicação",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no botão de enviar para transmitir a mensagem",
+      "concept": "Message Send",
+      "insight": "Botão de envio (seta) é o trigger final para comunicação no Teams",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Executei com sucesso uma tarefa básica de comunicação no Microsoft Teams, enviando uma mensagem simples para um contato específico através da interface desktop.",
+  "skills": [
+    "Desktop Navigation",
+    "Teams Interface",
+    "Contact Management",
+    "Text Communication",
+    "UI Interaction"
+  ],
+  "xp_earned": 180,
+  "next_level": "Experimente enviar arquivos, usar emojis ou criar conversas em grupo no Teams",
+  "task": "abra o teams, esta fixado na barra de tarefas, esta do lado do vs code, entre na conversa com jacskon missias, e escreva no chat \"Ola, Mundo\" e clique em enviar mensagem. faça isso de uma forma slimples, clique no teams, escreva a mensagem e clique em enviar.",
+  "generated_at": "2026-03-24T16:14:20.219417"
+}

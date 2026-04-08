@@ -1,0 +1,51 @@
+{
+  "steps": [
+    {
+      "what": "Pesquisei e abri o Microsoft Teams no sistema",
+      "concept": "app-search",
+      "insight": "Usar busca do sistema é mais rápido que navegar por menus",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei 4 segundos para o Teams carregar completamente",
+      "concept": "wait-loading",
+      "insight": "Aplicações pesadas precisam de tempo para inicializar",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no campo de texto da conversa usando visão computacional",
+      "concept": "vision-click",
+      "insight": "Coordenadas precisas garantem cliques certeiros em interfaces",
+      "difficulty": 3
+    },
+    {
+      "what": "Esperei 2 segundos para o campo de texto ficar ativo",
+      "concept": "ui-timing",
+      "insight": "Elementos UI precisam de tempo para responder após cliques",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitei 'Ola Mundo' no campo de mensagem usando visão",
+      "concept": "vision-type",
+      "insight": "Visão computacional permite digitação em qualquer campo detectado",
+      "difficulty": 3
+    },
+    {
+      "what": "Enviei a mensagem pressionando Enter via hotkey",
+      "concept": "hotkey-send",
+      "insight": "Teclas de atalho são mais confiáveis que cliques em botões",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Executei automação completa no Teams: abrir app, localizar conversa, digitar mensagem e enviar. Combinei técnicas de busca, espera, visão computacional e hotkeys.",
+  "skills": [
+    "app-automation",
+    "vision-control",
+    "timing-management",
+    "ui-interaction"
+  ],
+  "xp_earned": 320,
+  "next_level": "Tente automatizar uma reunião no Teams com convites e compartilhamento de tela",
+  "task": "Abra o Teams e escreva a mensagem: Ola Mundo e depois clique em enviar para Jackson Alves Missias",
+  "generated_at": "2026-03-26T13:38:12.613729"
+}

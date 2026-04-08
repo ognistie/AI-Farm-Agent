@@ -1,0 +1,45 @@
+{
+  "steps": [
+    {
+      "what": "Clicou no ícone do Microsoft Teams na taskbar",
+      "concept": "App Launch",
+      "insight": "Teams pode ser acessado diretamente pela barra de tarefas do Windows",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 4 segundos para o Teams carregar completamente",
+      "concept": "Wait Strategy",
+      "insight": "Aplicações corporativas como Teams precisam de tempo para inicializar",
+      "difficulty": 2
+    },
+    {
+      "what": "Tentativa de localizar campo de mensagem falhou",
+      "concept": "Vision Recognition",
+      "insight": "Interface do Teams pode variar, campo já estava focado",
+      "difficulty": 3
+    },
+    {
+      "what": "Digitou mensagem diretamente no chat ativo",
+      "concept": "Direct Input",
+      "insight": "Campo de texto aceita entrada mesmo sem clique explícito",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou em botão para encaminhar/enviar mensagem",
+      "concept": "Message Send",
+      "insight": "Teams oferece múltiplas opções de envio além do Enter",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Automatizou envio de mensagem no Microsoft Teams através de clique na taskbar, aguardo de carregamento e input direto no chat.",
+  "skills": [
+    "Teams Navigation",
+    "UI Automation",
+    "Text Input",
+    "Vision Click"
+  ],
+  "xp_earned": 240,
+  "next_level": "Automatizar envio de mensagem com anexo ou emoji no Teams",
+  "task": "clique no teams, e apos abrir ele clique em \"Digite sua mensagem\" escreva Ola Mundo, Eu Sou o exterminador do futuro e clique ao lado para enviar",
+  "generated_at": "2026-03-24T16:26:52.041826"
+}

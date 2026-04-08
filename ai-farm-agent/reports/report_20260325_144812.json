@@ -1,0 +1,31 @@
+{
+  "step_14": {
+    "what": "Digitou o número 11 na célula B1",
+    "concept": "entrada dados",
+    "insight": "Usar Enter após digitar move automaticamente para próxima célula",
+    "difficulty": 2
+  },
+  "step_15": {
+    "what": "Pressionou Enter para confirmar entrada",
+    "concept": "navegação células",
+    "insight": "Enter move cursor verticalmente para baixo na mesma coluna",
+    "difficulty": 1
+  },
+  "step_16": {
+    "what": "Digitou sequência numérica 12-20 em múltiplas linhas",
+    "concept": "entrada sequencial",
+    "insight": "Digitar números em sequência quebrados por Enter cria lista vertical",
+    "difficulty": 2
+  },
+  "summary": "Completou preenchimento sequencial de duas colunas no Excel com números 1-10 e 11-20. Demonstrou domínio de navegação básica entre células e entrada eficiente de dados.",
+  "skills": [
+    "excel-básico",
+    "entrada-dados",
+    "navegação-células",
+    "sequências-numéricas"
+  ],
+  "xp_earned": 180,
+  "next_level": "Experimente usar fórmulas para criar sequências automáticas com SEQUENCE() ou arrastar para preencher",
+  "task": "clique no botao do windows na barra de tarefas, pesquise por excel 2013 e clique para entrar nele, logo apos isso selecione o ducomento em branco e escreva na primeira coluna de 1 a 10, e na coluna ao lado de 11 a 20.",
+  "generated_at": "2026-03-25T14:48:12.422164"
+}

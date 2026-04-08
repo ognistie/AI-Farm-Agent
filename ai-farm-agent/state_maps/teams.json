@@ -1,0 +1,46 @@
+{
+    "app": "Microsoft Teams",
+    "states": {
+        "main": {
+            "description": "Tela principal do Teams",
+            "indicators_uia": ["Chat", "Teams", "Calendar", "Activity"],
+            "indicators_ocr": ["Chat", "Equipes", "Calendario", "Atividade"],
+            "transitions": {
+                "chat_list": [
+                    {"action": "uia_click", "target": "Chat", "control_type": "TreeItem"}
+                ]
+            }
+        },
+        "chat_list": {
+            "description": "Lista de conversas",
+            "indicators_uia": ["Recent", "Filter", "Chat"],
+            "indicators_ocr": ["Recentes", "Filtrar", "Chats"],
+            "transitions": {
+                "chat_open": [
+                    {"action": "uia_click", "target": "{contact_name}", "control_type": "ListItem"}
+                ],
+                "search_results": [
+                    {"action": "uia_click", "target": "Search", "control_type": "Edit"},
+                    {"action": "uia_type", "target": "Search", "text": "{search_query}"}
+                ]
+            }
+        },
+        "chat_open": {
+            "description": "Conversa aberta",
+            "indicators_uia": ["Type a new message", "Send"],
+            "indicators_ocr": ["Digite uma mensagem", "Enviar"],
+            "transitions": {
+                "message_sent": [
+                    {"action": "uia_type", "target": "Type a new message", "text": "{message}"},
+                    {"action": "uia_click", "target": "Send", "control_type": "Button"}
+                ]
+            }
+        }
+    },
+    "workflows": {
+        "send_message": {
+            "params": ["contact_name", "message"],
+            "path": ["main", "chat_list", "chat_open", "message_sent"]
+        }
+    }
+}

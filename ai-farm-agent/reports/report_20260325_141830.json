@@ -1,0 +1,88 @@
+{
+  "steps": [
+    {
+      "what": "Clicou na barra de tarefas para iniciar busca",
+      "concept": "interface navegação",
+      "insight": "A barra de tarefas é o ponto de entrada para localizar aplicativos",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou 'excel 2013' para buscar o aplicativo específico",
+      "concept": "busca aplicativo",
+      "insight": "Especificar a versão exata ajuda a encontrar o software correto",
+      "difficulty": 2
+    },
+    {
+      "what": "Selecionou Excel 2013 dos resultados da busca",
+      "concept": "seleção resultado",
+      "insight": "Reconhecer visualmente o aplicativo correto nos resultados é essencial",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 3 segundos para o aplicativo carregar completamente",
+      "concept": "tempo carregamento",
+      "insight": "Esperar o carregamento evita erros de clique em elementos não prontos",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou em 'Pasta de trabalho em branco' para criar novo documento",
+      "concept": "template seleção",
+      "insight": "Escolher o template correto define o ponto de partida do trabalho",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 2 segundos para a planilha abrir",
+      "concept": "sincronização interface",
+      "insight": "Pausas estratégicas garantem que a interface esteja pronta para interação",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na primeira célula para posicionar o cursor",
+      "concept": "posicionamento célula",
+      "insight": "Definir o ponto de inserção é fundamental antes de digitar dados",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou primeira fileira com números 1-10 separados por tab",
+      "concept": "entrada dados",
+      "insight": "O tab move automaticamente entre células horizontalmente",
+      "difficulty": 3
+    },
+    {
+      "what": "Pressionou Enter para mover para próxima linha",
+      "concept": "navegação vertical",
+      "insight": "Enter move o cursor para a linha seguinte na mesma coluna",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou segunda fileira com mesma sequência numérica",
+      "concept": "repetição padrão",
+      "insight": "Manter consistência nos dados facilita análises posteriores",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter novamente para terceira linha",
+      "concept": "continuidade workflow",
+      "insight": "Repetir ações conhecidas acelera a conclusão de tarefas",
+      "difficulty": 1
+    },
+    {
+      "what": "Completou terceira fileira finalizando a tarefa solicitada",
+      "concept": "conclusão tarefa",
+      "insight": "Seguir especificações exatas demonstra atenção aos detalhes",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Executou busca e abertura do Excel 2013, criou planilha em branco e preencheu 3 fileiras com números sequenciais de 1 a 10 usando navegação eficiente por tabulação e Enter.",
+  "skills": [
+    "busca-aplicativo",
+    "excel-básico",
+    "entrada-dados",
+    "navegação-planilha",
+    "workflow-office"
+  ],
+  "xp_earned": 280,
+  "next_level": "Experimente formatação de células e criação de fórmulas básicas no Excel.",
+  "task": "pesquise excel 2013 na barra de tarefas, entre nele, e depois selecione um documento em branco e preencha 3 fileras de numero de 1 a 10.",
+  "generated_at": "2026-03-25T14:18:30.571003"
+}

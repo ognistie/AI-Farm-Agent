@@ -1,0 +1,92 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "what": "Clique na barra de pesquisa do Windows",
+      "concept": "sistema-search",
+      "insight": "Iniciou navegação pelo sistema operacional para encontrar aplicativo",
+      "difficulty": 1
+    },
+    {
+      "step": 2,
+      "what": "Digitou 'teams' na pesquisa",
+      "concept": "app-search",
+      "insight": "Busca textual é mais eficiente que navegação visual em menus",
+      "difficulty": 1
+    },
+    {
+      "step": 3,
+      "what": "Clicou no Microsoft Teams nos resultados",
+      "concept": "app-launch",
+      "insight": "Reconhecimento visual preciso do ícone correto da aplicação",
+      "difficulty": 2
+    },
+    {
+      "step": 4,
+      "what": "Aguardou 4 segundos para carregamento",
+      "concept": "loading-wait",
+      "insight": "Tempo de espera necessário para aplicações corporativas pesadas",
+      "difficulty": 1
+    },
+    {
+      "step": 5,
+      "what": "Erro no atributo restore_browser",
+      "concept": "engine-error",
+      "insight": "Falha na engine de visão indica problema de configuração interna",
+      "difficulty": 4
+    },
+    {
+      "step": 6,
+      "what": "Aguardou 2 segundos adicional",
+      "concept": "recovery-wait",
+      "insight": "Tentativa de recuperação após erro com pausa curta",
+      "difficulty": 2
+    },
+    {
+      "step": 7,
+      "what": "Falha ao digitar mensagem",
+      "concept": "input-failure",
+      "insight": "Erro persistente impede interação com interface do Teams",
+      "difficulty": 4
+    },
+    {
+      "step": 8,
+      "what": "Falha ao enviar mensagem",
+      "concept": "action-failure",
+      "insight": "Cascata de erros bloqueia funcionalidade principal",
+      "difficulty": 4
+    },
+    {
+      "step": 9,
+      "what": "Falha ao iniciar chamada",
+      "concept": "call-failure",
+      "insight": "Engine comprometida não consegue executar ações complexas",
+      "difficulty": 5
+    },
+    {
+      "step": 10,
+      "what": "Aguardou 5 segundos conforme especificado",
+      "concept": "timed-wait",
+      "insight": "Sistema mantém timing mesmo com falhas nas ações",
+      "difficulty": 2
+    },
+    {
+      "step": 11,
+      "what": "Falha ao encerrar chamada",
+      "concept": "cleanup-failure",
+      "insight": "Erro estrutural impede até ações de finalização",
+      "difficulty": 4
+    }
+  ],
+  "summary": "Iniciou busca por Teams com sucesso, mas engine de visão falhou com erro de atributo 'restore_browser', impedindo execução da tarefa completa.",
+  "skills": [
+    "sistema-search",
+    "app-launch",
+    "error-diagnosis",
+    "engine-troubleshooting"
+  ],
+  "xp_earned": 150,
+  "next_level": "Corrigir configuração da engine de visão para restaurar funcionalidade completa",
+  "task": "procure pelo teams na barra de pesquisa, entre nele depois entra na conversa com jacskon missias escreva no campo de mensagem dentro da conversa a seguinte mensagem para ele: Eu vou te ligar e clique em enviar a mensagem, logo apos clique no canto superior direito em ligar para ele, e depois de 5 segundos desligue",
+  "generated_at": "2026-03-24T16:58:44.287084"
+}

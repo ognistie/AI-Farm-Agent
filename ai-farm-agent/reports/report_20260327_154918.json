@@ -1,0 +1,46 @@
+{
+  "steps": [
+    {
+      "what": "Navegou até YouTube e aguardou carregamento da página.",
+      "concept": "web_goto, wait",
+      "insight": "Aguardar 2s é essencial para DOM renderizar antes de interagir.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na barra de pesquisa e digitou 'skate 90s'.",
+      "concept": "web_click, web_type",
+      "insight": "Localizar input text por atributo placeholder acelera automação.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para disparar busca nos resultados.",
+      "concept": "web_key",
+      "insight": "web_key('Enter') simula comportamento humano melhor que submit().",
+      "difficulty": 1
+    },
+    {
+      "what": "Tentou clicar em vídeo usando seletor ytInitialData (falhou).",
+      "concept": "seletor inválido",
+      "insight": "ytInitialData é variável JS, não elemento DOM—use a[href*='watch'] ou .yt-simple-endpoint.",
+      "difficulty": 4
+    },
+    {
+      "what": "Identificar que permissão de microfone bloqueou interação com página.",
+      "concept": "browser permissions",
+      "insight": "Fechar modal de permissão antes de continuar automação web.",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Automação de busca funcionou até seletor de vídeo falhar. Modal de permissão de microfone e seletor CSS inválido foram bloqueadores.",
+  "skills": [
+    "web_navigation",
+    "dom_selectors",
+    "permission_handling",
+    "search_automation",
+    "error_debugging"
+  ],
+  "xp_earned": 120,
+  "next_level": "Use seletor [data-test-id='video-title'] ou .yt-simple-endpoint para clicar em resultados de vídeo YouTube.",
+  "task": "abra o youtube e pesquise video de skate 90s e clique nele",
+  "generated_at": "2026-03-27T15:49:18.710154"
+}

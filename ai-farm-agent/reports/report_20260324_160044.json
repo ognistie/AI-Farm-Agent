@@ -1,0 +1,57 @@
+{
+  "steps": [
+    {
+      "what": "Tentativa de clique na tela falhou",
+      "concept": "error-handling",
+      "insight": "Comandos inválidos são rejeitados pelo sistema de automação",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para carregar interface",
+      "concept": "wait-strategy",
+      "insight": "Pausas são essenciais para sincronização com UI",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou nome do contato na busca",
+      "concept": "search-input",
+      "insight": "Busca por nome é o método mais direto para encontrar contatos",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressionou Enter para confirmar busca",
+      "concept": "search-confirm",
+      "insight": "Enter é o atalho universal para confirmar buscas",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou conversa carregar completamente",
+      "concept": "ui-loading",
+      "insight": "Chats precisam de tempo para renderizar mensagens anteriores",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou mensagem na caixa de texto ativa",
+      "concept": "text-input",
+      "insight": "Campo de mensagem fica automaticamente focado após abrir chat",
+      "difficulty": 1
+    },
+    {
+      "what": "Enviou mensagem com Enter",
+      "concept": "message-send",
+      "insight": "Enter é o método padrão para envio em apps de mensagem",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Enviou mensagem no Teams após buscar contato específico. Processo completado com sucesso apesar de erro inicial.",
+  "skills": [
+    "teams-navigation",
+    "contact-search",
+    "chat-messaging",
+    "error-recovery"
+  ],
+  "xp_earned": 180,
+  "next_level": "Automatizar envio de mensagens para múltiplos contatos em sequência",
+  "task": "abra o teams, esta fixado na barra de tarefas, esta do lado do vs code, entre na conversa com jacskon missias, e escreva no chat \"Ola, Mundo\"",
+  "generated_at": "2026-03-24T16:00:44.756904"
+}

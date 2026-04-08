@@ -1,0 +1,60 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu o Microsoft Teams via busca de aplicativo.",
+      "concept": "app_search, navegação",
+      "insight": "Usar buscador do SO economiza cliques vs navegar manualmente.",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou carregamento da interface antes de interagir.",
+      "concept": "timing, paciência",
+      "insight": "Delays estratégicos previnem cliques em elementos não-renderizados.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou em conversa específica no painel lateral (Jackson Missias).",
+      "concept": "vision_click, localização",
+      "insight": "Identificar elementos visuais por posição permite automação robusta.",
+      "difficulty": 2
+    },
+    {
+      "what": "Localizou e focou o campo de mensagem na janela de chat.",
+      "concept": "UI traversal, focus",
+      "insight": "Esperar UI carregar evita erros ao clicar em campos dinâmicos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou mensagem 'Ola, Mundo' no campo de texto.",
+      "concept": "vision_type, input",
+      "insight": "Visão computacional localiza campo de foco sem seletor CSS.",
+      "difficulty": 2
+    },
+    {
+      "what": "Pressinou Enter para enviar mensagem automaticamente.",
+      "concept": "hotkey, submit",
+      "insight": "Hotkeys são mais confiáveis que clicar botões em chat.",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou ícone de chamada no canto superior direito.",
+      "concept": "vision_click, ação_sequencial",
+      "insight": "Múltiplas ações encadeadas testam fluxos reais de usuário.",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Completou fluxo de chat no Teams: localizar contato, digitar mensagem, enviar e iniciar chamada. Demonstra automação de UI com timing e localização visual.",
+  "skills": [
+    "app_search",
+    "vision_click",
+    "vision_type",
+    "timing_management",
+    "UI_navigation",
+    "hotkey_automation",
+    "chat_interface"
+  ],
+  "xp_earned": 180,
+  "next_level": "Automatize respostas contextuais analisando conteúdo da conversa antes de enviar.",
+  "task": "Abra o teams, procure a conversa com Jackson Missias e escreva para ele no campo de mensagem abaixo: Ola, Mundo. Depois disso clique em enviar e logo em seguida no canto superior direito ligue para ele",
+  "generated_at": "2026-03-27T15:45:08.762335"
+}

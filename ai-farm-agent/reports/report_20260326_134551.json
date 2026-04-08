@@ -1,0 +1,26 @@
+{
+  "step1": {
+    "what": "Abriu o Microsoft Excel 2013 através da busca do sistema",
+    "concept": "Inicialização aplicativo",
+    "insight": "Use a busca do Windows para acessar rapidamente aplicativos específicos",
+    "difficulty": 1
+  },
+  "step2": {
+    "what": "Aguardou 3 segundos para o carregamento completo da interface",
+    "concept": "Tempo carregamento",
+    "insight": "Aguardar o carregamento evita erros de cliques em elementos não responsivos",
+    "difficulty": 1
+  },
+  "general": {
+    "summary": "Iniciou com sucesso o Excel 2013 preparando ambiente para criar planilha de funcionários. Interface carregada e pronta para próximos passos.",
+    "skills": [
+      "abertura_aplicativo",
+      "navegacao_sistema",
+      "excel_basico"
+    ],
+    "xp_earned": 75,
+    "next_level": "Criar estrutura da planilha com cabeçalhos Nome e Salário nas colunas A e B"
+  },
+  "task": "abra o excel 2013 e Crie uma planilha com lista de funcionários e salários",
+  "generated_at": "2026-03-26T13:45:51.945403"
+}

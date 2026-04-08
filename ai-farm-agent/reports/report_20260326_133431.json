@@ -1,0 +1,64 @@
+{
+  "steps": [
+    {
+      "what": "Procurou e abriu o aplicativo Microsoft Teams",
+      "concept": "app-search",
+      "insight": "Use busca de aplicativos para acesso rápido a programas específicos",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 4 segundos para o Teams carregar completamente",
+      "concept": "wait-loading",
+      "insight": "Aplicativos corporativos precisam de tempo para inicialização completa",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou na barra de pesquisa do Teams",
+      "concept": "ui-navigation",
+      "insight": "Identifique elementos de busca pela posição central superior da interface",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou o nome do contato 'Jackson Alves Missias'",
+      "concept": "contact-search",
+      "insight": "Nomes completos garantem resultados mais precisos na busca",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no contato encontrado na lista de resultados",
+      "concept": "contact-selection",
+      "insight": "Verifique avatares e nomes completos antes de selecionar contatos",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardou 2 segundos para o chat carregar",
+      "concept": "chat-loading",
+      "insight": "Conversas podem ter histórico extenso que demora para carregar",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou a mensagem 'Ola Mundo' na caixa de texto",
+      "concept": "message-typing",
+      "insight": "Use vision_type para localizar e preencher campos de entrada automaticamente",
+      "difficulty": 3
+    },
+    {
+      "what": "Pressionou Enter para enviar a mensagem",
+      "concept": "message-send",
+      "insight": "Enter é o método padrão universal para envio de mensagens",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Executou comunicação corporativa completa no Teams, desde abertura até envio de mensagem. Demonstrou domínio de navegação, busca e interação com interface de chat.",
+  "skills": [
+    "teams-navigation",
+    "contact-search",
+    "corporate-messaging",
+    "ui-automation",
+    "vision-interaction"
+  ],
+  "xp_earned": 350,
+  "next_level": "Automatize conversas em grupo ou envie arquivos anexados no Teams",
+  "task": "Abra o Teams e envie a mensagem: Ola Mundo para Jackson Alves Missias",
+  "generated_at": "2026-03-26T13:34:31.671584"
+}

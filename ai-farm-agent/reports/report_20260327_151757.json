@@ -1,0 +1,61 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar documento em branco para entrada de dados.",
+      "concept": [
+        "Excel",
+        "Inicialização"
+      ],
+      "insight": "Excel 2013 permite criar planilhas estruturadas; sempre comece com arquivo novo para evitar conflitos.",
+      "difficulty": 1
+    },
+    {
+      "what": "Inserir 10 nomes de frutas na coluna A com formatação consistente.",
+      "concept": [
+        "Input-dados",
+        "Coluna-A"
+      ],
+      "insight": "Organize dados em colunas para facilitar análises futuras e manutenção da planilha.",
+      "difficulty": 2
+    },
+    {
+      "what": "Adicionar preços correspondentes na coluna B com valores numéricos.",
+      "concept": [
+        "Dados-numéricos",
+        "Coluna-B"
+      ],
+      "insight": "Use formato de moeda para preços; Excel reconhecerá automaticamente para cálculos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Salvar arquivo em formato Excel 2013 (.xlsx) com nome descritivo.",
+      "concept": [
+        "Save",
+        "Formato-xlsx"
+      ],
+      "insight": "Excel 2013 (.xlsx) é compatível com versões recentes; sempre especifique formato ao salvar.",
+      "difficulty": 1
+    },
+    {
+      "what": "Abrir arquivo salvo para validar integridade dos dados e formatação.",
+      "concept": [
+        "Validação",
+        "Verificação"
+      ],
+      "insight": "Confirme que dados persistiram corretamente após salvar; previne perda de informações.",
+      "difficulty": 1
+    }
+  ],
+  "summary": "Criou planilha Excel 2013 com 10 frutas e preços em colunas estruturadas, salva e validada. Dominou organização básica de dados tabulares.",
+  "skills": [
+    "Excel-2013",
+    "Entrada-dados",
+    "Estrutura-colunas",
+    "Salvamento-arquivo",
+    "Formatação-planilha"
+  ],
+  "xp_earned": 120,
+  "next_level": "Adicione fórmulas SUM() para calcular preço total e crie gráfico de valores.",
+  "task": "Abra o excel 2013, abra um documento em branco e Crie uma planilha com 10 nomes de frutas na coluna A e preços na coluna B",
+  "generated_at": "2026-03-27T15:17:57.005467"
+}

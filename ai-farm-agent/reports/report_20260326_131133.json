@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "what": "Abriu o Excel através da busca de aplicativo",
+      "concept": "app search",
+      "insight": "Use busca de apps para acesso rápido a programas",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para carregamento do programa",
+      "concept": "wait timing",
+      "insight": "Pausas estratégicas evitam erros de timing",
+      "difficulty": 2
+    },
+    {
+      "what": "Tentou clicar mas falhou por JSON inválido",
+      "concept": "vision click",
+      "insight": "Comandos malformados causam falhas de automação",
+      "difficulty": 3
+    },
+    {
+      "what": "Digitou lista de 9 nomes masculinos na primeira coluna",
+      "concept": "text input",
+      "insight": "Digite com quebras de linha para preencher células sequenciais",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou na célula adjacente com 95% de precisão",
+      "concept": "cell navigation",
+      "insight": "Alta precisão visual é crucial para posicionamento correto",
+      "difficulty": 3
+    },
+    {
+      "what": "Digitou lista de 9 nomes femininos na segunda coluna",
+      "concept": "data entry",
+      "insight": "Complete tarefas paralelas mantendo consistência no formato",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Automação de entrada de dados no Excel com navegação entre células e preenchimento de listas organizadas.",
+  "skills": [
+    "excel automation",
+    "data entry",
+    "cell navigation",
+    "vision click",
+    "timing control"
+  ],
+  "xp_earned": 280,
+  "next_level": "Implemente formatação e fórmulas para calcular estatísticas dos dados inseridos.",
+  "task": "abra o excel 2013, abra um documento em branco e preencha uma fileira co 10 nome de homens, e na coluna ao lado preencha uma fileira com 10 nome de mulheres",
+  "generated_at": "2026-03-26T13:11:33.042257"
+}

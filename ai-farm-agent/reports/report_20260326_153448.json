@@ -1,0 +1,54 @@
+{
+  "steps": [
+    {
+      "what": "Importar módulo 're' antes de usar funções de expressões regulares.",
+      "concept": [
+        "import",
+        "módulo"
+      ],
+      "insight": "Sempre declare imports no início do script para evitar NameError.",
+      "difficulty": 1
+    },
+    {
+      "what": "Criar lista de frutas e mapeá-las com preços usando estrutura de dados.",
+      "concept": [
+        "list",
+        "dict",
+        "estrutura"
+      ],
+      "insight": "Use dicionários ou listas paralelas para relacionar frutas com preços.",
+      "difficulty": 2
+    },
+    {
+      "what": "Gerar arquivo Excel com openpyxl ou pandas utilizando colunas A e B.",
+      "concept": [
+        "excel",
+        "pandas",
+        "output"
+      ],
+      "insight": "Pandas é mais eficiente: pd.DataFrame({'Fruta': frutas, 'Preço': preços}).to_excel().",
+      "difficulty": 2
+    },
+    {
+      "what": "Validar dados e formatar células (moeda, alinhamento) antes de salvar.",
+      "concept": [
+        "validação",
+        "formatação",
+        "polimento"
+      ],
+      "insight": "Formatar valores monetários como currency para profissionalismo.",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Corrigir import do módulo 're', estruturar dados de frutas e preços, exportar para Excel com formatação apropriada.",
+  "skills": [
+    "Python-basics",
+    "Data-structures",
+    "Excel-export",
+    "Error-handling"
+  ],
+  "xp_earned": 150,
+  "next_level": "Adicionar validação de entrada e gráfico visual dos preços na planilha.",
+  "task": "Crie uma planilha com nomes de frutas na coluna A e seus preços na coluna B",
+  "generated_at": "2026-03-26T15:34:48.293221"
+}

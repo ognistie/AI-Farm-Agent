@@ -1,0 +1,88 @@
+{
+  "steps": [
+    {
+      "what": "Clicou no botão do Windows na barra de tarefas",
+      "concept": "sistema operacional",
+      "insight": "Menu iniciar é o ponto de partida para aplicações",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 2 segundos para interface carregar",
+      "concept": "timing automação",
+      "insight": "Esperas estratégicas evitam erros de sincronização",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou 'excel 2013' para buscar o aplicativo",
+      "concept": "busca aplicativo",
+      "insight": "Busca específica localiza versões exatas de software",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 2 segundos para resultados aparecerem",
+      "concept": "tempo resposta",
+      "insight": "Sistema precisa processar busca antes de exibir",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no Excel 2013 nos resultados da busca",
+      "concept": "seleção aplicativo",
+      "insight": "Reconhecimento visual identifica aplicativo correto",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 4 segundos para Excel inicializar",
+      "concept": "carregamento aplicativo",
+      "insight": "Aplicações pesadas precisam mais tempo para carregar",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou em 'Pasta de trabalho em branco'",
+      "concept": "template excel",
+      "insight": "Documento em branco oferece flexibilidade total",
+      "difficulty": 1
+    },
+    {
+      "what": "Aguardou 3 segundos para planilha carregar",
+      "concept": "interface loading",
+      "insight": "Interface complexa precisa tempo para renderizar",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou na primeira célula da coluna A",
+      "concept": "navegação célula",
+      "insight": "Célula A1 é ponto inicial padrão em planilhas",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitou '1' e pressionou Enter repetidamente até 10",
+      "concept": "entrada sequencial",
+      "insight": "Enter move automaticamente para próxima célula vertical",
+      "difficulty": 3
+    },
+    {
+      "what": "Clicou na primeira célula da coluna B",
+      "concept": "mudança coluna",
+      "insight": "Navegação manual necessária para trocar coluna",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou de '11' a '20' usando Enter entre valores",
+      "concept": "preenchimento dados",
+      "insight": "Padrão sequencial acelera entrada de dados numéricos",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Executou abertura do Excel 2013 e preenchimento sistemático de dados sequenciais em duas colunas. Demonstrou controle preciso de timing e navegação eficiente entre células.",
+  "skills": [
+    "sistema operacional",
+    "excel básico",
+    "entrada dados",
+    "automação interface",
+    "navegação planilha"
+  ],
+  "xp_earned": 320,
+  "next_level": "Experimente usar fórmulas para gerar sequências automaticamente em vez de digitação manual",
+  "task": "clique no botao do windows na barra de tarefas, pesquise por excel 2013 e clique para entrar nele, logo apos isso selecione o ducomento em branco e clique na primeira cedula de cada coluna e  escreva na primeira coluna de 1 a 10, e na coluna ao lado de 11 a 20.",
+  "generated_at": "2026-03-25T14:52:39.107718"
+}

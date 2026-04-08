@@ -1,0 +1,57 @@
+{
+  "steps": [
+    {
+      "what": "Cliquei no ícone do Teams na barra de tarefas",
+      "concept": "app-navigation",
+      "insight": "Identificação visual precisa de ícones na taskbar permite acesso rápido a aplicativos",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei 3 segundos para o Teams carregar completamente",
+      "concept": "wait-timing",
+      "insight": "Tempos de espera estratégicos evitam erros de interação com elementos não carregados",
+      "difficulty": 1
+    },
+    {
+      "what": "Selecionei o contato Jackson Alves Missias na lista de conversas",
+      "concept": "contact-selection",
+      "insight": "Navegação eficiente em listas de contatos requer reconhecimento visual preciso de nomes",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardei a conversa carregar antes de continuar",
+      "concept": "ui-loading",
+      "insight": "Interfaces de chat precisam de tempo para renderizar mensagens e campo de input",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no campo de digitação de mensagem",
+      "concept": "input-focus",
+      "insight": "Campos de texto precisam ser focados antes da digitação para garantir entrada correta",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitei a mensagem 'Ola Mundo Eu sou o exterminador do futuro'",
+      "concept": "text-input",
+      "insight": "Digitação direta em campos focados é mais confiável que simulação de teclado",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no botão enviar (seta) para enviar a mensagem",
+      "concept": "message-send",
+      "insight": "Botões de envio em chats têm ícones visuais consistentes (setas) para fácil identificação",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Abri o Teams, naveguei até a conversa com Jackson Missias e enviei uma mensagem personalizada com sucesso.",
+  "skills": [
+    "teams-navigation",
+    "contact-management",
+    "chat-messaging",
+    "ui-interaction"
+  ],
+  "xp_earned": 280,
+  "next_level": "Automatizar envio de mensagens em massa ou agendar mensagens no Teams",
+  "task": "abra o teams, e escreva na conversa com jackson missias a seguinte mensagem : Ola Mundo Eu sou o exterminador do futuro, depois disso clique em enviar a mensagem",
+  "generated_at": "2026-03-24T16:38:18.805869"
+}

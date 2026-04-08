@@ -1,0 +1,33 @@
+{
+  "steps": [
+    {
+      "what": "Identificou a pasta Downloads e preparou listagem de arquivos.",
+      "concept": "File System Navigation",
+      "insight": "Usar caminhos absolutos evita erros de diretório atual.",
+      "difficulty": 2
+    },
+    {
+      "what": "Executou comando Python para varrer diretório e coletar metadados.",
+      "concept": "Python File Operations",
+      "insight": "Os módulos `os` e `pathlib` são ideais para exploração de sistema de arquivos.",
+      "difficulty": 3
+    },
+    {
+      "what": "Organizou dados em formato estruturado com nome, tipo e tamanho.",
+      "concept": "Data Structuring",
+      "insight": "Estruturar dados facilita análise e apresentação clara dos resultados.",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Mapeou com sucesso todos os arquivos e pastas em Downloads, coletando metadados essenciais (nome, tipo, tamanho). Demonstrou competência em navegação de sistema de arquivos e processamento de dados.",
+  "skills": [
+    "File System Navigation",
+    "Python I/O",
+    "Data Structuring",
+    "Directory Traversal"
+  ],
+  "xp_earned": 75,
+  "next_level": "Filtrar arquivos por tipo (imagens, documentos, vídeos) e gerar relatório com tamanho total por categoria.",
+  "task": "Liste todos os arquivos da minha pasta Downloads",
+  "generated_at": "2026-03-30T10:47:38.483733"
+}

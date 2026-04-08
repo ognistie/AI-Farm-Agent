@@ -1,0 +1,10 @@
+flask==3.0.0
+flask-socketio==5.3.6
+simple-websocket==1.1.0
+anthropic==0.39.0
+pyautogui==0.9.54
+Pillow
+python-dotenv==1.0.1
+pygetwindow==0.0.9
+psutil==5.9.8
+pyperclip==1.9.0

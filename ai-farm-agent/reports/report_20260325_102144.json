@@ -1,0 +1,70 @@
+{
+  "steps": [
+    {
+      "what": "Cliquei na barra de pesquisa do Windows",
+      "concept": "UI Navigation",
+      "insight": "Localizar elementos interativos pela posição visual é fundamental para automação de UI.",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei 'teams' para buscar o aplicativo",
+      "concept": "Search Input",
+      "insight": "Usar pesquisa do sistema é mais eficiente que navegar menus manualmente.",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei em Microsoft Teams nos resultados",
+      "concept": "App Launch",
+      "insight": "Reconhecimento visual de ícones e texto permite seleção precisa de aplicativos.",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei 5 segundos para o Teams carregar",
+      "concept": "Loading Wait",
+      "insight": "Aplicações corporativas como Teams precisam tempo para carregar completamente.",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no contato Igor Henrique na lista",
+      "concept": "Contact Selection",
+      "insight": "Interface do Teams organiza contatos em lista lateral para acesso rápido.",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardei a conversa carregar",
+      "concept": "Chat Load",
+      "insight": "Conversas podem precisar tempo para sincronizar mensagens anteriores.",
+      "difficulty": 1
+    },
+    {
+      "what": "Digitei a mensagem no campo de texto",
+      "concept": "Text Input",
+      "insight": "Campos de mensagem respondem a input direto após seleção visual.",
+      "difficulty": 2
+    },
+    {
+      "what": "Cliquei no botão enviar (seta)",
+      "concept": "Message Send",
+      "insight": "Botão de envio geralmente usa ícone de seta para indicar ação.",
+      "difficulty": 1
+    },
+    {
+      "what": "Cliquei no botão de chamada no canto superior",
+      "concept": "Voice Call",
+      "insight": "Funcionalidades de chamada ficam em posição proeminente na interface de chat.",
+      "difficulty": 3
+    }
+  ],
+  "summary": "Abri o Teams, naveguei para conversa com Igor e enviei mensagem seguida de chamada. Fluxo completo de comunicação corporativa executado com precisão.",
+  "skills": [
+    "App Navigation",
+    "Chat Interface",
+    "Contact Management",
+    "Voice Calling",
+    "UI Automation"
+  ],
+  "xp_earned": 350,
+  "next_level": "Automatizar chamadas em grupo ou compartilhamento de tela no Teams.",
+  "task": "procure pelo teams na barra de pesquisa clique para entrar nele e depois de entrar dentro dele clique e entre na conversa com Igor Henrique escreva no campo de mensagem dentro da conversa a seguinte frase: Ola Mundo, Eu Sou o Exterminador do futuro e clique para enviar, logo apos isso no canto superior direito clique em ligar para ele",
+  "generated_at": "2026-03-25T10:21:44.308656"
+}

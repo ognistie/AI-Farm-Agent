@@ -1,0 +1,58 @@
+{
+  "steps": [
+    {
+      "what": "Clicou na seção Chat do Teams",
+      "concept": "Navigation UI",
+      "insight": "Primeiro passo é sempre navegar para a seção correta da aplicação",
+      "difficulty": 2
+    },
+    {
+      "what": "Aguardou 3 segundos para interface carregar",
+      "concept": "Wait Strategy",
+      "insight": "Aguardar é crucial em aplicações web para evitar erros de timing",
+      "difficulty": 1
+    },
+    {
+      "what": "Selecionou conversa com Jackson Alves Missias",
+      "concept": "Contact Selection",
+      "insight": "Identificação precisa de contatos específicos na lista de conversas",
+      "difficulty": 3
+    },
+    {
+      "what": "Aguardou 1 segundo para conversa abrir",
+      "concept": "UI Loading",
+      "insight": "Pequenos waits garantem que elementos estejam prontos para interação",
+      "difficulty": 1
+    },
+    {
+      "what": "Clicou no campo de entrada de mensagem",
+      "concept": "Input Focus",
+      "insight": "Foco no campo correto é essencial antes de digitar texto",
+      "difficulty": 2
+    },
+    {
+      "what": "Digitou mensagem específica solicitada",
+      "concept": "Text Input",
+      "insight": "Automação de entrada de texto permite mensagens padronizadas e precisas",
+      "difficulty": 2
+    },
+    {
+      "what": "Clicou no botão enviar para disparar mensagem",
+      "concept": "Form Submit",
+      "insight": "Finalização da ação com submit garante que a mensagem seja efetivamente enviada",
+      "difficulty": 2
+    }
+  ],
+  "summary": "Enviou mensagem automatizada via Teams navegando pela interface, selecionando contato específico e digitando texto predefinido.",
+  "skills": [
+    "Teams Navigation",
+    "Contact Management",
+    "Message Automation",
+    "UI Timing",
+    "Text Input"
+  ],
+  "xp_earned": 180,
+  "next_level": "Implementar envio de mensagens em massa para múltiplos contatos",
+  "task": "abra o teams, e digite no campo abaixo na conversa com jackson missias a seguinte mensagem : Ola Mundo Eu sou o exterminador do futuro, depois disso clique em enviar a mensagemOla Mundo Eu sou o exterminador do futuro",
+  "generated_at": "2026-03-24T16:39:11.374008"
+}

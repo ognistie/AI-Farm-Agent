@@ -1,0 +1,49 @@
+{
+  "steps": [
+    {
+      "what": "Aplicação foi localizada mas não apareceu na tela dentro do tempo limite.",
+      "concept": [
+        "window-timing",
+        "app-launch"
+      ],
+      "insight": "Aumentar timeout ou verificar se o app está minimizado/background.",
+      "difficulty": 2
+    },
+    {
+      "what": "Tentativa de digitar em janela não foi possível pois a janela alvo não estava ativa.",
+      "concept": [
+        "window-focus",
+        "input-handling"
+      ],
+      "insight": "Sempre validar que a janela está em foreground antes de enviar keystrokes.",
+      "difficulty": 3
+    },
+    {
+      "what": "Ciclo de retry executado mas padrão de falha se repetiu identicamente.",
+      "concept": [
+        "debugging",
+        "pattern-recognition"
+      ],
+      "insight": "Quando mesmo erro ocorre 2x, raiz é diferente: verificar permissões ou processo travado.",
+      "difficulty": 4
+    }
+  ],
+  "summary": "Tarefa falhou por timeout repetido na janela do Bloco de Notas. A aplicação foi encontrada mas não se tornou visível/ativa para receber input.",
+  "skills": [
+    "app-launch-debugging",
+    "window-management",
+    "timeout-handling",
+    "retry-logic",
+    "foreground-activation"
+  ],
+  "xp_earned": 75,
+  "next_level": "Implemente verificação de processo ativo + force window to foreground antes de typing.",
+  "recommendations": [
+    "Use Win32 API SetForegroundWindow() para garantir foco",
+    "Adicione logging de estado da janela (visible, enabled, focused)",
+    "Considere aumentar timeout inicial para 15-20s em primeiro launch",
+    "Validar se notepad.exe está realmente sendo executado (task manager)"
+  ],
+  "task": "Abra o Bloco de Notas e escreva Olá Mundo, eu sou o AI Farm Agent",
+  "generated_at": "2026-03-31T16:06:20.505199"
+}
