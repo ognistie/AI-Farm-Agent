@@ -3,134 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Farm Agent</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+    <title>AI Farm Agent — The Matrix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-<div class="crt"></div>
-<div class="scanlines"></div>
-<canvas id="stars"></canvas>
 
-<div class="app">
-    <!-- TOP BAR -->
-    <header class="topbar">
-        <div class="tb-left">
-            <span class="tb-icon">◈</span>
-            <span class="tb-title">AI FARM AGENT</span>
-            <span class="tb-ver">v9</span>
+<!-- ══════════════════════════════════════ -->
+<!--  SPLASH SCREEN — "Join the Matrix?"  -->
+<!-- ══════════════════════════════════════ -->
+<div id="splash" class="splash">
+    <canvas id="rain-canvas"></canvas>
+    <div class="splash-content">
+        <div class="splash-glitch" data-text="AI FARM AGENT">AI FARM AGENT</div>
+        <p class="splash-sub">Autonomous Computer Operator</p>
+        <div class="splash-pills">
+            <button class="pill pill-blue" onclick="rejectMatrix()">
+                <span class="pill-icon">💊</span>
+                <span class="pill-label">Pílula Azul</span>
+                <span class="pill-desc">Voltar para a realidade</span>
+            </button>
+            <button class="pill pill-red" onclick="enterMatrix()">
+                <span class="pill-icon">💊</span>
+                <span class="pill-label">Pílula Vermelha</span>
+                <span class="pill-desc">Entrar na Matrix</span>
+            </button>
         </div>
-        <div class="tb-right">
-            <button id="btn-stop" class="tb-stop" onclick="forceStop()" style="display:none">■ ABORT</button>
-            <div class="tb-status"><span class="led" id="dot"></span><span id="status-txt">BOOT</span></div>
-        </div>
-    </header>
+        <p class="splash-quote">"Eu só posso te mostrar a porta. Você é quem tem que atravessá-la."</p>
+    </div>
+</div>
 
-    <!-- MAIN GRID -->
-    <div class="grid">
-        <!-- LEFT: Command + API -->
-        <div class="col-left">
-            <!-- COMMAND -->
-            <section class="panel cmd-panel">
-                <div class="panel-bar"><span class="panel-dot cyan"></span>COMMAND_INPUT</div>
-                <div class="cmd-body">
-                    <h2 class="cmd-title">O que você precisa<br><span class="neon-text">executar hoje?</span></h2>
-                    <textarea id="task-input" class="cmd-textarea" placeholder="// Descreva a tarefa em linguagem natural...&#10;// Ex: Crie uma planilha de vendas com 10 produtos" rows="6"></textarea>
-                    <div class="cmd-controls">
-                        <div class="cmd-toggles">
-                            <label class="toggle" id="c-dry"><input type="checkbox" id="chk-dry" onchange="S.s.dryRun=this.checked;this.parentElement.classList.toggle('on',this.checked)"><span>◇ SIM</span></label>
-                            <label class="toggle on" id="c-rpt"><input type="checkbox" id="chk-report" checked onchange="S.s.genReport=this.checked;this.parentElement.classList.toggle('on',this.checked)"><span>◆ RPT</span></label>
+<!-- ══════════════════════════════════════ -->
+<!--  MAIN APP                             -->
+<!-- ══════════════════════════════════════ -->
+<div id="main-app" class="app" style="display:none">
+    
+    <!-- CRT OVERLAY -->
+    <div class="crt-overlay"></div>
+    <div class="scan-line"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <span class="logo-hex">⬡</span>
+                <span class="logo-text">AI FARM AGENT</span>
+                <span class="logo-ver">v2.0</span>
+            </div>
+        </div>
+        <div class="nav-center">
+            <button class="nav-tab active" data-view="terminal" onclick="switchView('terminal')">
+                <span class="tab-icon">▶</span> Terminal
+            </button>
+            <button class="nav-tab" data-view="monitor" onclick="switchView('monitor')">
+                <span class="tab-icon">◆</span> Monitor
+            </button>
+            <button class="nav-tab" data-view="about" onclick="switchView('about')">
+                <span class="tab-icon">◇</span> Sobre
+            </button>
+        </div>
+        <div class="nav-right">
+            <button id="btn-stop" class="btn-abort" onclick="forceStop()" style="display:none">■ ABORT</button>
+            <div class="status-indicator">
+                <span class="status-led" id="dot"></span>
+                <span class="status-text" id="status-txt">ONLINE</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ════════════════════════════════ -->
+    <!--  VIEW: TERMINAL                  -->
+    <!-- ════════════════════════════════ -->
+    <div id="view-terminal" class="view active">
+        <div class="terminal-grid">
+            
+            <!-- LEFT COLUMN -->
+            <div class="col-input">
+                
+                <!-- COMMAND INPUT -->
+                <section class="card card-command">
+                    <div class="card-header">
+                        <div class="card-dots">
+                            <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
                         </div>
-                        <button id="btn" class="cmd-exec" onclick="go()">
-                            <span class="exec-text">EXECUTAR</span>
-                            <span class="exec-arrow">►</span>
-                        </button>
+                        <span class="card-title">command_input</span>
                     </div>
-                    <div class="cmd-quick" id="qas">
-                        <button class="qb" onclick="setEx('Crie uma planilha com frutas e preços')">EXCEL</button>
-                        <button class="qb" onclick="setEx('Organize meus Downloads por tipo')">FILES</button>
-                        <button class="qb" onclick="setEx('Pesquise no Google o que é IA')">WEB</button>
-                        <button class="qb" onclick="setEx('Crie um site bonito com HTML e CSS')">CODE</button>
-                        <button class="qb" onclick="setEx('Abra o Notepad e escreva Olá Mundo')">DESKTOP</button>
-                        <button class="qb" onclick="setEx('Entre no YouTube e pesquise lofi')">MEDIA</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- API MONITOR -->
-            <section class="panel api-panel">
-                <div class="panel-bar"><span class="panel-dot amber"></span>API_MONITOR</div>
-                <div class="api-grid">
-                    <div class="api-cell">
-                        <div class="api-label">CALLS</div>
-                        <div class="api-val" id="api-calls">0</div>
-                    </div>
-                    <div class="api-cell">
-                        <div class="api-label">TOKENS</div>
-                        <div class="api-val" id="api-tokens">0k</div>
-                    </div>
-                    <div class="api-cell">
-                        <div class="api-label">RUNS</div>
-                        <div class="api-val" id="tasks-n">0</div>
-                    </div>
-                    <div class="api-cell">
-                        <div class="api-label">CUSTO EST.</div>
-                        <div class="api-val cost" id="api-cost">$0.00</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PLAN -->
-            <section class="panel plan-panel" id="plan-section" style="display:none">
-                <div class="panel-bar"><span class="panel-dot amber"></span>EXECUTION_PLAN</div>
-                <div class="plan-body" id="plan-box"></div>
-            </section>
-        </div>
-
-        <!-- RIGHT: Feed + Report + Logs -->
-        <div class="col-right">
-            <section class="panel live-panel">
-                <div class="panel-bar">
-                    <div class="panel-bar-left">
-                        <span class="panel-dot green" id="live-dot"></span>
-                        <span id="live-label">AWAITING_INPUT</span>
-                    </div>
-                    <div class="panel-tabs">
-                        <button class="ptab active" data-tab="feed">▶ LIVE</button>
-                        <button class="ptab" data-tab="report">◆ REPORT</button>
-                        <button class="ptab" data-tab="logs">▣ LOGS</button>
-                    </div>
-                </div>
-                <div class="live-progress"><div class="live-bar" id="prog"></div></div>
-
-                <div class="tab-pane active" id="tp-feed">
-                    <div class="feed" id="feed">
-                        <div class="feed-empty">
-                            <pre class="ascii-art">
-  ╔══════════════════════════╗
-  ║  READY FOR COMMANDS...   ║
-  ║  Type a task to begin.   ║
-  ╚══════════════════════════╝
-                            </pre>
+                    <div class="card-body">
+                        <h2 class="command-heading">
+                            Diga ao sistema<br>
+                            <span class="text-glow">o que fazer.</span>
+                        </h2>
+                        <div class="input-wrapper">
+                            <span class="input-prompt">$</span>
+                            <textarea id="task-input" class="task-input" placeholder="Descreva a tarefa em linguagem natural..." rows="4"></textarea>
+                        </div>
+                        <div class="input-actions">
+                            <div class="toggles">
+                                <label class="chip" id="c-dry">
+                                    <input type="checkbox" id="chk-dry" onchange="S.s.dryRun=this.checked;this.parentElement.classList.toggle('on',this.checked)">
+                                    <span>Simulação</span>
+                                </label>
+                                <label class="chip on" id="c-rpt">
+                                    <input type="checkbox" id="chk-report" checked onchange="S.s.genReport=this.checked;this.parentElement.classList.toggle('on',this.checked)">
+                                    <span>Relatório</span>
+                                </label>
+                            </div>
+                            <button id="btn" class="btn-execute" onclick="go()">
+                                <span class="exec-text">EXECUTAR</span>
+                                <span class="exec-arrow">→</span>
+                            </button>
+                        </div>
+                        <!-- QUICK ACTIONS -->
+                        <div class="quick-actions" id="qas">
+                            <button class="qa" onclick="setEx('Crie uma planilha com frutas e preços')">📊 Excel</button>
+                            <button class="qa" onclick="setEx('Organize meus Downloads por tipo')">📁 Arquivos</button>
+                            <button class="qa" onclick="setEx('Pesquise no Google o que é IA')">🌐 Web</button>
+                            <button class="qa" onclick="setEx('Crie um site bonito com HTML e CSS')">💻 Código</button>
+                            <button class="qa" onclick="setEx('Abra o Notepad e escreva Olá Mundo')">🖥 Desktop</button>
+                            <button class="qa" onclick="setEx('Entre no YouTube e pesquise lofi')">🎵 Mídia</button>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="tab-pane" id="tp-report">
-                    <div class="report-body" id="rpt">
-                        <div class="feed-empty"><pre>No report generated yet.</pre></div>
+                <!-- API METRICS -->
+                <section class="card card-metrics">
+                    <div class="card-header">
+                        <span class="card-title">api_metrics</span>
                     </div>
-                </div>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-val" id="api-calls">0</span>
+                            <span class="metric-label">Calls</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-val" id="api-tokens">0k</span>
+                            <span class="metric-label">Tokens</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-val" id="tasks-n">0</span>
+                            <span class="metric-label">Tasks</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-val accent" id="api-cost">$0.00</span>
+                            <span class="metric-label">Custo</span>
+                        </div>
+                    </div>
+                </section>
 
-                <div class="tab-pane" id="tp-logs">
-                    <div class="log-body" id="logs"></div>
-                </div>
-            </section>
+                <!-- EXECUTION PLAN -->
+                <section class="card card-plan" id="plan-section" style="display:none">
+                    <div class="card-header">
+                        <span class="card-title">execution_plan</span>
+                    </div>
+                    <div class="plan-body" id="plan-box"></div>
+                </section>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="col-output">
+                <section class="card card-live">
+                    <div class="card-header">
+                        <div class="card-header-left">
+                            <span class="live-dot" id="live-dot"></span>
+                            <span class="card-title" id="live-label">aguardando_input</span>
+                        </div>
+                        <div class="live-tabs">
+                            <button class="ltab active" data-tab="feed" onclick="tab('feed')">▶ Live</button>
+                            <button class="ltab" data-tab="report" onclick="tab('report')">◆ Report</button>
+                            <button class="ltab" data-tab="logs" onclick="tab('logs')">▣ Logs</button>
+                        </div>
+                    </div>
+                    <div class="progress-track"><div class="progress-bar" id="prog"></div></div>
+
+                    <!-- FEED -->
+                    <div class="tab-content active" id="tp-feed">
+                        <div class="feed" id="feed">
+                            <div class="feed-empty">
+                                <div class="empty-icon">⬡</div>
+                                <p>Aguardando comandos...</p>
+                                <p class="empty-hint">Digite uma tarefa e clique em EXECUTAR</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REPORT -->
+                    <div class="tab-content" id="tp-report">
+                        <div class="report-body" id="rpt">
+                            <div class="feed-empty"><p>Nenhum relatório gerado ainda.</p></div>
+                        </div>
+                    </div>
+
+                    <!-- LOGS -->
+                    <div class="tab-content" id="tp-logs">
+                        <div class="log-body" id="logs"></div>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 
-    <footer class="foot">
-        <span class="foot-line">◈ DEVELOPED BY <a href="https://github.com/ognistie" target="_blank">@OGNISTIE</a> ◈ AI FARM AGENT v9 ◈</span>
+    <!-- ════════════════════════════════ -->
+    <!--  VIEW: MONITOR                   -->
+    <!-- ════════════════════════════════ -->
+    <div id="view-monitor" class="view">
+        <div class="monitor-grid">
+            <div class="card">
+                <div class="card-header"><span class="card-title">agent_performance</span></div>
+                <div class="card-body" style="padding:20px">
+                    <p style="color:var(--t2);font-size:13px">Métricas de performance dos agentes serão exibidas aqui após execuções.</p>
+                    <div class="agent-bars" id="agent-bars">
+                        <div class="agent-bar"><span class="ab-name">MAESTRO</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                        <div class="agent-bar"><span class="ab-name">DATA</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                        <div class="agent-bar"><span class="ab-name">WEB</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                        <div class="agent-bar"><span class="ab-name">CODE</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                        <div class="agent-bar"><span class="ab-name">DESKTOP</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                        <div class="agent-bar"><span class="ab-name">FILE</span><div class="ab-track"><div class="ab-fill" style="width:0%"></div></div><span class="ab-pct">--</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title">interaction_cascade</span></div>
+                <div class="card-body" style="padding:20px">
+                    <div class="cascade-levels">
+                        <div class="cascade-level"><span class="cl-badge l1">L1</span><span class="cl-name">API / Code</span><span class="cl-bar"><span class="cl-fill" style="width:0%"></span></span><span class="cl-pct">--</span></div>
+                        <div class="cascade-level"><span class="cl-badge l2">L2</span><span class="cl-name">UIA</span><span class="cl-bar"><span class="cl-fill" style="width:0%"></span></span><span class="cl-pct">--</span></div>
+                        <div class="cascade-level"><span class="cl-badge l3">L3</span><span class="cl-name">Vision</span><span class="cl-bar"><span class="cl-fill" style="width:0%"></span></span><span class="cl-pct">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!--  VIEW: ABOUT                     -->
+    <!-- ════════════════════════════════ -->
+    <div id="view-about" class="view">
+        <div class="about-container">
+            <div class="about-hero">
+                <div class="about-avatar">
+                    <img src="https://github.com/ognistie.png" alt="Guilherme" class="avatar-img">
+                    <div class="avatar-ring"></div>
+                </div>
+                <div class="about-info">
+                    <h2 class="about-name">Guilherme Moraes Franco</h2>
+                    <p class="about-handle">@ognistie</p>
+                    <p class="about-role">Estagiário de TI @ IT Universe · Estudante de Ciência da Computação</p>
+                    <p class="about-bio">Transformando infraestrutura em código e processos em automação. Foco em Cloud, DevOps e sistemas inteligentes.</p>
+                    <div class="about-tags">
+                        <span class="atag">AWS</span>
+                        <span class="atag">Azure</span>
+                        <span class="atag">Python</span>
+                        <span class="atag">Linux</span>
+                        <span class="atag">DevOps</span>
+                        <span class="atag">Docker</span>
+                    </div>
+                    <div class="about-links">
+                        <a href="https://github.com/ognistie" target="_blank" class="alink">GitHub ↗</a>
+                        <a href="https://ognistie.github.io/portfolio/" target="_blank" class="alink">Portfólio ↗</a>
+                        <a href="https://www.linkedin.com/in/guilherme-moraes-franco-b4b1a0353/" target="_blank" class="alink">LinkedIn ↗</a>
+                        <a href="mailto:og.guifranco@gmail.com" class="alink">Email ↗</a>
+                    </div>
+                </div>
+            </div>
+            <div class="about-project">
+                <h3 class="about-section-title">Sobre o AI Farm Agent</h3>
+                <p class="about-desc">Sistema autônomo multi-agente que opera seu computador através de linguagem natural. 6 agentes especializados, cascata de interação em 3 níveis (API → UIA → Vision), self-healing e memória de workflows.</p>
+                <div class="about-stats">
+                    <div class="astat"><span class="astat-val">6</span><span class="astat-label">Agentes</span></div>
+                    <div class="astat"><span class="astat-val">3</span><span class="astat-label">Níveis</span></div>
+                    <div class="astat"><span class="astat-val">12+</span><span class="astat-label">Apps</span></div>
+                    <div class="astat"><span class="astat-val">5</span><span class="astat-label">Estratégias</span></div>
+                </div>
+                <div class="about-stack">
+                    <span class="stag">Python 3.11+</span>
+                    <span class="stag">Claude API</span>
+                    <span class="stag">Flask + SocketIO</span>
+                    <span class="stag">pywinauto</span>
+                    <span class="stag">Playwright</span>
+                    <span class="stag">EasyOCR</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <span>⬡ Desenvolvido por <a href="https://github.com/ognistie" target="_blank">@ognistie</a> · Guilherme Moraes Franco · AI Farm Agent v2.0</span>
     </footer>
 </div>
 

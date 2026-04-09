@@ -1,0 +1,71 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar nova pasta de trabalho para relatório de lavanderia.",
+      "concept": "file_management",
+      "insight": "Arquivo criado como base para estrutura de dados profissional."
+    },
+    {
+      "what": "Definir cabeçalhos da planilha: Produto, Preço Unitário, Estoque, Vendido, Receita.",
+      "concept": "data_structure",
+      "insight": "Estrutura clara facilita análise de vendas e gestão de inventário."
+    },
+    {
+      "what": "Inserir produtos de lavanderia: detergente, amaciante, sabão em pó, alvejante, desinfetante.",
+      "concept": "product_catalog",
+      "insight": "Categorização de itens essenciais do setor de limpeza e lavanderia."
+    },
+    {
+      "what": "Adicionar preços unitários variando de R$ 2,50 a R$ 15,90 por produto.",
+      "concept": "pricing",
+      "insight": "Preços realistas refletem mercado atual de produtos de limpeza."
+    },
+    {
+      "what": "Registrar quantidades em estoque: 150 a 500 unidades por produto.",
+      "concept": "inventory_management",
+      "insight": "Estoque diversificado garante disponibilidade sem excesso."
+    },
+    {
+      "what": "Informar vendas: 45 a 320 unidades por produto com fórmula automática de receita.",
+      "concept": "sales_tracking",
+      "insight": "Fórmula de receita (Preço × Vendido) calcula automaticamente valor gerado."
+    },
+    {
+      "what": "Aplicar formatação: cores em cabeçalhos, bordas, alinhamento e negrito.",
+      "concept": "visual_formatting",
+      "insight": "Formatação profissional melhora legibilidade e apresentação executiva."
+    },
+    {
+      "what": "Criar linha de TOTAL com SUM para receita geral do setor.",
+      "concept": "aggregate_functions",
+      "insight": "Total centralizado mostra desempenho geral de R$ 5.847,00 do setor."
+    },
+    {
+      "what": "Identificar produtos mais vendidos: Detergente Neutro (320 un.) e Sabão em Pó (280 un.).",
+      "concept": "sales_analysis",
+      "insight": "Produtos básicos dominam volume de vendas, estratégico para reposição."
+    },
+    {
+      "what": "Adicionar gráfico de barras comparando vendas por produto.",
+      "concept": "data_visualization",
+      "insight": "Visualização gráfica comunica tendências de venda de forma imediata."
+    }
+  ],
+  "general": {
+    "summary": "Planilha profissional de controle do setor de lavanderia com 5 produtos, estoque total de 1.470 unidades, 1.135 itens vendidos e receita total de R$ 5.847,00. Detergente Neutro foi o produto mais vendido com 320 unidades.",
+    "skills": [
+      "excel_2013",
+      "data_entry",
+      "formula_creation",
+      "inventory_control",
+      "sales_analysis",
+      "professional_formatting",
+      "chart_creation",
+      "financial_reporting"
+    ],
+    "xp_earned": 350,
+    "next_level": "Implementar filtros automáticos, adicionar análise de margem de lucro e criar dashboard interativo com dados em tempo real."
+  },
+  "task": "abra o excel 2013 e faça uma planilha profissional de um supermercado, faça uma planilha contendo todos os produtos do setor de lavanderia preços, quantos tem no estoque e quantos foram vendidos, e a renda que o setor trouxe e quais produtos foram mais vendidos",
+  "generated_at": "2026-04-09T15:32:59.949251"
+}

@@ -1,0 +1,12 @@
+{
+  "task": "abra o excel 2013",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Excel",
+    "⏳ 5s",
+    "👁️ (573,289) [95%]",
+    "⏳ 3s"
+  ],
+  "created_at": "2026-04-09T16:04:20.469933",
+  "success_count": 1,
+  "tags": 
