@@ -22,7 +22,11 @@ function initStars(){
 
 function init(){
     initStars();
-    sk=io();
+    sk = io("http://127.0.0.1:5000", {
+    query: {
+        token: "17qXMKndUUepc2Z_PQe7dzLVRuuWR0n3tGCT2ukDb0E"
+    }
+});
     sk.on("connect",()=>{S.c=true;dot("ok");lg("info","SYSTEM ONLINE")});
     sk.on("disconnect",()=>{S.c=false;dot("off");lg("err","CONNECTION LOST")});
     sk.on("status",d=>lg("info",d.msg));
