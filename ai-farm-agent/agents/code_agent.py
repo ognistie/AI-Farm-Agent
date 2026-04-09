@@ -1,17 +1,17 @@
 """
-CodeAgent v16 — Sonnet para conteudo especifico, Haiku para generico.
-O Haiku ignora conteudo da tarefa. O Sonnet segue instrucoes.
+CodeAgent v17 — Migrado para BaseAgent.
+Mantém seleção dinâmica de modelo: Sonnet para conteúdo específico, Haiku para genérico.
 """
 
-import json, os, getpass
-from anthropic import Anthropic
-from core.json_validator import safe_parse
+import os
+import getpass
+from agents.base_agent import BaseAgent
+from core.config import get_config
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 USERNAME = getpass.getuser()
-BASE = "C:/Users/" + USERNAME
+BASE = f"C:/Users/{USERNAME}"
 
-SYSTEM = (
+SYSTEM_PROMPT = (
     "Gere codigo Python que cria um projeto de arquivos.\n"
     "O codigo DEVE:\n"
     "1. import os, subprocess\n"
@@ -29,40 +29,44 @@ SYSTEM = (
     '{"steps":[{"step":1,"description":"...","code":"codigo python completo"}]}'
 )
 
+# Indicadores de conteúdo específico que requerem Sonnet
+_SONNET_INDICATORS = [
+    "titulo", "title", "github.com", "desenvolvido por", "apresentacao",
+    "sobre o", "about", "seções", "sections", "secoes",
+    "conteudo", "content", "texto", "escreva", "coloque",
+    "nome", "link", "url", "http", "logo",
+]
+
 
 def _needs_sonnet(task):
-    """Detecta se a tarefa precisa de conteudo especifico (Sonnet) ou generico (Haiku)."""
+    """Detecta se a tarefa precisa de conteúdo específico (Sonnet) ou genérico (Haiku)."""
     t = str(task).lower()
-    # Se menciona conteudo especifico, titulos, nomes, links → Sonnet
-    indicators = [
-        "titulo", "title", "github.com", "desenvolvido por", "apresentacao",
-        "sobre o", "about", "seções", "sections", "secoes",
-        "conteudo", "content", "texto", "escreva", "coloque",
-        "nome", "link", "url", "http", "logo"
-    ]
-    for ind in indicators:
-        if ind in t:
-            return True
-    return False
+    return any(ind in t for ind in _SONNET_INDICATORS)
 
 
-class CodeAgent:
+class CodeAgent(BaseAgent):
+    """Agente especialista em criação de código e projetos."""
+
     def __init__(self):
-        self.name = "CODE"
+        super().__init__(name="CODE", system_prompt=SYSTEM_PROMPT)
+        self._config = get_config()
 
     def plan(self, task, context=None):
-        # Escolhe modelo baseado na complexidade do conteudo
-        use_sonnet = _needs_sonnet(task)
-        model = "claude-sonnet-4-20250514" if use_sonnet else "claude-haiku-4-5-20251001"
+        """Gera plano com seleção dinâmica de modelo."""
+        task_text = self._extract_task_text(task)
 
+        # Escolhe modelo baseado na complexidade do conteúdo
+        use_sonnet = _needs_sonnet(task_text)
         if use_sonnet:
-            print("  [CODE] Usando Sonnet (conteudo especifico)")
+            model = self._config.get("models.strong")
+            self.logger.info("Usando Sonnet (conteúdo específico)")
         else:
-            print("  [CODE] Usando Haiku (estrutura simples)")
+            model = self._config.get("models.fast")
+            self.logger.info("Usando Haiku (estrutura simples)")
 
         message = (
             "TAREFA (siga EXATAMENTE o que esta escrito, palavra por palavra):\n"
-            + str(task) + "\n\n"
+            + task_text + "\n\n"
             "CHECKLIST antes de gerar o codigo:\n"
             "- O titulo/nome do site e EXATAMENTE o que foi pedido? (nao 'Meu Site')\n"
             "- O conteudo fala sobre o TEMA pedido? (nao generico)\n"
@@ -74,10 +78,15 @@ class CodeAgent:
         )
 
         try:
-            resp = client.messages.create(model=model, max_tokens=8000, system=SYSTEM,
-                messages=[{"role": "user", "content": message}])
-            raw = resp.content[0].text.strip()
+            raw = self._client.message(
+                model=model,
+                system=self.system_prompt,
+                user_content=message,
+                max_tokens=8000,
+            )
+            from core.json_validator import safe_parse
             plan = safe_parse(raw, model)
+
             steps = []
             for st in plan.get("steps", []):
                 code = st.get("code", "")
@@ -86,8 +95,17 @@ class CodeAgent:
                     "step": st.get("step", 1),
                     "description": st.get("description", ""),
                     "action": "run_python",
-                    "params": {"code": code, "description": st.get("description", "")}
+                    "params": {"code": code, "description": st.get("description", "")},
+                    "agent": "CODE",
                 })
+
+            self.logger.info(f"Plano: {len(steps)} steps (model={model.split('-')[1]})")
+            self._metrics["total_plans"] += 1
+            self._metrics["successful_plans"] += 1
             return {"steps": steps, "agent": "CODE"}
-        except Exception as ex:
-            return {"steps": [], "error": str(ex), "agent": "CODE"}
+
+        except Exception as e:
+            self.logger.error(f"Erro: {e}")
+            self._metrics["total_plans"] += 1
+            self._metrics["failed_plans"] += 1
+            return {"steps": [], "error": str(e), "agent": "CODE"}

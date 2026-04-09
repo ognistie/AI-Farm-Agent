@@ -1,21 +1,14 @@
 """
-DesktopAgent v12 — Fix Teams: vai para Chat PRIMEIRO, depois pesquisa.
-O Ctrl+E pesquisa globalmente e abre Connections. Errado.
-A sequencia correta:
-1. Abrir Teams
-2. Clicar na aba Chat na barra lateral
-3. Clicar na barra de pesquisa OU usar atalho para filtrar chats
-4. Digitar nome da pessoa
-5. Clicar na conversa que aparece
-6. Digitar mensagem
-7. Enviar
+DesktopAgent v13 — Migrado para ai_client centralizado.
+Mantém todas as rotinas hardcoded e _build_steps intactos.
+Fallback LLM agora usa client centralizado.
 """
 
-import json, os
-from anthropic import Anthropic
+import json
+import os
+from core.ai_client import get_client
+from core.config import get_config
 from core.json_validator import safe_parse
-
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
 def _build_steps(app, params):
@@ -32,39 +25,29 @@ def _build_steps(app, params):
         steps.append({"step": n[0], "action": action, "params": p, "description": desc, "agent": "DESKTOP"})
 
     # === TEAMS ===
-    # Fluxo correto: Chat primeiro, depois pesquisa DENTRO do chat
     if app in ("teams", "microsoft teams"):
         add("app_search", {"name": "Microsoft Teams"}, "Abrir Teams")
         add("wait", {"seconds": 5}, "Aguardar Teams carregar")
         add("focus_window", {"title": "Teams"}, "Focar janela do Teams")
         add("wait", {"seconds": 1}, "Aguardar foco")
-        # 1. Vai para a aba Chat clicando nela (garante contexto de chat)
         add("vision_click", {"description": "texto 'Chat' na barra lateral esquerda DENTRO da janela do Teams, e um dos icones na coluna vertical do lado esquerdo com texto 'Chat' embaixo"}, "Ir para aba Chat")
         add("wait", {"seconds": 2}, "Aguardar lista de chats carregar")
-        # 2. Usa o campo de filtro/busca que aparece DENTRO da area de Chat
-        #    No Teams novo, tem um icone de filtro ou campo no topo da lista de chats
         add("hotkey", {"keys": ["ctrl", "shift", "f"]}, "Filtrar chats (Ctrl+Shift+F)")
         add("wait", {"seconds": 1}, "Aguardar campo de filtro")
-        # 3. Digita o nome para filtrar
         add("type_text", {"text": person}, "Filtrar por: " + person)
         add("wait", {"seconds": 2}, "Aguardar resultados do filtro")
-        # 4. O primeiro resultado filtrado e a conversa — clica nela
         add("vision_click", {"description": "conversa com " + person + " que aparece na lista filtrada de chats DENTRO do Teams, deve ser o primeiro item da lista apos o filtro"}, "Abrir conversa com " + person)
         add("wait", {"seconds": 2}, "Aguardar conversa carregar")
-        # 5. Agora o campo de mensagem esta visivel — clica nele para garantir foco
         add("vision_click", {"description": "campo de texto 'Digite uma mensagem' na PARTE INFERIOR da conversa DENTRO do Teams"}, "Focar campo de mensagem")
         add("wait", {"seconds": 0.5}, "Aguardar")
         if action_type in ("send_message", "") and message:
-            # 6. Digita via clipboard (preserva acentos)
             add("type_text", {"text": message}, "Digitar: " + message[:40])
             add("wait", {"seconds": 1}, "Aguardar texto")
-            # 7. Envia
             add("hotkey", {"keys": ["enter"]}, "Enviar mensagem")
         elif action_type == "call":
             add("vision_click", {"description": "icone de telefone no canto superior direito DENTRO da conversa do Teams"}, "Ligar")
         elif action_type == "video_call":
             add("vision_click", {"description": "icone de camera no canto superior direito DENTRO da conversa do Teams"}, "Videochamada")
-        # Limpa filtro para nao atrapalhar proxima vez
         add("hotkey", {"keys": ["escape"]}, "Limpar filtro")
         return steps
 
@@ -101,7 +84,7 @@ def _build_steps(app, params):
         add("type_text", {"text": text}, "Digitar texto")
         return steps
 
-    # === EXCEL (abrir visual) ===
+    # === EXCEL ===
     if app in ("excel", "microsoft excel"):
         add("app_search", {"name": "Excel"}, "Abrir Excel")
         add("wait", {"seconds": 5}, "Aguardar")
@@ -116,8 +99,7 @@ def _build_steps(app, params):
         return steps
 
     # === GENERICO ===
-    generic = {"paint": "Paint", "calculadora": "Calculadora", "calculator": "Calculadora",
-               "spotify": "Spotify"}
+    generic = {"paint": "Paint", "calculadora": "Calculadora", "calculator": "Calculadora", "spotify": "Spotify"}
     if app in generic:
         add("app_search", {"name": generic[app]}, "Abrir " + generic[app])
         add("wait", {"seconds": 3}, "Aguardar")
@@ -161,8 +143,12 @@ PROMPT_FALLBACK = (
 
 
 class DesktopAgent:
+    """Agente especialista em interação com apps desktop."""
+
     def __init__(self):
-        self.model = "claude-sonnet-4-20250514"
+        self._config = get_config()
+        self._client = get_client()
+        self.model = self._config.get_model("desktop")
         self.name = "DESKTOP"
 
     def plan(self, task, context=None):
@@ -175,26 +161,37 @@ class DesktopAgent:
             params = context
 
         app = (params.get("app", "") or "").lower().strip()
+
+        # Tenta rotina hardcoded primeiro ($0)
         if app:
             steps = _build_steps(app, params)
             if steps:
-                print("  [DESKTOP] Rotina: " + str(len(steps)) + " steps ($0)")
+                print(f"  [DESKTOP] Rotina: {len(steps)} steps ($0)")
                 return {"steps": steps, "agent": "DESKTOP"}
 
-        for kw, detected in {"teams":"teams","whatsapp":"whatsapp","whats":"whatsapp",
-            "notepad":"notepad","bloco de notas":"notepad","word":"word","excel":"excel",
-            "vscode":"vscode","vs code":"vscode","paint":"paint","calculadora":"calculadora",
-            "spotify":"spotify","explorer":"explorer"}.items():
+        # Detecção por keyword
+        for kw, detected in {
+            "teams": "teams", "whatsapp": "whatsapp", "whats": "whatsapp",
+            "notepad": "notepad", "bloco de notas": "notepad", "word": "word",
+            "excel": "excel", "vscode": "vscode", "vs code": "vscode",
+            "paint": "paint", "calculadora": "calculadora",
+            "spotify": "spotify", "explorer": "explorer",
+        }.items():
             if kw in str(task_text).lower():
                 steps = _build_steps(detected, {"app": detected, "action_type": "open"})
                 if steps:
                     return {"steps": steps, "agent": "DESKTOP"}
 
+        # Fallback: LLM via client centralizado
         print("  [DESKTOP] LLM fallback ($)")
         try:
-            resp = client.messages.create(model=self.model, max_tokens=2500, system=PROMPT_FALLBACK,
-                messages=[{"role": "user", "content": "TAREFA: " + str(task_text) + "\nJSON puro."}])
-            plan = safe_parse(resp.content[0].text.strip(), self.model)
+            raw = self._client.message(
+                model=self.model,
+                system=PROMPT_FALLBACK,
+                user_content=f"TAREFA: {task_text}\nJSON puro.",
+                max_tokens=2500,
+            )
+            plan = safe_parse(raw, self.model)
             for st in plan.get("steps", []):
                 st["agent"] = "DESKTOP"
             return {"steps": plan.get("steps", []), "agent": "DESKTOP"}

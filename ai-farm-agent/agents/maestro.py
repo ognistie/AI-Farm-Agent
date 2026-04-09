@@ -1,12 +1,13 @@
 """
-Maestro v12 — Objetivos verificaveis + cache que NAO salva vazios.
+Maestro v13 — Migrado para ai_client centralizado.
+Mantém cache, memória, e lógica de roteamento intactos.
 """
 
-import json, os
-from anthropic import Anthropic
+import json
+import os
+from core.ai_client import get_client
+from core.config import get_config
 from core.json_validator import safe_parse
-
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 PROMPT = (
     "Voce e o MAESTRO do AI Farm Agent.\n\n"
@@ -31,13 +32,15 @@ PROMPT = (
 
 class Maestro:
     def __init__(self):
-        self.model = "claude-haiku-4-5-20251001"
+        self._config = get_config()
+        self._client = get_client()
+        self.model = self._config.get_model("maestro")
         self._cache = {}
 
     def analyze(self, task):
         print("\n[Maestro] Analisando...")
 
-        # Cache (so retorna se tem subtasks validas)
+        # Cache (só retorna se tem subtasks válidas)
         key = task.lower().strip()[:80]
         if key in self._cache:
             cached = self._cache[key]
@@ -45,36 +48,45 @@ class Maestro:
                 print("[Maestro] Cache hit!")
                 return cached
             else:
-                # Cache invalido, remove
                 del self._cache[key]
 
-        # Memoria
+        # Memória
         try:
             from memory.workflow_store import find_similar_workflow
             wf = find_similar_workflow(task)
             if wf:
-                print("[Maestro] Workflow da memoria!")
+                print("[Maestro] Workflow da memória!")
                 return {
-                    "analysis": "Template da memoria",
-                    "subtasks": [{"agent": wf["agent"], "task": wf["task"],
-                                  "params": wf.get("params", {}),
-                                  "objectives": wf.get("objectives", []),
-                                  "depends_on": None}],
-                    "skills": list(wf.get("tags", []))
+                    "analysis": "Template da memória",
+                    "subtasks": [{
+                        "agent": wf["agent"],
+                        "task": wf["task"],
+                        "params": wf.get("params", {}),
+                        "objectives": wf.get("objectives", []),
+                        "depends_on": None,
+                    }],
+                    "skills": list(wf.get("tags", [])),
                 }
-        except: pass
+        except Exception:
+            pass
 
-        # API
+        # API via client centralizado
         try:
-            resp = client.messages.create(model=self.model, max_tokens=1500, system=PROMPT,
-                messages=[{"role": "user", "content": "TAREFA: " + task + "\nJSON puro."}])
-            plan = safe_parse(resp.content[0].text.strip(), self.model)
+            raw = self._client.message(
+                model=self.model,
+                system=PROMPT,
+                user_content=f"TAREFA: {task}\nJSON puro.",
+                max_tokens=self._config.get("limits.max_tokens_fast", 1500),
+            )
+            plan = safe_parse(raw, self.model)
+
             if "subtasks" not in plan or len(plan.get("subtasks", [])) == 0:
                 return {"error": True, "message": "Sem subtasks"}
-            # So cacheia se tem subtasks validas
+
             self._cache[key] = plan
-            print("[Maestro] " + str(len(plan["subtasks"])) + " subtask(s)")
+            print(f"[Maestro] {len(plan['subtasks'])} subtask(s)")
             return plan
+
         except Exception as ex:
-            print("[Maestro] Erro: " + str(ex))
+            print(f"[Maestro] Erro: {ex}")
             return {"error": True, "message": str(ex)}

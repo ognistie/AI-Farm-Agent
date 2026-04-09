@@ -1,0 +1,81 @@
+# ══════════════════════════════════════════
+#  AI Farm Agent — Configuration
+# ══════════════════════════════════════════
+#
+#  Este arquivo centraliza TODAS as configurações do sistema.
+#  Edite aqui em vez de alterar código-fonte.
+#
+#  Valores omitidos usam os defaults de core/config.py
+
+# Modelos disponíveis
+models:
+  fast: "claude-haiku-4-5-20251001"        # Routing, dados, web, arquivos
+  strong: "claude-sonnet-4-20250514"       # Código, desktop, visão, retry
+
+# Qual modelo cada agente usa
+agent_models:
+  maestro: fast
+  vision_maestro: fast
+  data: fast
+  web: fast
+  code: strong
+  desktop: strong
+  file: fast
+  memory: fast
+
+# Limites de segurança e performance
+limits:
+  max_task_length: 2000          # Máximo de caracteres por tarefa
+  max_steps_per_agent: 10        # Máximo de steps por plano
+  max_subtasks: 5                # Máximo de subtasks por tarefa
+  task_timeout_seconds: 120      # Timeout global por tarefa
+  max_retries: 3                 # Tentativas do retry engine
+  max_tokens_fast: 1500          # Max tokens para modelos fast
+  max_tokens_strong: 2500        # Max tokens para modelos strong
+
+# Servidor web
+server:
+  host: "127.0.0.1"
+  port: 5000
+  allowed_origins: "http://127.0.0.1:5000"
+
+# Interaction Layer (cascata L1 → L2 → L3)
+interaction:
+  uia_timeout: 5                 # Timeout para conectar via UIA (segundos)
+  uia_cache_seconds: 5           # Cache de conexão UIA
+  vision_confidence_min: 0.15    # Confiança mínima para aceitar click visual
+  taskbar_margin_px: 60          # Margem inferior para rejeitar clicks na taskbar
+  screenshot_max_width: 1280     # Largura máxima do screenshot para Vision
+
+# Wait Engine
+waits:
+  window_timeout: 15             # Timeout para esperar janela
+  element_timeout: 10            # Timeout para esperar elemento
+  ocr_interval: 1.0              # Intervalo entre scans OCR
+  poll_interval: 0.5             # Intervalo de polling geral
+
+# OCR Local (EasyOCR)
+ocr:
+  languages: ["pt", "en"]
+  gpu: false
+  confidence_min: 0.5
+
+# Diretórios
+paths:
+  captures_dir: "captures"
+  reports_dir: "reports"
+  logs_dir: "logs"
+  workflows_dir: "memory/workflows"
+  state_maps_dir: "state_maps"
+
+# Segurança
+security:
+  blocked_commands:
+    - "rm -rf"
+    - "rmdir /s"
+    - "format c"
+    - "del /f /s"
+    - "shutdown"
+    - "reg delete"
+    - "diskpart"
+    - "bcdedit"

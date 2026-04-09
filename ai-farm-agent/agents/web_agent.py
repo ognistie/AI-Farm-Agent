@@ -1,18 +1,12 @@
 """
-WebAgent v11 — Upgrade do v9.
-MUDANCAS:
-- Prompt com exemplos COMPLETOS (Google, YouTube, formularios)
-- Instrucoes para lidar com cookies/popups
-- wait apos navegacao
+WebAgent v12 — Migrado para BaseAgent.
+Especialista em navegação web via Playwright.
 """
 
-import json, os
-from anthropic import Anthropic
-from core.json_validator import safe_parse
+import json
+from agents.base_agent import BaseAgent
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
-PROMPT = (
+SYSTEM_PROMPT = (
     "Voce e o WEB AGENT — especialista em Playwright.\n"
     "NUNCA use open_app para browser. web_goto ja abre automaticamente.\n\n"
     "ACOES: web_goto(url) | web_type(field, text) | web_click(target)\n"
@@ -43,21 +37,40 @@ PROMPT = (
 )
 
 
-class WebAgent:
+class WebAgent(BaseAgent):
+    """Agente especialista em navegação web."""
+
     def __init__(self):
-        self.model = "claude-haiku-4-5-20251001"
-        self.name = "WEB"
+        super().__init__(name="WEB", system_prompt=SYSTEM_PROMPT)
 
     def plan(self, task, context=None):
+        """Gera plano de navegação web."""
+        task_text = self._extract_task_text(task)
+
         ctx = ""
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
+
         try:
-            resp = client.messages.create(model=self.model, max_tokens=2000, system=PROMPT,
-                messages=[{"role": "user", "content": "TAREFA: " + str(task) + ctx + "\nJSON puro."}])
-            plan = safe_parse(resp.content[0].text.strip(), self.model)
+            raw = self._client.message(
+                model=self.model,
+                system=self.system_prompt,
+                user_content=f"TAREFA: {task_text}{ctx}\nJSON puro.",
+                max_tokens=2000,
+            )
+            from core.json_validator import safe_parse
+            plan = safe_parse(raw, self.model)
+
             for st in plan.get("steps", []):
                 st["agent"] = "WEB"
+
+            self.logger.info(f"Plano: {len(plan.get('steps', []))} steps")
+            self._metrics["total_plans"] += 1
+            self._metrics["successful_plans"] += 1
             return {"steps": plan.get("steps", []), "agent": "WEB"}
-        except Exception as ex:
-            return {"steps": [], "error": str(ex), "agent": "WEB"}
+
+        except Exception as e:
+            self.logger.error(f"Erro: {e}")
+            self._metrics["total_plans"] += 1
+            self._metrics["failed_plans"] += 1
+            return {"steps": [], "error": str(e), "agent": "WEB"}

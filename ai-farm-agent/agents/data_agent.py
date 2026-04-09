@@ -1,17 +1,17 @@
 """
-DataAgent v11 — Upgrade do v9.
-MUDANCAS: Prompt limpo, template mantido (ja funcionava bem).
+DataAgent v12 — Migrado para BaseAgent.
+Especialista em Excel/dados. Usa openpyxl para gerar planilhas.
 """
 
-import json, os, getpass
-from anthropic import Anthropic
-from core.json_validator import safe_parse
+import json
+import os
+import getpass
+from agents.base_agent import BaseAgent
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 USERNAME = getpass.getuser()
-BASE = "C:/Users/" + USERNAME
+BASE = f"C:/Users/{USERNAME}"
 
-PROMPT = (
+SYSTEM_PROMPT = (
     "Voce e o DATA AGENT — especialista senior em Excel com Python.\n"
     "Seu codigo funciona na PRIMEIRA tentativa.\n\n"
     "REGRAS:\n"
@@ -54,25 +54,49 @@ PROMPT = (
 )
 
 
-class DataAgent:
+class DataAgent(BaseAgent):
+    """Agente especialista em dados e Excel."""
+
     def __init__(self):
-        self.model = "claude-haiku-4-5-20251001"
-        self.name = "DATA"
+        super().__init__(name="DATA", system_prompt=SYSTEM_PROMPT)
 
     def plan(self, task, context=None):
+        """Gera plano e converte steps de code para run_python."""
+        task_text = self._extract_task_text(task)
+
         ctx = ""
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
+
         try:
-            resp = client.messages.create(model=self.model, max_tokens=4000, system=PROMPT,
-                messages=[{"role": "user", "content": "TAREFA: " + str(task) + ctx + "\nJSON puro."}])
-            raw = resp.content[0].text.strip()
+            raw = self._client.message(
+                model=self.model,
+                system=self.system_prompt,
+                user_content=f"TAREFA: {task_text}{ctx}\nJSON puro.",
+                max_tokens=4000,
+            )
+            from core.json_validator import safe_parse
             plan = safe_parse(raw, self.model)
+
             steps = []
             for st in plan.get("steps", []):
-                code = st.get("code", "").replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-                steps.append({"step": st.get("step", 1), "description": st.get("description", ""),
-                    "action": "run_python", "params": {"code": code, "description": st.get("description", "")}})
+                code = st.get("code", "")
+                code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
+                steps.append({
+                    "step": st.get("step", 1),
+                    "description": st.get("description", ""),
+                    "action": "run_python",
+                    "params": {"code": code, "description": st.get("description", "")},
+                    "agent": "DATA",
+                })
+
+            self.logger.info(f"Plano: {len(steps)} steps")
+            self._metrics["total_plans"] += 1
+            self._metrics["successful_plans"] += 1
             return {"steps": steps, "agent": "DATA"}
-        except Exception as ex:
-            return {"steps": [], "error": str(ex), "agent": "DATA"}
+
+        except Exception as e:
+            self.logger.error(f"Erro: {e}")
+            self._metrics["total_plans"] += 1
+            self._metrics["failed_plans"] += 1
+            return {"steps": [], "error": str(e), "agent": "DATA"}

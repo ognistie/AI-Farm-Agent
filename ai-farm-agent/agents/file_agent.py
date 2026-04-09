@@ -1,17 +1,17 @@
 """
-FileAgent v11 — Upgrade do v9.
-MUDANCAS: Fix f-string braces, exemplos no prompt.
+FileAgent v12 — Migrado para BaseAgent.
+Especialista em organização de arquivos. Usa os/shutil/glob.
 """
 
-import json, os, getpass
-from anthropic import Anthropic
-from core.json_validator import safe_parse
+import json
+import os
+import getpass
+from agents.base_agent import BaseAgent
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 USERNAME = getpass.getuser()
-BASE = "C:/Users/" + USERNAME
+BASE = f"C:/Users/{USERNAME}"
 
-PROMPT = (
+SYSTEM_PROMPT = (
     "Voce e o FILE AGENT — sysadmin senior em arquivos Windows.\n"
     "Use os.path.expanduser('~') para obter o diretorio do usuario.\n"
     "Downloads: expanduser + /Downloads. Desktop: expanduser + /Desktop.\n\n"
@@ -43,25 +43,49 @@ PROMPT = (
 )
 
 
-class FileAgent:
+class FileAgent(BaseAgent):
+    """Agente especialista em gerenciamento de arquivos."""
+
     def __init__(self):
-        self.model = "claude-haiku-4-5-20251001"
-        self.name = "FILE"
+        super().__init__(name="FILE", system_prompt=SYSTEM_PROMPT)
 
     def plan(self, task, context=None):
+        """Gera plano e converte steps de code para run_python."""
+        task_text = self._extract_task_text(task)
+
         ctx = ""
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
+
         try:
-            resp = client.messages.create(model=self.model, max_tokens=3000, system=PROMPT,
-                messages=[{"role": "user", "content": "TAREFA: " + str(task) + ctx + "\nJSON puro."}])
-            raw = resp.content[0].text.strip()
+            raw = self._client.message(
+                model=self.model,
+                system=self.system_prompt,
+                user_content=f"TAREFA: {task_text}{ctx}\nJSON puro.",
+                max_tokens=3000,
+            )
+            from core.json_validator import safe_parse
             plan = safe_parse(raw, self.model)
+
             steps = []
             for st in plan.get("steps", []):
-                code = st.get("code", "").replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-                steps.append({"step": st.get("step", 1), "description": st.get("description", ""),
-                    "action": "run_python", "params": {"code": code, "description": st.get("description", "")}})
+                code = st.get("code", "")
+                code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
+                steps.append({
+                    "step": st.get("step", 1),
+                    "description": st.get("description", ""),
+                    "action": "run_python",
+                    "params": {"code": code, "description": st.get("description", "")},
+                    "agent": "FILE",
+                })
+
+            self.logger.info(f"Plano: {len(steps)} steps")
+            self._metrics["total_plans"] += 1
+            self._metrics["successful_plans"] += 1
             return {"steps": steps, "agent": "FILE"}
-        except Exception as ex:
-            return {"steps": [], "error": str(ex), "agent": "FILE"}
+
+        except Exception as e:
+            self.logger.error(f"Erro: {e}")
+            self._metrics["total_plans"] += 1
+            self._metrics["failed_plans"] += 1
+            return {"steps": [], "error": str(e), "agent": "FILE"}
