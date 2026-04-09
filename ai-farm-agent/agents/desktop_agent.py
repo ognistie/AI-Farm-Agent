@@ -11,13 +11,11 @@ A sequencia correta:
 7. Enviar
 """
 
-import json, os, getpass
+import json, os
 from anthropic import Anthropic
 from core.json_validator import safe_parse
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-USERNAME = getpass.getuser()
-BASE = "C:/Users/" + USERNAME
 
 
 def _build_steps(app, params):
@@ -149,7 +147,7 @@ def _build_steps(app, params):
 
 PROMPT_FALLBACK = (
     "Voce e o DESKTOP AGENT para apps SEM rotina conhecida.\n"
-    "Windows PT-BR. Usuario: " + USERNAME + ".\n\n"
+    "Windows PT-BR.\n\n"
     "PREFIRA ATALHOS DE TECLADO sobre cliques visuais.\n"
     "ACOES: app_search(name) | app_type(window_title, text) | focus_window(title)\n"
     "       vision_click(description) | vision_type(description, text)\n"

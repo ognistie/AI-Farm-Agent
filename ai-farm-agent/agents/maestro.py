@@ -2,13 +2,11 @@
 Maestro v12 — Objetivos verificaveis + cache que NAO salva vazios.
 """
 
-import json, os, getpass
+import json, os
 from anthropic import Anthropic
 from core.json_validator import safe_parse
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-USERNAME = getpass.getuser()
-BASE = "C:/Users/" + USERNAME
 
 PROMPT = (
     "Voce e o MAESTRO do AI Farm Agent.\n\n"
@@ -27,7 +25,7 @@ PROMPT = (
     '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"oi"},'
     '"objectives":["Teams aberto e visivel","Aba Chat selecionada","Conversa com Joao aberta","Mensagem enviada"],'
     '"depends_on":null}],"skills":["teams"]}\n\n'
-    "Prefira 1 subtask. Windows PT-BR. Usuario: " + USERNAME
+    "Prefira 1 subtask. Windows PT-BR."
 )
 
 

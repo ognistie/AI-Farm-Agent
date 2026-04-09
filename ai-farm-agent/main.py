@@ -24,6 +24,26 @@ if not api_key or api_key == "sk-ant-COLE_SUA_CHAVE_AQUI":
     print("=" * 60 + "\n")
     sys.exit(1)
 
+# Verifica SECRET_KEY (seguranca do Flask)
+secret_key = os.getenv("SECRET_KEY", "")
+if not secret_key or secret_key == "GERE_UMA_CHAVE_SECRETA_AQUI":
+    print("\n" + "=" * 60)
+    print("  ⚠️  SECRET_KEY não configurada!")
+    print("  Gere uma com: python -c \"import secrets; print(secrets.token_hex(32))\"")
+    print("  Cole no arquivo .env")
+    print("=" * 60 + "\n")
+    sys.exit(1)
+
+# Verifica AUTH_TOKEN (autenticacao SocketIO)
+auth_token = os.getenv("AUTH_TOKEN", "")
+if not auth_token or auth_token == "GERE_UM_TOKEN_AQUI":
+    print("\n" + "=" * 60)
+    print("  ⚠️  AUTH_TOKEN não configurado!")
+    print("  Gere um com: python -c \"import secrets; print(secrets.token_urlsafe(32))\"")
+    print("  Cole no arquivo .env")
+    print("=" * 60 + "\n")
+    sys.exit(1)
+
 # Cria diretórios necessários
 BASE_DIR = Path(__file__).parent
 CAPTURES_DIR = BASE_DIR / "captures"
@@ -47,6 +67,9 @@ def main():
     print("  🌱 AI Farm Agent — Iniciando...")
     print(f"  📡 Servidor: http://{HOST}:{PORT}")
     print("  🔑 API Key: ...{}".format(api_key[-8:]))
+    print("  🔒 SECRET_KEY: configurada")
+    print("  🛡️  AUTH_TOKEN: configurado")
+    print("  🌐 CORS: " + os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5000"))
     print("=" * 60 + "\n")
 
     # Importa servidor aqui para garantir que .env já foi carregado

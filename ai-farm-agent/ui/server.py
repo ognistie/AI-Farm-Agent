@@ -1,6 +1,12 @@
 """
-UI Server v11 — Upgrade do v9.
-MUDANCAS:
+UI Server v12 — Security Upgrade.
+MUDANCAS v12:
+- SECRET_KEY vem do .env (nao hardcoded)
+- CORS restrito a origens do .env
+- Autenticacao por token no SocketIO
+- Sanitizacao de tarefas (limite de tamanho)
+- Protecao contra path traversal nos captures/reports
+MUDANCAS v11:
 - Passa params do Maestro para Desktop Agent
 - NAO tira screenshot durante acoes desktop (evita roubar foco)
 - NAO restaura browser entre passos (so no final)
@@ -8,9 +14,9 @@ MUDANCAS:
 - Salva workflow bem-sucedido na memoria
 - Action Logger registra cada acao
 """
-import os, threading, time, traceback
-from flask import Flask, render_template, send_from_directory, jsonify
-from flask_socketio import SocketIO, emit
+import os, threading, time, traceback, re
+from flask import Flask, render_template, send_from_directory, jsonify, abort, request
+from flask_socketio import SocketIO, emit, disconnect
 from agents.maestro import Maestro
 from agents.data_agent import DataAgent
 from agents.web_agent import WebAgent
@@ -27,11 +33,20 @@ try:
 except:
     VisionMaestro = None
 
+# === SEGURANCA: Carrega configs do .env ===
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+AUTH_TOKEN = os.getenv("AUTH_TOKEN", "")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5000")
+ALLOWED_ORIGINS_LIST = [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
+
+# Limite de tamanho de tarefa (previne abuso)
+MAX_TASK_LENGTH = 2000
+
 app = Flask(__name__,
     template_folder=os.path.join(os.path.dirname(__file__),"templates"),
     static_folder=os.path.join(os.path.dirname(__file__),"static"))
-app.config["SECRET_KEY"] = "ai-farm-v11"
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+app.config["SECRET_KEY"] = SECRET_KEY
+socketio = SocketIO(app, cors_allowed_origins=ALLOWED_ORIGINS_LIST, async_mode="threading")
 
 maestro = Maestro()
 agents = {"DATA":DataAgent(),"WEB":WebAgent(),"CODE":CodeAgent(),"DESKTOP":DesktopAgent(),"FILE":FileAgent()}
@@ -52,16 +67,46 @@ RETRY_ACTIONS = {"vision_click","vision_type","uia_click","uia_type"}
 
 @app.route("/")
 def index(): return render_template("index.html")
+
 @app.route("/captures/<path:f>")
-def serve_cap(f): return send_from_directory(os.path.join(os.path.dirname(os.path.dirname(__file__)),"captures"),f)
+def serve_cap(f):
+    # Protecao contra path traversal
+    if ".." in f or f.startswith("/"):
+        abort(403)
+    cap_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),"captures")
+    full_path = os.path.realpath(os.path.join(cap_dir, f))
+    if not full_path.startswith(os.path.realpath(cap_dir)):
+        abort(403)
+    return send_from_directory(cap_dir, f)
+
 @app.route("/reports/<path:f>")
-def serve_rep(f): return send_from_directory(os.path.join(os.path.dirname(os.path.dirname(__file__)),"reports"),f)
+def serve_rep(f):
+    # Protecao contra path traversal
+    if ".." in f or f.startswith("/"):
+        abort(403)
+    rep_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),"reports")
+    full_path = os.path.realpath(os.path.join(rep_dir, f))
+    if not full_path.startswith(os.path.realpath(rep_dir)):
+        abort(403)
+    return send_from_directory(rep_dir, f)
+
 @socketio.on("connect")
-def on_connect(): emit("status",{"type":"connected","msg":"Pronto"})
+def on_connect():
+    # === AUTENTICACAO: Verifica token no connect ===
+    token = request.args.get("token", "")
+    if AUTH_TOKEN and token != AUTH_TOKEN:
+        print("  🚫 Conexao recusada: token invalido")
+        disconnect()
+        return
+    emit("status",{"type":"connected","msg":"Pronto"})
+
 @socketio.on("execute_task")
 def on_execute(data):
     task=data.get("task","").strip()
     if not task or state["running"]: emit("error",{"msg":"Vazio ou em execucao"}); return
+    # === SEGURANCA: Limite de tamanho da tarefa ===
+    if len(task) > MAX_TASK_LENGTH:
+        emit("error",{"msg":f"Tarefa muito longa (max {MAX_TASK_LENGTH} chars)"}); return
     threading.Thread(target=_run,args=(task,data.get("dry_run",False),data.get("generate_report",True)),daemon=True).start()
 @socketio.on("force_stop")
 def on_stop():
