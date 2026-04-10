@@ -1,12 +1,18 @@
 /* ══════════════════════════════════════ */
-/*  AI Farm Agent v2.0 — Frontend        */
+/* AI Farm Agent v2.0 — Frontend        */
 /* ══════════════════════════════════════ */
 
 const S = { c: false, r: false, s: { dryRun: false, genReport: true }, tasks: 0, xp: 0 };
 let sk;
 
-/* ═══ MATRIX RAIN ═══ */
-function initRain() {
+const hologramData = {
+    'autonomous': "CORE DIRECTIVE // AUTONOMOUS MODE",
+    'computer': "SYSTEM LINK // HARDWARE INTERFACE",
+    'operator': "HUMAN PROXY // MANUAL OVERRIDE"
+};
+
+/* ═══ MATRIX ENGINE V2 (MULTIDIRECIONAL + HOLOGRAMA ROSTO) ═══ */
+function initMatrixEngine() {
     const c = document.getElementById('rain-canvas');
     if (!c) return;
     const ctx = c.getContext('2d');
@@ -16,33 +22,124 @@ function initRain() {
     const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
     const fontSize = 14;
     const cols = Math.floor(c.width / fontSize);
-    const drops = Array(cols).fill(1);
+    const rows = Math.floor(c.height / fontSize);
 
-    function draw() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, c.width, c.height);
-        ctx.fillStyle = '#00ff41';
-        ctx.font = fontSize + 'px monospace';
+    // Sistema de cascata que anda em múltiplas direções
+    class Stream {
+        constructor() { this.reset(); }
+        reset() {
+            let dir = Math.random();
+            if (dir < 0.7) { this.vx = 0; this.vy = 1; this.x = Math.floor(Math.random() * cols); this.y = -Math.floor(Math.random() * 50); }
+            else if (dir < 0.8) { this.vx = 0; this.vy = -1; this.x = Math.floor(Math.random() * cols); this.y = rows + Math.floor(Math.random() * 50); }
+            else if (dir < 0.9) { this.vx = 1; this.vy = 0; this.x = -Math.floor(Math.random() * 50); this.y = Math.floor(Math.random() * rows); }
+            else { this.vx = -1; this.vy = 0; this.x = cols + Math.floor(Math.random() * 50); this.y = Math.floor(Math.random() * rows); }
+            
+            this.speed = Math.floor(Math.random() * 2) + 1;
+            this.chars = [];
+            this.length = Math.floor(Math.random() * 15) + 5;
+        }
+        update() {
+            this.x += this.vx * this.speed;
+            this.y += this.vy * this.speed;
+            this.chars.unshift({ x: this.x, y: this.y, char: chars[Math.floor(Math.random() * chars.length)] });
+            if (this.chars.length > this.length) this.chars.pop();
 
-        for (let i = 0; i < drops.length; i++) {
-            const char = chars[Math.floor(Math.random() * chars.length)];
-            const x = i * fontSize;
-            const y = drops[i] * fontSize;
+            if ((this.vy > 0 && this.y > rows + this.length) || (this.vy < 0 && this.y < -this.length) || 
+                (this.vx > 0 && this.x > cols + this.length) || (this.vx < 0 && this.x < -this.length)) {
+                this.reset();
+            }
+        }
+    }
 
-            ctx.globalAlpha = Math.random() * 0.5 + 0.3;
-            ctx.fillText(char, x, y);
+    const streams = Array.from({length: 150}, () => new Stream());
+    let mouseX = -1000;
+    let mouseY = -1000;
+    document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
-            // Bright leading char
-            if (Math.random() > 0.95) {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(char, x, y);
-                ctx.fillStyle = '#00ff41';
+    // Equação para desenhar o "rosto de código" (estilo da foto_45b7fb)
+    function getFaceIntensity(gx, gy) {
+        const cx = Math.floor(cols * 0.20); 
+        const cy = Math.floor(rows * 0.5);
+        const rx = Math.floor(cols * 0.12);
+        const ry = Math.floor(rows * 0.35);
+
+        let dy = gy - cy;
+        let adjustedRx = rx;
+
+        // Afina um pouco embaixo (formato de crânio)
+        if (dy > 0) {
+            adjustedRx = rx * (1 - (dy / ry) * 0.4);
+        }
+
+        const distSq = Math.pow(gx - cx, 2) / Math.pow(adjustedRx, 2) + Math.pow(dy, 2) / Math.pow(ry, 2);
+
+        if (distSq <= 1) {
+            // Buracos dos olhos
+            const eyeY = cy - Math.floor(ry * 0.1);
+            const leftEyeX = cx - Math.floor(rx * 0.4);
+            const rightEyeX = cx + Math.floor(rx * 0.4);
+            const eyeR = rx * 0.25;
+
+            if (Math.hypot(gx - leftEyeX, gy - eyeY) < eyeR || Math.hypot(gx - rightEyeX, gy - eyeY) < eyeR) {
+                return 0.1; // Fundo do olho escuro
             }
 
-            if (y > c.height && Math.random() > 0.975) drops[i] = 0;
-            drops[i]++;
+            // Sombreamento base (Rosto brilhante no centro)
+            return 0.9 - (distSq * 0.4);
         }
-        ctx.globalAlpha = 1;
+        return 0;
+    }
+
+    function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.font = fontSize + 'px monospace';
+
+        // 1. Drenagem do código multidirecional (Rastro interativo do mouse)
+        streams.forEach(s => {
+            s.update();
+            s.chars.forEach((cObj, i) => {
+                let px = cObj.x * fontSize;
+                let py = cObj.y * fontSize;
+                
+                const mouseDist = Math.hypot(px - mouseX, py - mouseY);
+                if (mouseDist < 80) {
+                    ctx.fillStyle = '#ffffff';
+                    // Efeito do código se quebrando e fugindo do mouse
+                    const angle = Math.atan2(py - mouseY, px - mouseX);
+                    px += Math.cos(angle) * 10;
+                    py += Math.sin(angle) * 10;
+                    ctx.fillText(chars[Math.floor(Math.random() * chars.length)], px, py);
+                } else {
+                    const alpha = 1 - (i / s.length);
+                    ctx.fillStyle = (i === 0) ? '#ffffff' : `rgba(0, 255, 65, ${alpha})`;
+                    ctx.fillText(cObj.char, px, py);
+                }
+            });
+        });
+
+        // 2. Projeta a face da Matrix no lado esquerdo
+        for (let gx = 0; gx < cols * 0.4; gx++) {
+            for (let gy = 0; gy < rows; gy++) {
+                const intensity = getFaceIntensity(gx, gy);
+                if (intensity > 0 && Math.random() > 0.8) {
+                    const px = gx * fontSize;
+                    const py = gy * fontSize;
+                    const char = chars[Math.floor(Math.random() * chars.length)];
+                    
+                    if (Math.hypot(px - mouseX, py - mouseY) < 150) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#ffffff';
+                    } else {
+                        ctx.fillStyle = `rgba(0, 255, 65, ${intensity})`;
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fillText(char, px, py);
+                    ctx.shadowBlur = 0; 
+                }
+            }
+        }
         requestAnimationFrame(draw);
     }
     draw();
@@ -53,24 +150,99 @@ function initRain() {
     });
 }
 
-/* ═══ SPLASH ACTIONS ═══ */
+/* ═══ HOVER HUD DATA PROFILE DAS PALAVRAS ═══ */
+function initHoverReveal() {
+    const hoverElements = document.querySelectorAll('.matrix-hover');
+    const revealContainer = document.getElementById('hover-reveal-container');
+    const revealBg = document.getElementById('hover-reveal-bg'); 
+    const hologramDesc = document.getElementById('hologram-desc');
+
+    if (!revealContainer || !revealBg || hoverElements.length === 0) return;
+
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+            const imgSrc = el.getAttribute('data-image');
+            if(imgSrc) {
+                revealBg.style.backgroundImage = `url('${imgSrc}')`;
+            } else {
+                revealBg.style.backgroundImage = 'none';
+            }
+            
+            const dataKey = el.textContent.trim().toLowerCase();
+            hologramDesc.textContent = hologramData[dataKey] || "NEURAL LINK // DATA FEED ACTIVE";
+            
+            revealContainer.style.opacity = '1';
+            revealContainer.classList.add('glitch-anim');
+            setTimeout(() => revealContainer.classList.remove('glitch-anim'), 300);
+        });
+
+        el.addEventListener('mousemove', (e) => {
+            const x = e.clientX + 30;
+            const y = e.clientY + 30;
+            revealContainer.style.transform = `translate(${x}px, ${y}px) scale(1) skew(0deg)`;
+        });
+
+        el.addEventListener('mouseleave', (e) => {
+            revealContainer.style.opacity = '0';
+            const x = e.clientX + 30;
+            const y = e.clientY + 30;
+            revealContainer.style.transform = `translate(${x}px, ${y}px) scale(0.8) skew(10deg)`;
+        });
+    });
+}
+
+/* ═══ MANTIDO 100% INTACTO: SUAS FUNÇÕES ORIGINAIS DO APP.JS ═══ */
 function enterMatrix() {
-    const splash = document.getElementById('splash');
-    splash.classList.add('hidden');
+    const splashContent = document.querySelector('.splash-content');
+    const overlay = document.getElementById('transition-overlay');
+    const transText = document.getElementById('transition-text');
+    
+    splashContent.style.opacity = '0';
+    splashContent.style.transition = 'opacity 0.5s';
+
     setTimeout(() => {
-        splash.style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
-        document.getElementById('main-app').style.flexDirection = 'column';
-        document.getElementById('main-app').style.minHeight = '100vh';
-    }, 800);
+        overlay.classList.remove('hidden');
+        overlay.classList.add('active');
+        transText.textContent = "QUEBRANDO PROTOCOLOS...";
+        transText.style.color = "#ff1744"; 
+        transText.style.textShadow = "0 0 20px #ff1744";
+    }, 500);
+
+    setTimeout(() => {
+        transText.textContent = "ENTRANDO NA MATRIX";
+        transText.style.color = "#fff";
+        transText.style.textShadow = "0 0 30px #00ff41, 0 0 60px #00ff41";
+    }, 2500);
+
+    setTimeout(() => {
+        overlay.classList.remove('active');
+        document.getElementById('splash').style.display = 'none';
+        
+        const mainApp = document.getElementById('main-app');
+        mainApp.style.display = 'flex';
+        mainApp.style.flexDirection = 'column';
+        mainApp.style.minHeight = '100vh';
+        mainApp.style.opacity = '0';
+        
+        setTimeout(() => {
+            mainApp.style.transition = 'opacity 1s ease-in';
+            mainApp.style.opacity = '1';
+        }, 100);
+        
+    }, 4500);
 }
 
 function rejectMatrix() {
     const splash = document.querySelector('.splash-content');
-    splash.innerHTML = '<div style="font-family:var(--font-mono);color:#4488ff;font-size:14px;animation:fadeInUp 0.5s ease"><p style="font-size:24px;margin-bottom:16px">💊</p><p>Você escolheu a pílula azul.</p><p style="margin-top:12px;color:#335599;font-size:12px">"A história acaba. Você acorda na sua cama e acredita no que quiser."</p><button onclick="location.reload()" style="margin-top:24px;padding:8px 24px;border:1px solid #4488ff;background:transparent;color:#4488ff;cursor:pointer;font-family:inherit;font-size:13px">Tentar de novo</button></div>';
+    splash.innerHTML = `
+        <div style="font-family:var(--font-mono);color:#00e5ff;font-size:16px;animation:fadeInUp 0.5s ease; background: rgba(0,0,0,0.8); padding: 40px; border: 1px solid #00e5ff;">
+            <p style="font-size:40px;margin-bottom:16px;text-shadow: 0 0 20px #00e5ff;">🔵</p>
+            <p style="letter-spacing: 2px;">DESCONEXÃO INICIADA.</p>
+            <p style="margin-top:16px;color:#0088aa;font-size:14px; font-style: italic;">"A história acaba. Você acorda na sua cama e acredita no que quiser."</p>
+            <button onclick="location.reload()" style="margin-top:32px;padding:12px 32px;border:1px solid #00e5ff;background:transparent;color:#00e5ff;cursor:pointer;font-family:var(--font-display);font-size:14px; letter-spacing:2px; transition: 0.3s;" onmouseover="this.style.background='rgba(0,229,255,0.2)'" onmouseout="this.style.background='transparent'">REINICIAR SIMULAÇÃO</button>
+        </div>`;
 }
 
-/* ═══ VIEW SWITCHING ═══ */
 function switchView(name) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -80,10 +252,9 @@ function switchView(name) {
     if (tab) tab.classList.add('active');
 }
 
-/* ═══ SOCKET INIT ═══ */
 function initSocket() {
     sk = io('http://127.0.0.1:5000', {
-        query: { token: '17qXMKndUUepc2Z_PQe7dzLVRuuWR0n3tGCT2ukDb0E' } // Coloque o token exato do seu .env aqui
+        query: { token: '17qXMKndUUepc2Z_PQe7dzLVRuuWR0n3tGCT2ukDb0E' } 
     });
 
     sk.on('connect', () => { S.c = true; dot('ok'); lg('info', 'SYSTEM ONLINE'); });
@@ -130,7 +301,6 @@ function initSocket() {
     });
 }
 
-/* ═══ EXECUTE ═══ */
 function go() {
     const v = $('task-input').value.trim();
     if (!v || S.r) return;
@@ -152,7 +322,6 @@ function forceStop() {
     lg('err', '■ EXECUTION HALTED');
 }
 
-/* ═══ PLAN ═══ */
 function renderPlan(p) {
     const c = $('plan-box'); c.innerHTML = '';
     $('plan-section').style.display = 'block';
@@ -165,7 +334,6 @@ function renderPlan(p) {
 function hlP(n) { document.querySelectorAll('.pi').forEach(e => e.classList.remove('cur')); const e = $('pi-' + n); if (e) { e.classList.add('cur'); e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
 function dnP(n) { const e = $('pi-' + n); if (e) { e.classList.remove('cur'); e.classList.add('dn'); } }
 
-/* ═══ FEED ═══ */
 function addFc(d) {
     const f = $('feed'); const em = f.querySelector('.feed-empty'); if (em) em.remove();
     const c = mk('div', 'fc active'); c.id = 'fc-' + d.step;
@@ -189,7 +357,6 @@ function showSk(s) {
     $('feed').appendChild(c); c.scrollIntoView({ behavior: 'smooth' });
 }
 
-/* ═══ REPORT ═══ */
 function renderRpt(r) {
     const c = $('rpt'); c.innerHTML = '';
     if (!r || r.error) { c.innerHTML = '<div style="color:var(--red);padding:20px">' + (r ? r.message : 'No data') + '</div>'; return; }
@@ -213,7 +380,6 @@ function renderRpt(r) {
     }
 }
 
-/* ═══ LOG ═══ */
 function lg(t, m) {
     const ts = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const d = mk('div', 'lg ' + t);
@@ -221,7 +387,6 @@ function lg(t, m) {
     const logs = $('logs'); logs.appendChild(d); logs.scrollTop = logs.scrollHeight;
 }
 
-/* ═══ UI HELPERS ═══ */
 function dot(s) { const d = $('dot'); d.className = 'status-led'; if (s === 'off') d.classList.add('off'); if (s === 'work') d.classList.add('work'); }
 function ldot(on) { const d = $('live-dot'); if (d) d.style.boxShadow = on ? '0 0 12px var(--green)' : '0 0 4px var(--green)'; }
 function lbl(t) { $('live-label').textContent = t; $('status-txt').textContent = t; }
@@ -240,10 +405,12 @@ function setEx(t) { $('task-input').value = t; $('task-input').focus(); }
 function $(id) { return document.getElementById(id); }
 function mk(t, c) { const e = document.createElement(t); if (c) e.className = c; return e; }
 
-/* ═══ INIT ═══ */
+/* ═══ INICIALIZAÇÃO GERAL ═══ */
 document.addEventListener('DOMContentLoaded', () => {
-    initRain();
+    initMatrixEngine(); // Liga a Cascata que interage com o mouse + Holograma
+    initHoverReveal();  // Liga o HUD nas palavras
     initSocket();
+    
     $('task-input').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); }
     });

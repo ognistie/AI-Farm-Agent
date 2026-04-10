@@ -9,40 +9,61 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════════ -->
-<!--  SPLASH SCREEN — "Join the Matrix?"  -->
-<!-- ══════════════════════════════════════ -->
 <div id="splash" class="splash">
     <canvas id="rain-canvas"></canvas>
     <div class="splash-content">
         <div class="splash-glitch" data-text="AI FARM AGENT">AI FARM AGENT</div>
-        <p class="splash-sub">Autonomous Computer Operator</p>
+        <p class="splash-sub">
+            [ 
+            <span class="matrix-hover" data-image="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=400&q=80">AUTONOMOUS</span> 
+            <span class="matrix-hover" data-image="https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=400&q=80">COMPUTER</span> 
+            <span class="matrix-hover" data-image="https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?auto=format&fit=crop&w=400&q=80">OPERATOR</span> 
+            ]
+        </p>
+        
         <div class="splash-pills">
-            <button class="pill pill-blue" onclick="rejectMatrix()">
-                <span class="pill-icon">💊</span>
-                <span class="pill-label">Pílula Azul</span>
-                <span class="pill-desc">Voltar para a realidade</span>
+            <button class="cyber-btn btn-blue" onclick="rejectMatrix()">
+                <div class="cyber-pill">
+                    <span class="pill-half half-blue"></span>
+                    <span class="pill-half half-dark"></span>
+                </div>
+                <div class="btn-text">
+                    <span class="pill-label">PÍLULA AZUL</span>
+                    <span class="pill-desc">VOLTAR PARA A REALIDADE</span>
+                </div>
             </button>
-            <button class="pill pill-red" onclick="enterMatrix()">
-                <span class="pill-icon">💊</span>
-                <span class="pill-label">Pílula Vermelha</span>
-                <span class="pill-desc">Entrar na Matrix</span>
+            
+            <button class="cyber-btn btn-red" onclick="enterMatrix()">
+                <div class="cyber-pill">
+                    <span class="pill-half half-red"></span>
+                    <span class="pill-half half-dark"></span>
+                </div>
+                <div class="btn-text">
+                    <span class="pill-label">PÍLULA VERMELHA</span>
+                    <span class="pill-desc">ENTRAR NA MATRIX</span>
+                </div>
             </button>
         </div>
         <p class="splash-quote">"Eu só posso te mostrar a porta. Você é quem tem que atravessá-la."</p>
     </div>
 </div>
 
-<!-- ══════════════════════════════════════ -->
-<!--  MAIN APP                             -->
-<!-- ══════════════════════════════════════ -->
+<div id="transition-overlay" class="transition-overlay hidden">
+    <div class="tear-container">
+        <div class="tear-left"></div>
+        <div class="tear-right"></div>
+        <div class="grab-effect"></div>
+        <div class="transition-text-container">
+            <h1 id="transition-text" class="glitch-text">INITIALIZING...</h1>
+        </div>
+    </div>
+</div>
+
 <div id="main-app" class="app" style="display:none">
     
-    <!-- CRT OVERLAY -->
     <div class="crt-overlay"></div>
     <div class="scan-line"></div>
 
-    <!-- NAVBAR -->
     <nav class="navbar">
         <div class="nav-left">
             <div class="nav-logo">
@@ -71,16 +92,11 @@
         </div>
     </nav>
 
-    <!-- ════════════════════════════════ -->
-    <!--  VIEW: TERMINAL                  -->
-    <!-- ════════════════════════════════ -->
     <div id="view-terminal" class="view active">
         <div class="terminal-grid">
             
-            <!-- LEFT COLUMN -->
             <div class="col-input">
                 
-                <!-- COMMAND INPUT -->
                 <section class="card card-command">
                     <div class="card-header">
                         <div class="card-dots">
@@ -113,7 +129,6 @@
                                 <span class="exec-arrow">→</span>
                             </button>
                         </div>
-                        <!-- QUICK ACTIONS -->
                         <div class="quick-actions" id="qas">
                             <button class="qa" onclick="setEx('Crie uma planilha com frutas e preços')">📊 Excel</button>
                             <button class="qa" onclick="setEx('Organize meus Downloads por tipo')">📁 Arquivos</button>
@@ -125,7 +140,6 @@
                     </div>
                 </section>
 
-                <!-- API METRICS -->
                 <section class="card card-metrics">
                     <div class="card-header">
                         <span class="card-title">api_metrics</span>
@@ -150,7 +164,6 @@
                     </div>
                 </section>
 
-                <!-- EXECUTION PLAN -->
                 <section class="card card-plan" id="plan-section" style="display:none">
                     <div class="card-header">
                         <span class="card-title">execution_plan</span>
@@ -159,7 +172,6 @@
                 </section>
             </div>
 
-            <!-- RIGHT COLUMN -->
             <div class="col-output">
                 <section class="card card-live">
                     <div class="card-header">
@@ -175,7 +187,6 @@
                     </div>
                     <div class="progress-track"><div class="progress-bar" id="prog"></div></div>
 
-                    <!-- FEED -->
                     <div class="tab-content active" id="tp-feed">
                         <div class="feed" id="feed">
                             <div class="feed-empty">
@@ -186,14 +197,12 @@
                         </div>
                     </div>
 
-                    <!-- REPORT -->
                     <div class="tab-content" id="tp-report">
                         <div class="report-body" id="rpt">
                             <div class="feed-empty"><p>Nenhum relatório gerado ainda.</p></div>
                         </div>
                     </div>
 
-                    <!-- LOGS -->
                     <div class="tab-content" id="tp-logs">
                         <div class="log-body" id="logs"></div>
                     </div>
@@ -202,9 +211,6 @@
         </div>
     </div>
 
-    <!-- ════════════════════════════════ -->
-    <!--  VIEW: MONITOR                   -->
-    <!-- ════════════════════════════════ -->
     <div id="view-monitor" class="view">
         <div class="monitor-grid">
             <div class="card">
@@ -234,9 +240,6 @@
         </div>
     </div>
 
-    <!-- ════════════════════════════════ -->
-    <!--  VIEW: ABOUT                     -->
-    <!-- ════════════════════════════════ -->
     <div id="view-about" class="view">
         <div class="about-container">
             <div class="about-hero">
@@ -286,10 +289,23 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <span>⬡ Desenvolvido por <a href="https://github.com/ognistie" target="_blank">@ognistie</a> · Guilherme Moraes Franco · AI Farm Agent v2.0</span>
     </footer>
+</div>
+
+<div id="hover-reveal-container" class="hover-reveal-container">
+    <div id="hover-reveal-bg" class="hover-reveal-bg"></div>
+    <div class="hologram-content">
+        <div class="hologram-header">
+            <span class="hologram-icon">⬡</span>
+            <span class="hologram-title">DATA PROFILE</span>
+        </div>
+        <div class="hologram-data">
+            <div id="hologram-desc" class="hologram-desc">SYSTEMS CASCADE</div>
+            <div class="hologram-status">[ ACTIVE FEED: ONLINE ]</div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
