@@ -1,5 +1,12 @@
 """
-UI Server v12 — Security Upgrade.
+UI Server v13 — Gap 1: Passagem de contexto entre subtarefas.
+MUDANCAS v13:
+- ContextManager: extrai outputs de cada subtarefa (arquivos, pastas, URLs)
+- Interpola variaveis {output_folder_N}, {output_path_N}, {output_files_N},
+  {output_all_files_N}, {output_url_N} nos params da subtarefa seguinte
+- Injeta automaticamente files/folder/url nos params quando depends_on
+- Emite evento context_extracted para o frontend (debug/log)
+- Snapshot do workspace antes de cada subtarefa (delta preciso)
 MUDANCAS v12:
 - SECRET_KEY vem do .env (nao hardcoded)
 - CORS restrito a origens do .env
@@ -26,6 +33,7 @@ from agents.file_agent import FileAgent
 from core.automation import AutomationEngine
 from core.capture import ScreenCapture
 from core.narrator import ReportNarrator
+from core.context_manager import ContextManager
 
 # Opcionais — nao travam se falharem
 try:
@@ -113,117 +121,216 @@ def on_stop():
     state["running"]=False
     emit("cancelled",{"msg":"Parado"})
 
-def _run(task,dry_run,gen_report):
-    state["running"]=True
+def _run(task, dry_run, gen_report):
+    state["running"] = True
     all_success = True
     try:
-        socketio.emit("phase",{"phase":"maestro","msg":"Analisando..."})
-        api_usage["calls"]+=1; api_usage["tokens_est"]+=500
-        plan=maestro.analyze(task)
-        if plan.get("error"): socketio.emit("error",{"msg":plan.get("message","Erro")}); return
-        subtasks=plan.get("subtasks",[])
-        socketio.emit("plan_ready",{"plan":{"task_summary":plan.get("analysis",""),
-            "steps":[{"step":i+1,"description":"["+s["agent"]+"] "+s["task"],"action":s["agent"]} for i,s in enumerate(subtasks)],
-            "skills":plan.get("skills",[])}})
+        socketio.emit("phase", {"phase": "maestro", "msg": "Analisando..."})
+        api_usage["calls"] += 1
+        api_usage["tokens_est"] += 500
+        plan = maestro.analyze(task)
+        if plan.get("error"):
+            socketio.emit("error", {"msg": plan.get("message", "Erro")})
+            return
+        subtasks = plan.get("subtasks", [])
+        socketio.emit("plan_ready", {"plan": {
+            "task_summary": plan.get("analysis", ""),
+            "steps": [
+                {"step": i + 1, "description": "[" + s["agent"] + "] " + s["task"], "action": s["agent"]}
+                for i, s in enumerate(subtasks)
+            ],
+            "skills": plan.get("skills", []),
+        }})
 
-        capture.clear_records(); all_records=[]; context={}; step_n=0
+        capture.clear_records()
+        all_records = []
+        step_n = 0
 
-        for si,subtask in enumerate(subtasks):
-            if not state["running"]: socketio.emit("cancelled",{"msg":"Cancelado"}); return
-            agent_name=subtask.get("agent","").upper()
-            agent=agents.get(agent_name)
-            if not agent: continue
+        # ── Gap 1: ContextManager para passagem de dados entre subtarefas ──
+        ctx_mgr = ContextManager()
 
-            socketio.emit("phase",{"phase":"agent","msg":agent_name+" Agent..."})
+        for si, subtask in enumerate(subtasks):
+            if not state["running"]:
+                socketio.emit("cancelled", {"msg": "Cancelado"})
+                return
 
-            # UPGRADE: Passa params estruturados para Desktop Agent
+            # ── Gap 1: prepara subtarefa (interpola variáveis de contexto) ──
+            subtask = ctx_mgr.prepare_subtask(subtask, si)
+
+            agent_name = subtask.get("agent", "").upper()
+            agent = agents.get(agent_name)
+            if not agent:
+                continue
+
             subtask_params = subtask.get("params", {})
             agent_task = subtask.get("task", "")
+            dep = subtask.get("depends_on")
 
+            socketio.emit("phase", {"phase": "agent", "msg": agent_name + " Agent..."})
+
+            # Contexto legado (resultados brutos da subtarefa dependida)
+            legacy_ctx = None
+            if dep is not None:
+                try:
+                    dep_idx = int(dep)
+                    extracted = ctx_mgr.get(dep_idx)
+                    if extracted:
+                        legacy_ctx = {
+                            "agent": extracted.get("agent"),
+                            "results": extracted.get("output", []),
+                            "files": extracted.get("files", []),
+                            "folder": extracted.get("folder"),
+                            "primary_path": extracted.get("primary_path"),
+                            "url": extracted.get("url"),
+                        }
+                except (ValueError, TypeError):
+                    pass
+
+            # Plano do agente
             if agent_name == "DESKTOP" and subtask_params and subtask_params.get("app"):
-                # Desktop recebe params do Maestro → usa atalhos de teclado
-                agent_plan = agent.plan({"task": agent_task, "params": subtask_params}, context=subtask_params)
+                # Desktop recebe params do Maestro → usa rotinas de atalho
+                agent_plan = agent.plan(
+                    {"task": agent_task, "params": subtask_params},
+                    context=subtask_params,
+                )
             else:
-                api_usage["calls"]+=1; api_usage["tokens_est"]+=1000
-                dep=subtask.get("depends_on")
-                agent_plan=agent.plan(agent_task, context=context.get("sub_"+str(dep)) if dep else None)
+                api_usage["calls"] += 1
+                api_usage["tokens_est"] += 1000
+                agent_plan = agent.plan(agent_task, context=legacy_ctx)
 
-            if agent_plan.get("error"): continue
+            if agent_plan.get("error"):
+                continue
 
-            agent_steps=agent_plan.get("steps",[])
-            sub_results=[]
+            agent_steps = agent_plan.get("steps", [])
+            sub_results = []
             is_desktop = agent_name == "DESKTOP"
 
-            for j,step in enumerate(agent_steps):
-                if not state["running"]: socketio.emit("cancelled",{"msg":"Cancelado"}); return
-                step_n+=1
-                action=step.get("action",""); params=step.get("params",{}); desc=step.get("description","")
+            # ── Gap 1: snapshot do workspace ANTES desta subtarefa ──
+            ws_snapshot = dict(engine.workspace)
+
+            for j, step in enumerate(agent_steps):
+                if not state["running"]:
+                    socketio.emit("cancelled", {"msg": "Cancelado"})
+                    return
+                step_n += 1
+                action = step.get("action", "")
+                params = step.get("params", {})
+                desc = step.get("description", "")
                 start_time = time.time()
 
-                socketio.emit("step_start",{"step":step_n,"total":step_n+len(agent_steps)-j-1,
-                    "desc":"["+agent_name+"] "+desc,"action":action,"progress":round(si/len(subtasks)*100)})
+                socketio.emit("step_start", {
+                    "step": step_n,
+                    "total": step_n + len(agent_steps) - j - 1,
+                    "desc": "[" + agent_name + "] " + desc,
+                    "action": action,
+                    "progress": round(si / len(subtasks) * 100),
+                })
 
                 # EXECUTA
-                result=engine.execute(action,params,dry_run=dry_run)
+                result = engine.execute(action, params, dry_run=dry_run)
 
-                # UPGRADE: Retry para acoes visuais que falharam
-                if not result.get("success",True) and action in RETRY_ACTIONS and not dry_run:
+                # Retry para ações visuais que falharam
+                if not result.get("success", True) and action in RETRY_ACTIONS and not dry_run:
                     time.sleep(2)
-                    result=engine.execute(action,params,dry_run=dry_run)
+                    result = engine.execute(action, params, dry_run=dry_run)
 
                 if not result.get("success", True):
                     all_success = False
 
-                # UPGRADE: Log da acao
+                # Log da ação
                 duration = int((time.time() - start_time) * 1000)
                 try:
                     from core.action_logger import log_action
                     log_action(agent_name, action, params, result, duration_ms=duration)
-                except: pass
+                except Exception:
+                    pass
 
-                all_records.append(result); sub_results.append(result.get("result",""))
+                all_records.append(result)
+                sub_results.append(result.get("result", ""))
 
-                # UPGRADE: Screenshot SOMENTE para acoes de codigo, NAO desktop
-                cap=None
+                # Screenshot SOMENTE para ações de código, NÃO desktop
+                cap = None
                 if not dry_run and action not in NO_SCREENSHOT and not is_desktop:
-                    try: cap=capture.capture_step(step_n,desc,action,result.get("result",""))
-                    except: pass
+                    try:
+                        cap = capture.capture_step(step_n, desc, action, result.get("result", ""))
+                    except Exception:
+                        pass
 
-                # UPGRADE: NUNCA restaura browser entre passos
-                # O browser fica minimizado ate o final de TODA a tarefa
-
-                socketio.emit("step_done",{"step":step_n,"total":step_n+len(agent_steps)-j-1,
-                    "ok":result.get("success",False),"result":result.get("result",""),
-                    "desc":"["+agent_name+"] "+desc,"action":action,
-                    "screenshot":cap.get("filename") if cap and cap.get("filename") else None,
-                    "progress":round((si+1)/len(subtasks)*100)})
-                socketio.emit("api_usage",api_usage)
+                socketio.emit("step_done", {
+                    "step": step_n,
+                    "total": step_n + len(agent_steps) - j - 1,
+                    "ok": result.get("success", False),
+                    "result": result.get("result", ""),
+                    "desc": "[" + agent_name + "] " + desc,
+                    "action": action,
+                    "screenshot": cap.get("filename") if cap and cap.get("filename") else None,
+                    "progress": round((si + 1) / len(subtasks) * 100),
+                })
+                socketio.emit("api_usage", api_usage)
                 time.sleep(0.05)
 
-            context["sub_"+str(si+1)]={"agent":agent_name,"results":sub_results}
+            # ── Gap 1: extrai contexto desta subtarefa para as próximas ──
+            if not dry_run:
+                extracted = ctx_mgr.extract(
+                    subtask_index=si,
+                    agent_name=agent_name,
+                    step_results=sub_results,
+                    engine_workspace=engine.workspace,
+                    workspace_snapshot=ws_snapshot,
+                )
+                # Emite ao frontend para debug/visualização
+                if extracted.get("files") or extracted.get("folder") or extracted.get("url"):
+                    socketio.emit("context_extracted", {
+                        "subtask": si + 1,
+                        "agent": agent_name,
+                        "folder": extracted.get("folder"),
+                        "files": extracted.get("files", []),
+                        "primary_path": extracted.get("primary_path"),
+                        "url": extracted.get("url"),
+                    })
 
         # Restaura browser SOMENTE no final de tudo
         if engine.vision:
-            try: engine.vision.restore_browser()
-            except: pass
+            try:
+                engine.vision.restore_browser()
+            except Exception:
+                pass
 
-        # UPGRADE: Salva workflow se deu certo
+        # Salva workflow se deu certo
         if all_success and not dry_run:
             try:
                 from memory.workflow_store import save_workflow
-                save_workflow(task, [r.get("result","") for r in all_records], subtasks[0].get("agent",""), True)
-            except: pass
+                save_workflow(
+                    task,
+                    [r.get("result", "") for r in all_records],
+                    subtasks[0].get("agent", ""),
+                    True,
+                )
+            except Exception:
+                pass
 
-        socketio.emit("task_done",{"msg":"Concluido","steps":step_n,"dry_run":dry_run,"skills":plan.get("skills",[])})
+        socketio.emit("task_done", {
+            "msg": "Concluido",
+            "steps": step_n,
+            "dry_run": dry_run,
+            "skills": plan.get("skills", []),
+            "context_summary": ctx_mgr.summary(),
+        })
+
         if gen_report and not dry_run:
-            socketio.emit("phase",{"phase":"reporting","msg":"Relatorio..."})
-            api_usage["calls"]+=1; api_usage["tokens_est"]+=1500
-            report=narrator.generate_report(task,all_records,capture.get_captures_as_base64(3))
-            socketio.emit("report_ready",{"report":report})
+            socketio.emit("phase", {"phase": "reporting", "msg": "Relatorio..."})
+            api_usage["calls"] += 1
+            api_usage["tokens_est"] += 1500
+            report = narrator.generate_report(task, all_records, capture.get_captures_as_base64(3))
+            socketio.emit("report_ready", {"report": report})
+
     except Exception as e:
-        socketio.emit("error",{"msg":str(e)}); traceback.print_exc()
+        socketio.emit("error", {"msg": str(e)})
+        traceback.print_exc()
     finally:
-        state["running"]=False
+        state["running"] = False
         if engine.vision:
-            try: engine.vision.restore_browser()
-            except: pass
+            try:
+                engine.vision.restore_browser()
+            except Exception:
+                pass

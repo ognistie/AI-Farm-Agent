@@ -3,8 +3,6 @@ Maestro v13 — Migrado para ai_client centralizado.
 Mantém cache, memória, e lógica de roteamento intactos.
 """
 
-import json
-import os
 from core.ai_client import get_client
 from core.config import get_config
 from core.json_validator import safe_parse
@@ -19,14 +17,38 @@ PROMPT = (
     "- person: APENAS nome\n"
     "- message: APENAS conteudo (sem instrucoes de envio)\n"
     "- text: texto a escrever\n"
-    "- action_type: send_message/write_text/open/call/create_file/search\n\n"
+    "- action_type: send_message/write_text/open/call/create_file/search/send_file\n\n"
+    "VARIAVEIS DE CONTEXTO (para subtarefas com depends_on):\n"
+    "Quando uma subtarefa depende da anterior (depends_on: N), use essas variaveis nos params:\n"
+    "  {output_folder_N}    → pasta criada/usada pela subtarefa N\n"
+    "  {output_path_N}      → caminho principal (arquivo ou pasta) da subtarefa N\n"
+    "  {output_files_N}     → primeiro arquivo criado pela subtarefa N\n"
+    "  {output_all_files_N} → todos os arquivos separados por ponto-e-virgula\n"
+    "  {output_url_N}       → URL visitada pela subtarefa N\n\n"
+    "EXEMPLOS MULTI-SUBTAREFA:\n\n"
+    "Tarefa: 'crie um site e envie os arquivos pelo Teams para Joao'\n"
+    '{"analysis":"criar site e enviar via Teams","subtasks":['
+    '{"agent":"CODE","task":"criar site HTML/CSS","params":{},"objectives":["Arquivos criados no Desktop"],"depends_on":null},'
+    '{"agent":"DESKTOP","task":"enviar arquivos do site pelo Teams para Joao",'
+    '"params":{"app":"teams","action_type":"send_file","person":"Joao",'
+    '"files":"{output_all_files_1}","message":"Segue o site criado!"},'
+    '"objectives":["Teams aberto","Arquivos anexados","Mensagem enviada"],"depends_on":1}'
+    '],"skills":["code","teams"]}\n\n'
+    "Tarefa: 'crie um projeto python e faca commit no github'\n"
+    '{"analysis":"criar projeto e fazer commit","subtasks":['
+    '{"agent":"CODE","task":"criar projeto Python","params":{},"objectives":["Arquivos criados"],"depends_on":null},'
+    '{"agent":"CODE","task":"fazer git init, add e commit na pasta {output_folder_1}",'
+    '"params":{"folder":"{output_folder_1}","action_type":"git_commit","message":"initial commit"},'
+    '"objectives":["Commit criado"],"depends_on":1}'
+    '],"skills":["code","git"]}\n\n'
     "Para DESKTOP, gere objectives (condicoes da tela):\n"
-    "Exemplo: 'mande oi para Joao no Teams'\n"
+    "Exemplo simples: 'mande oi para Joao no Teams'\n"
     '{"analysis":"enviar msg no Teams","subtasks":[{"agent":"DESKTOP","task":"enviar mensagem",'
     '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"oi"},'
     '"objectives":["Teams aberto e visivel","Aba Chat selecionada","Conversa com Joao aberta","Mensagem enviada"],'
     '"depends_on":null}],"skills":["teams"]}\n\n'
-    "Prefira 1 subtask. Windows PT-BR."
+    "Prefira 1 subtask quando possivel. Use depends_on apenas quando uma etapa precisa do resultado da anterior.\n"
+    "Windows PT-BR."
 )
 
 
