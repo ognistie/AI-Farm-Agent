@@ -56,56 +56,166 @@ function initMatrixEngine() {
     let mouseY = -1000;
     document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
-    // Equação para desenhar o "rosto de código" (estilo da foto_45b7fb)
-    function getFaceIntensity(gx, gy) {
-        const cx = Math.floor(cols * 0.20); 
-        const cy = Math.floor(rows * 0.5);
-        const rx = Math.floor(cols * 0.12);
-        const ry = Math.floor(rows * 0.35);
+    // ═══ GLOBO TERRESTRE 3D — Geografia real, Brasil destacado ═══
+    const landMasses = [
+        // ── AMÉRICA DO NORTE ──
+        // Canadá
+        [-2.45,-1.05, 0.82, 1.22], [-2.6,-2.0, 0.95, 1.18], [-1.6,-1.05, 0.75, 0.95],
+        [-2.3,-1.8, 1.05, 1.2], [-2.8,-2.4, 0.95, 1.1],
+        // Alasca
+        [-2.95,-2.55, 1.0, 1.18], [-3.1,-2.85, 0.95, 1.08],
+        // EUA
+        [-2.15,-1.25, 0.52, 0.85], [-2.05,-1.3, 0.58, 0.82], [-1.55,-1.28, 0.42, 0.58],
+        [-2.15,-1.75, 0.52, 0.62], [-1.4,-1.25, 0.45, 0.55],
+        // México
+        [-1.95,-1.55, 0.32, 0.55], [-1.82,-1.6, 0.28, 0.42],
+        // América Central
+        [-1.58,-1.38, 0.15, 0.32], [-1.48,-1.35, 0.1, 0.22],
+        // Cuba / Caribe
+        [-1.48,-1.3, 0.35, 0.4], [-1.25,-1.12, 0.3, 0.35],
 
-        let dy = gy - cy;
-        let adjustedRx = rx;
+        // ── AMÉRICA DO SUL (exceto Brasil) ──
+        // Venezuela / Colômbia
+        [-1.32,-1.1, 0.0, 0.2], [-1.4,-1.2, 0.02, 0.12],
+        // Peru / Equador
+        [-1.42,-1.22, -0.25, 0.0], [-1.38,-1.28, -0.15, -0.02],
+        // Bolívia
+        [-1.2,-1.05, -0.3, -0.12],
+        // Chile (fino e longo)
+        [-1.28,-1.18, -0.95, -0.25], [-1.25,-1.18, -0.6, -0.3],
+        // Argentina
+        [-1.22,-1.02, -0.85, -0.28], [-1.18,-1.05, -0.55, -0.3],
+        // Paraguai / Uruguai
+        [-1.05,-0.92, -0.42, -0.28], [-0.98,-0.88, -0.58, -0.48],
+        // Patagônia
+        [-1.25,-1.1, -0.88, -0.78],
 
-        // Afina um pouco embaixo (formato de crânio)
-        if (dy > 0) {
-            adjustedRx = rx * (1 - (dy / ry) * 0.4);
+        // ── EUROPA ──
+        // Ibéria
+        [-0.18, 0.05, 0.62, 0.75], [-0.15, 0.02, 0.58, 0.65],
+        // França
+        [-0.08, 0.12, 0.72, 0.85], [0.0, 0.1, 0.68, 0.75],
+        // Ilhas Britânicas
+        [-0.1, 0.05, 0.85, 0.98], [-0.05, 0.0, 0.88, 0.95],
+        // Itália
+        [0.12, 0.28, 0.6, 0.78], [0.15, 0.22, 0.58, 0.65],
+        // Alemanha / Polônia / Bálticos
+        [0.08, 0.38, 0.82, 0.98], [0.15, 0.42, 0.85, 0.95],
+        // Escandinávia
+        [0.08, 0.28, 0.98, 1.2], [0.15, 0.35, 1.02, 1.15],
+        // Bálcãs / Grécia
+        [0.25, 0.45, 0.6, 0.78], [0.32, 0.42, 0.58, 0.65],
+        // Turquia
+        [0.45, 0.72, 0.62, 0.72],
+        // Europa Oriental
+        [0.35, 0.7, 0.78, 1.05], [0.5, 0.8, 0.85, 1.0],
+
+        // ── RÚSSIA ──
+        [0.5, 2.8, 0.9, 1.2], [0.7, 2.5, 0.95, 1.15], [1.0, 3.0, 0.85, 1.1],
+        [2.2, 2.8, 0.78, 0.95],
+
+        // ── ÁFRICA ──
+        // Norte da África / Magreb
+        [-0.2, 0.55, 0.35, 0.58], [0.0, 0.6, 0.38, 0.55],
+        // África Ocidental
+        [-0.3, 0.15, 0.08, 0.38], [-0.25, 0.1, 0.12, 0.3],
+        // Congo / África Central
+        [0.1, 0.52, -0.08, 0.15], [0.15, 0.48, -0.05, 0.1],
+        // África Oriental
+        [0.5, 0.72, -0.2, 0.2], [0.55, 0.7, -0.08, 0.15],
+        // Corno da África
+        [0.62, 0.88, 0.02, 0.2],
+        // África do Sul
+        [0.25, 0.55, -0.6, -0.2], [0.3, 0.52, -0.5, -0.25],
+        // Madagascar
+        [0.72, 0.82, -0.4, -0.2],
+
+        // ── ORIENTE MÉDIO ──
+        [0.6, 0.9, 0.35, 0.58], [0.72, 0.85, 0.38, 0.55],
+        // Arábia
+        [0.62, 0.88, 0.22, 0.42],
+
+        // ── ÁSIA ──
+        // Índia
+        [1.1, 1.45, 0.12, 0.55], [1.15, 1.4, 0.05, 0.35], [1.2, 1.35, -0.02, 0.15],
+        // Sri Lanka
+        [1.35, 1.42, 0.05, 0.12],
+        // Sudeste Asiático
+        [1.5, 1.85, 0.02, 0.42], [1.6, 1.9, 0.15, 0.38],
+        // China
+        [1.3, 2.15, 0.45, 0.85], [1.5, 2.1, 0.5, 0.78], [1.7, 2.05, 0.55, 0.72],
+        // Mongólia
+        [1.5, 2.0, 0.75, 0.85],
+        // Coreia
+        [2.15, 2.28, 0.55, 0.68],
+        // Japão
+        [2.25, 2.5, 0.52, 0.78], [2.28, 2.45, 0.55, 0.72], [2.3, 2.42, 0.48, 0.58],
+        // Indonésia
+        [1.65, 2.35, -0.15, 0.08], [1.8, 2.1, -0.12, 0.02],
+
+        // ── OCEANIA ──
+        // Austrália
+        [1.95, 2.65, -0.65, -0.18], [2.0, 2.55, -0.58, -0.22], [2.1, 2.5, -0.5, -0.25],
+        // Nova Zelândia
+        [2.85, 3.0, -0.72, -0.58], [2.88, 2.98, -0.62, -0.52],
+
+        // ── GROENLÂNDIA ──
+        [-0.9,-0.45, 1.05, 1.3], [-0.8,-0.5, 1.1, 1.25],
+    ];
+
+    // ── BRASIL (polígonos mais detalhados) ──
+    const brazil = [
+        [-1.28,-0.6, -0.58, 0.08],
+        [-1.22,-0.65, -0.52, 0.05],
+        [-1.15,-0.62, -0.45, 0.02],
+        [-1.08,-0.6, -0.35, -0.02],
+        [-1.0,-0.62, -0.28, -0.05],
+        [-0.95,-0.6, -0.18, -0.08],
+        [-1.3,-0.85, -0.55, -0.15],
+        [-1.15,-0.72, -0.12, 0.08],
+        [-0.85,-0.6, -0.25, 0.0],
+        [-0.78,-0.58, -0.42, -0.12],
+        [-1.25,-1.0, -0.52, -0.35],
+    ];
+
+    function isBrazil(lon, lat) {
+        for (let i = 0; i < brazil.length; i++) {
+            const b = brazil[i];
+            if (lon >= b[0] && lon <= b[1] && lat >= b[2] && lat <= b[3]) return true;
         }
-
-        const distSq = Math.pow(gx - cx, 2) / Math.pow(adjustedRx, 2) + Math.pow(dy, 2) / Math.pow(ry, 2);
-
-        if (distSq <= 1) {
-            // Buracos dos olhos
-            const eyeY = cy - Math.floor(ry * 0.1);
-            const leftEyeX = cx - Math.floor(rx * 0.4);
-            const rightEyeX = cx + Math.floor(rx * 0.4);
-            const eyeR = rx * 0.25;
-
-            if (Math.hypot(gx - leftEyeX, gy - eyeY) < eyeR || Math.hypot(gx - rightEyeX, gy - eyeY) < eyeR) {
-                return 0.1; // Fundo do olho escuro
-            }
-
-            // Sombreamento base (Rosto brilhante no centro)
-            return 0.9 - (distSq * 0.4);
-        }
-        return 0;
+        return false;
     }
 
+    function isLand(lon, lat) {
+        if (isBrazil(lon, lat)) return 2; // 2 = Brasil
+        for (let i = 0; i < landMasses.length; i++) {
+            const c = landMasses[i];
+            if (lon >= c[0] && lon <= c[1] && lat >= c[2] && lat <= c[3]) return 1; // 1 = terra
+        }
+        return 0; // 0 = oceano
+    }
+
+    let globeAngle = 0;
+    const globeCx = Math.floor(cols * 0.25);
+    const globeCy = Math.floor(rows * 0.48);
+    const globeR = Math.min(cols * 0.18, rows * 0.38);
+
     function draw() {
+        globeAngle += 0.003;
+
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.fillRect(0, 0, c.width, c.height);
         ctx.font = fontSize + 'px monospace';
 
-        // 1. Drenagem do código multidirecional (Rastro interativo do mouse)
+        // 1. Cascata de código multidirecional
         streams.forEach(s => {
             s.update();
             s.chars.forEach((cObj, i) => {
                 let px = cObj.x * fontSize;
                 let py = cObj.y * fontSize;
-                
                 const mouseDist = Math.hypot(px - mouseX, py - mouseY);
                 if (mouseDist < 80) {
                     ctx.fillStyle = '#ffffff';
-                    // Efeito do código se quebrando e fugindo do mouse
                     const angle = Math.atan2(py - mouseY, px - mouseX);
                     px += Math.cos(angle) * 10;
                     py += Math.sin(angle) * 10;
@@ -118,26 +228,105 @@ function initMatrixEngine() {
             });
         });
 
-        // 2. Projeta a face da Matrix no lado esquerdo
-        for (let gx = 0; gx < cols * 0.4; gx++) {
-            for (let gy = 0; gy < rows; gy++) {
-                const intensity = getFaceIntensity(gx, gy);
-                if (intensity > 0 && Math.random() > 0.8) {
-                    const px = gx * fontSize;
-                    const py = gy * fontSize;
-                    const char = chars[Math.floor(Math.random() * chars.length)];
-                    
-                    if (Math.hypot(px - mouseX, py - mouseY) < 150) {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = '#ffffff';
+        // 2. Globo terrestre 3D
+        const x1 = Math.max(0, globeCx - globeR - 2);
+        const x2 = Math.min(Math.floor(cols * 0.5), globeCx + globeR + 2);
+        const y1 = Math.max(0, globeCy - globeR - 2);
+        const y2 = Math.min(rows, globeCy + globeR + 2);
+
+        for (let gx = x1; gx < x2; gx++) {
+            for (let gy = y1; gy < y2; gy++) {
+                const dx = gx - globeCx;
+                const dy = gy - globeCy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > globeR) continue;
+
+                const nx = dx / globeR;
+                const ny = dy / globeR;
+                const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+                if (nz < 0.01) continue;
+
+                // Rotação Y
+                const rx = nx * Math.cos(globeAngle) + nz * Math.sin(globeAngle);
+                const rz = -nx * Math.sin(globeAngle) + nz * Math.cos(globeAngle);
+                if (rz < 0) continue;
+
+                const lon = Math.atan2(rx, rz);
+                const lat = Math.asin(Math.max(-1, Math.min(1, ny)));
+                const land = isLand(lon, -lat);
+
+                // Atmosfera na borda
+                const edgeDist = 1 - dist / globeR;
+
+                // Densidade e cor
+                let intensity, r, g, b;
+                const lighting = 0.3 + rz * 0.5;
+
+                if (land === 2) {
+                    // ══ BRASIL — verde, azul e amarelo ══
+                    const brNoise = Math.sin(lon * 40 + lat * 40);
+                    if (brNoise > 0.3) {
+                        // Verde
+                        r = 0; g = 180 + Math.floor(lighting * 75); b = 30;
+                    } else if (brNoise > -0.3) {
+                        // Amarelo
+                        r = 220 + Math.floor(lighting * 35); g = 200 + Math.floor(lighting * 55); b = 0;
                     } else {
-                        ctx.fillStyle = `rgba(0, 255, 65, ${intensity})`;
+                        // Azul
+                        r = 0; g = 80 + Math.floor(lighting * 40); b = 180 + Math.floor(lighting * 75);
+                    }
+                    intensity = 0.6 + lighting * 0.35;
+                } else if (land === 1) {
+                    // ══ Outros países — verde Matrix ══
+                    r = 0;
+                    g = 100 + Math.floor(lighting * 100);
+                    b = 30 + Math.floor(lighting * 20);
+                    intensity = 0.25 + lighting * 0.35;
+                } else {
+                    // ══ Oceano — escuro com grid ══
+                    const gridLon = Math.abs(lon % 0.5) < 0.025;
+                    const gridLat = Math.abs(lat % 0.5) < 0.025;
+                    if (gridLon || gridLat) {
+                        r = 0; g = 60; b = 30; intensity = 0.15;
+                    } else {
+                        r = 0; g = 25; b = 15; intensity = 0.04;
+                    }
+                }
+
+                // Atmosfera glow na borda
+                if (edgeDist < 0.1) {
+                    intensity = Math.max(intensity, 0.35 * (1 - edgeDist / 0.1));
+                    g = Math.max(g, 150);
+                }
+
+                // Filtra por densidade
+                if (Math.random() > intensity * 0.85 + 0.15) continue;
+
+                const px = gx * fontSize;
+                const py = gy * fontSize;
+                const char = chars[Math.floor(Math.random() * chars.length)];
+
+                // Mouse interaction
+                const mDist = Math.hypot(px - mouseX, py - mouseY);
+                if (mDist < 120) {
+                    const prox = 1 - mDist / 120;
+                    ctx.fillStyle = `rgba(200, 255, 220, ${0.4 + prox * 0.6})`;
+                    ctx.shadowBlur = 6 + prox * 10;
+                    ctx.shadowColor = land === 2 ? '#ffdd00' : '#00ff41';
+                } else {
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.55})`;
+                    if (land === 2) {
+                        ctx.shadowBlur = 3;
+                        ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                    } else if (intensity > 0.45) {
+                        ctx.shadowBlur = 3;
+                        ctx.shadowColor = '#00ff41';
+                    } else {
                         ctx.shadowBlur = 0;
                     }
-                    ctx.fillText(char, px, py);
-                    ctx.shadowBlur = 0; 
                 }
+                ctx.fillText(char, px, py);
+                ctx.shadowBlur = 0;
             }
         }
         requestAnimationFrame(draw);
