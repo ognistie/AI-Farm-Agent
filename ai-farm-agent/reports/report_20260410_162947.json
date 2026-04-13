@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "what": "Pesquisou e encontrou a aplicação Bloco de Notas no sistema.",
+      "concept": "app_search",
+      "insight": "Localização eficiente de recursos do SO."
+    },
+    {
+      "what": "Aguardou 3 segundos para a aplicação carregar completamente.",
+      "concept": "timing_management",
+      "insight": "Sincronização adequada entre ações garante estabilidade."
+    },
+    {
+      "what": "Digitou mensagem de saudação na aplicação aberta.",
+      "concept": "input_management",
+      "insight": "Interação bem-sucedida com interface de texto."
+    }
+  ],
+  "general": {
+    "summary": "Abriu Bloco de Notas com sucesso e inseriu texto. Demonstrou domínio de busca de aplicações, gerenciamento de tempo de carregamento e entrada de dados.",
+    "skills": [
+      "app_search",
+      "timing_management",
+      "input_management",
+      "task_execution"
+    ],
+    "xp_earned": 75,
+    "next_level": "Explore funcionalidades de salvamento de arquivo (Ctrl+S) e navegação entre abas."
+  },
+  "task": "abra o bloco de notas",
+  "generated_at": "2026-04-10T16:29:47.149431"
+}

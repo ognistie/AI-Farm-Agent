@@ -1,0 +1,14 @@
+{
+  "task": "abra o bloco de notas e escreva de 1 ate 10",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Bloco de Notas",
+    "⏳ 3s",
+    "✅ 'Notas': Ola!",
+    "✅ Bloco de Notas",
+    "⏳ 3s",
+    "✅ 'Notas': 1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+  ],
+  "created_at": "2026-04-13T17:21:04.567056",
+  "success_count": 1,
+  "tags": 

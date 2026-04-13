@@ -1,0 +1,16 @@
+{
+  "task": "abra uma nova guia no navegador, pesquise por youtube e procure videos sobre skate",
+  "agent": "WEB",
+  "steps": [
+    "⚠️",
+    "⏳ 1.5s",
+    "⚠️",
+    "⚠️",
+    "⏳ 2s",
+    "⚠️ Browser indisponível",
+    "⏳ 1.5s",
+    "⚠️"
+  ],
+  "created_at": "2026-04-13T17:33:39.280300",
+  "success_count": 1,
+  "tags": 

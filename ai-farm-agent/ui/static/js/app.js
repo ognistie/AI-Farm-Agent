@@ -5,10 +5,23 @@
 const S = { c: false, r: false, s: { dryRun: false, genReport: true }, tasks: 0, xp: 0 };
 let sk;
 
+// Dados atualizados com Glifos Sofisticados e Tradução para o Português
 const hologramData = {
-    'autonomous': "CORE DIRECTIVE // AUTONOMOUS MODE",
-    'computer': "SYSTEM LINK // HARDWARE INTERFACE",
-    'operator': "HUMAN PROXY // MANUAL OVERRIDE"
+    'autonomous': {
+        glyph: '❖',
+        title: 'MODO AUTÔNOMO',
+        desc: 'DIRETRIZ CENTRAL // MODO AUTÔNOMO ATIVO'
+    },
+    'computer': {
+        glyph: '🖳',
+        title: 'LINK DO SISTEMA',
+        desc: 'INTERFACE DE HARDWARE // CONEXÃO DE SISTEMA ESTÁVEL'
+    },
+    'operator': {
+        glyph: '웃',
+        title: 'PROXY HUMANO',
+        desc: 'SOBRECARGA MANUAL // CONTROLE HUMANO INICIADO'
+    }
 };
 
 /* ═══ MATRIX ENGINE V2 (MULTIDIRECIONAL + HOLOGRAMA ROSTO) ═══ */
@@ -56,279 +69,286 @@ function initMatrixEngine() {
     let mouseY = -1000;
     document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
-    // ═══ GLOBO TERRESTRE 3D — Geografia real, Brasil destacado ═══
-    const landMasses = [
-        // ── AMÉRICA DO NORTE ──
-        // Canadá
-        [-2.45,-1.05, 0.82, 1.22], [-2.6,-2.0, 0.95, 1.18], [-1.6,-1.05, 0.75, 0.95],
-        [-2.3,-1.8, 1.05, 1.2], [-2.8,-2.4, 0.95, 1.1],
-        // Alasca
-        [-2.95,-2.55, 1.0, 1.18], [-3.1,-2.85, 0.95, 1.08],
-        // EUA
-        [-2.15,-1.25, 0.52, 0.85], [-2.05,-1.3, 0.58, 0.82], [-1.55,-1.28, 0.42, 0.58],
-        [-2.15,-1.75, 0.52, 0.62], [-1.4,-1.25, 0.45, 0.55],
-        // México
-        [-1.95,-1.55, 0.32, 0.55], [-1.82,-1.6, 0.28, 0.42],
-        // América Central
-        [-1.58,-1.38, 0.15, 0.32], [-1.48,-1.35, 0.1, 0.22],
-        // Cuba / Caribe
-        [-1.48,-1.3, 0.35, 0.4], [-1.25,-1.12, 0.3, 0.35],
-
-        // ── AMÉRICA DO SUL (exceto Brasil) ──
-        // Venezuela / Colômbia
-        [-1.32,-1.1, 0.0, 0.2], [-1.4,-1.2, 0.02, 0.12],
-        // Peru / Equador
-        [-1.42,-1.22, -0.25, 0.0], [-1.38,-1.28, -0.15, -0.02],
-        // Bolívia
-        [-1.2,-1.05, -0.3, -0.12],
-        // Chile (fino e longo)
-        [-1.28,-1.18, -0.95, -0.25], [-1.25,-1.18, -0.6, -0.3],
-        // Argentina
-        [-1.22,-1.02, -0.85, -0.28], [-1.18,-1.05, -0.55, -0.3],
-        // Paraguai / Uruguai
-        [-1.05,-0.92, -0.42, -0.28], [-0.98,-0.88, -0.58, -0.48],
-        // Patagônia
-        [-1.25,-1.1, -0.88, -0.78],
-
-        // ── EUROPA ──
-        // Ibéria
-        [-0.18, 0.05, 0.62, 0.75], [-0.15, 0.02, 0.58, 0.65],
-        // França
-        [-0.08, 0.12, 0.72, 0.85], [0.0, 0.1, 0.68, 0.75],
-        // Ilhas Britânicas
-        [-0.1, 0.05, 0.85, 0.98], [-0.05, 0.0, 0.88, 0.95],
-        // Itália
-        [0.12, 0.28, 0.6, 0.78], [0.15, 0.22, 0.58, 0.65],
-        // Alemanha / Polônia / Bálticos
-        [0.08, 0.38, 0.82, 0.98], [0.15, 0.42, 0.85, 0.95],
-        // Escandinávia
-        [0.08, 0.28, 0.98, 1.2], [0.15, 0.35, 1.02, 1.15],
-        // Bálcãs / Grécia
-        [0.25, 0.45, 0.6, 0.78], [0.32, 0.42, 0.58, 0.65],
-        // Turquia
-        [0.45, 0.72, 0.62, 0.72],
-        // Europa Oriental
-        [0.35, 0.7, 0.78, 1.05], [0.5, 0.8, 0.85, 1.0],
-
-        // ── RÚSSIA ──
-        [0.5, 2.8, 0.9, 1.2], [0.7, 2.5, 0.95, 1.15], [1.0, 3.0, 0.85, 1.1],
-        [2.2, 2.8, 0.78, 0.95],
-
-        // ── ÁFRICA ──
-        // Norte da África / Magreb
-        [-0.2, 0.55, 0.35, 0.58], [0.0, 0.6, 0.38, 0.55],
-        // África Ocidental
-        [-0.3, 0.15, 0.08, 0.38], [-0.25, 0.1, 0.12, 0.3],
-        // Congo / África Central
-        [0.1, 0.52, -0.08, 0.15], [0.15, 0.48, -0.05, 0.1],
-        // África Oriental
-        [0.5, 0.72, -0.2, 0.2], [0.55, 0.7, -0.08, 0.15],
-        // Corno da África
-        [0.62, 0.88, 0.02, 0.2],
-        // África do Sul
-        [0.25, 0.55, -0.6, -0.2], [0.3, 0.52, -0.5, -0.25],
-        // Madagascar
-        [0.72, 0.82, -0.4, -0.2],
-
-        // ── ORIENTE MÉDIO ──
-        [0.6, 0.9, 0.35, 0.58], [0.72, 0.85, 0.38, 0.55],
-        // Arábia
-        [0.62, 0.88, 0.22, 0.42],
-
-        // ── ÁSIA ──
-        // Índia
-        [1.1, 1.45, 0.12, 0.55], [1.15, 1.4, 0.05, 0.35], [1.2, 1.35, -0.02, 0.15],
-        // Sri Lanka
-        [1.35, 1.42, 0.05, 0.12],
-        // Sudeste Asiático
-        [1.5, 1.85, 0.02, 0.42], [1.6, 1.9, 0.15, 0.38],
-        // China
-        [1.3, 2.15, 0.45, 0.85], [1.5, 2.1, 0.5, 0.78], [1.7, 2.05, 0.55, 0.72],
-        // Mongólia
-        [1.5, 2.0, 0.75, 0.85],
-        // Coreia
-        [2.15, 2.28, 0.55, 0.68],
-        // Japão
-        [2.25, 2.5, 0.52, 0.78], [2.28, 2.45, 0.55, 0.72], [2.3, 2.42, 0.48, 0.58],
-        // Indonésia
-        [1.65, 2.35, -0.15, 0.08], [1.8, 2.1, -0.12, 0.02],
-
-        // ── OCEANIA ──
-        // Austrália
-        [1.95, 2.65, -0.65, -0.18], [2.0, 2.55, -0.58, -0.22], [2.1, 2.5, -0.5, -0.25],
-        // Nova Zelândia
-        [2.85, 3.0, -0.72, -0.58], [2.88, 2.98, -0.62, -0.52],
-
-        // ── GROENLÂNDIA ──
-        [-0.9,-0.45, 1.05, 1.3], [-0.8,-0.5, 1.1, 1.25],
+    // ═══ GLOBO 3D — Continentes + Siglas + Empresas de IA por hover ═══
+    const countries = [
+        [-1.28,-0.6,-0.55,0.08,"BR","SA"],[-1.22,-1.02,-0.85,-0.28,"AR","SA"],
+        [-1.42,-1.22,-0.25,0.0,"PE","SA"],[-1.32,-1.1,0.0,0.2,"CO","SA"],
+        [-1.4,-1.2,0.02,0.15,"VE","SA"],[-1.28,-1.18,-0.95,-0.25,"CL","SA"],
+        [-1.2,-1.05,-0.3,-0.12,"BO","SA"],[-1.05,-0.92,-0.42,-0.28,"PY","SA"],
+        [-0.98,-0.88,-0.58,-0.48,"UY","SA"],
+        [-2.15,-1.25,0.52,0.85,"USA","NA"],[-2.5,-1.1,0.82,1.22,"CA","NA"],
+        [-1.95,-1.55,0.32,0.55,"MX","NA"],[-2.95,-2.55,1.0,1.18,"AK","NA"],
+        [-1.48,-1.3,0.35,0.4,"CU","NA"],
+        [-0.18,0.05,0.58,0.75,"ES","EU"],[-0.08,0.12,0.68,0.85,"FR","EU"],
+        [-0.1,0.05,0.85,0.98,"UK","EU"],[0.08,0.28,0.82,0.98,"DE","EU"],
+        [0.12,0.28,0.6,0.78,"IT","EU"],[0.35,0.55,0.78,0.95,"PL","EU"],
+        [0.08,0.25,0.98,1.18,"NO","EU"],[0.15,0.32,1.0,1.15,"SE","EU"],
+        [0.42,0.65,0.62,0.72,"TR","EU"],
+        [-0.05,0.55,0.35,0.55,"DZ","AF"],[0.35,0.62,0.35,0.55,"EG","AF"],
+        [-0.2,0.18,0.2,0.38,"NG","AF"],[0.25,0.55,-0.58,-0.2,"ZA","AF"],
+        [0.62,0.82,0.02,0.18,"ET","AF"],[0.35,0.65,-0.08,0.15,"CD","AF"],
+        [0.15,0.55,0.0,0.25,"SD","AF"],
+        [0.5,2.8,0.88,1.2,"RU","AS"],[1.3,2.15,0.5,0.82,"CN","AS"],
+        [1.1,1.42,0.08,0.5,"IN","AS"],[2.25,2.48,0.5,0.75,"JP","AS"],
+        [2.15,2.28,0.55,0.68,"KR","AS"],[1.55,1.85,0.25,0.42,"TH","AS"],
+        [0.82,0.98,0.42,0.58,"IR","AS"],[0.62,0.88,0.25,0.42,"SAU","AS"],
+        [1.0,1.3,0.5,0.7,"PK","AS"],[1.65,1.92,0.05,0.28,"ID","AS"],
+        [0.72,0.85,0.42,0.55,"IQ","AS"],
+        [1.95,2.65,-0.62,-0.18,"AU","OC"],[2.85,3.0,-0.72,-0.52,"NZ","OC"],
+        [-0.9,-0.45,1.05,1.3,"GL","NA"]
     ];
 
-    // ── BRASIL (polígonos mais detalhados) ──
-    const brazil = [
-        [-1.28,-0.6, -0.58, 0.08],
-        [-1.22,-0.65, -0.52, 0.05],
-        [-1.15,-0.62, -0.45, 0.02],
-        [-1.08,-0.6, -0.35, -0.02],
-        [-1.0,-0.62, -0.28, -0.05],
-        [-0.95,-0.6, -0.18, -0.08],
-        [-1.3,-0.85, -0.55, -0.15],
-        [-1.15,-0.72, -0.12, 0.08],
-        [-0.85,-0.6, -0.25, 0.0],
-        [-0.78,-0.58, -0.42, -0.12],
-        [-1.25,-1.0, -0.52, -0.35],
+    const landFill = [
+        [-1.05,-0.92,-0.42,-0.28,"","SA"],[-1.25,-1.0,-0.52,-0.35,"","SA"],
+        [-0.85,-0.6,-0.25,0.0,"","SA"],[-1.15,-0.72,-0.12,0.08,"","SA"],
+        [-1.55,-1.28,0.42,0.58,"","NA"],[-2.3,-1.8,1.05,1.2,"","NA"],
+        [-1.58,-1.38,0.15,0.32,"","NA"],[-1.48,-1.35,0.1,0.22,"","NA"],
+        [-0.15,0.25,0.55,0.68,"","EU"],[0.25,0.45,0.6,0.75,"","EU"],
+        [0.55,0.75,0.78,1.0,"","EU"],[0.7,2.5,0.92,1.12,"","AS"],
+        [1.0,3.0,0.85,1.08,"","AS"],[0.5,1.0,0.5,0.7,"","AS"],
+        [1.2,1.8,0.05,0.4,"","AS"],[1.35,1.42,0.05,0.12,"","AS"],
+        [1.8,2.35,-0.15,0.05,"","AS"],[1.5,1.72,0.75,0.85,"","AS"],
+        [0.0,0.5,-0.5,0.0,"","AF"],[-0.25,0.1,0.12,0.3,"","AF"],
+        [0.1,0.48,-0.05,0.1,"","AF"],[-0.3,-0.05,0.08,0.2,"","AF"],
+        [0.5,0.72,-0.2,0.08,"","AF"],[0.72,0.82,-0.4,-0.2,"","AF"],
+        [-0.2,0.15,0.38,0.55,"","AF"],[2.0,2.55,-0.55,-0.22,"","OC"],
+        [2.4,2.6,-0.12,0.0,"","OC"]
     ];
 
-    function isBrazil(lon, lat) {
-        for (let i = 0; i < brazil.length; i++) {
-            const b = brazil[i];
-            if (lon >= b[0] && lon <= b[1] && lat >= b[2] && lat <= b[3]) return true;
-        }
-        return false;
-    }
+    const CC = {
+        SA:[0,220,60], NA:[50,140,255], EU:[220,180,40],
+        AF:[230,120,30], AS:[220,50,80], OC:[0,210,210],
+    };
 
-    function isLand(lon, lat) {
-        if (isBrazil(lon, lat)) return 2; // 2 = Brasil
-        for (let i = 0; i < landMasses.length; i++) {
-            const c = landMasses[i];
-            if (lon >= c[0] && lon <= c[1] && lat >= c[2] && lat <= c[3]) return 1; // 1 = terra
+    const aiCompanies = {
+        SA: {name:"SOUTH AMERICA",companies:["Nubank AI","iFood ML","TOTVS Carol","Semantix","Tempest AI","Movile Labs"]},
+        NA: {name:"NORTH AMERICA",companies:["OpenAI","Anthropic","Google DeepMind","Meta AI","NVIDIA","xAI","Microsoft","Amazon AWS AI","Apple ML","Tesla AI"]},
+        EU: {name:"EUROPE",companies:["Mistral AI","DeepL","Aleph Alpha","Stability AI","BioNTech AI","Graphcore","Darktrace","Exscientia"]},
+        AF: {name:"AFRICA",companies:["InstaDeep","Lelapa AI","Zindi","Masakhane NLP","Ushahidi AI","54gene ML"]},
+        AS: {name:"ASIA",companies:["Baidu AI","Alibaba DAMO","Tencent AI","ByteDance","Samsung AI","SoftBank","Yandex","Huawei AI","SenseTime","Infosys AI"]},
+        OC: {name:"OCEANIA",companies:["Canva AI","Atlassian Intelligence","Appen","SafetyCulture AI","Harrison.ai","Nearmap AI"]},
+    };
+
+    function identifyPoint(lon, lat) {
+        for (let i = 0; i < countries.length; i++) {
+            const c = countries[i];
+            if (lon >= c[0] && lon <= c[1] && lat >= c[2] && lat <= c[3]) return {cont:c[5],tag:c[4]};
         }
-        return 0; // 0 = oceano
+        for (let i = 0; i < landFill.length; i++) {
+            const c = landFill[i];
+            if (lon >= c[0] && lon <= c[1] && lat >= c[2] && lat <= c[3]) return {cont:c[5],tag:""};
+        }
+        return null;
     }
 
     let globeAngle = 0;
     const globeCx = Math.floor(cols * 0.25);
     const globeCy = Math.floor(rows * 0.48);
     const globeR = Math.min(cols * 0.18, rows * 0.38);
+    let hoveredContinent = null;
+
+    const cCenters = countries.filter(c=>c[4]).map(c=>({
+        lon:(c[0]+c[1])/2, lat:-(c[2]+c[3])/2, tag:c[4], cont:c[5]
+    }));
+
+    function project(lon, lat) {
+        const sy = -Math.sin(lat);
+        const cy2 = Math.cos(lat);
+        const sx = cy2 * Math.sin(lon);
+        const sz = cy2 * Math.cos(lon);
+        const prx = sx * Math.cos(globeAngle) + sz * Math.sin(globeAngle);
+        const prz = -sx * Math.sin(globeAngle) + sz * Math.cos(globeAngle);
+        if (prz < 0.05) return null;
+        return {
+            x: (globeCx + prx * globeR) * fontSize,
+            y: (globeCy + sy * globeR) * fontSize,
+            z: prz
+        };
+    }
+
+    function detectContinent(mx, my) {
+        const gx = mx / fontSize;
+        const gy = my / fontSize;
+        const dx = gx - globeCx;
+        const dy = gy - globeCy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > globeR) return null;
+
+        const nx = dx / globeR;
+        const ny = dy / globeR;
+        const nz = Math.sqrt(Math.max(0, 1-nx*nx-ny*ny));
+        if (nz < 0.01) return null;
+
+        const rx = nx*Math.cos(globeAngle) + nz*Math.sin(globeAngle);
+        const rz = -nx*Math.sin(globeAngle) + nz*Math.cos(globeAngle);
+        if (rz < 0) return null;
+
+        const lon = Math.atan2(rx, rz);
+        const lat = -Math.asin(Math.max(-1, Math.min(1, ny)));
+        const info = identifyPoint(lon, lat);
+        return info ? info.cont : null;
+    }
 
     function draw() {
         globeAngle += 0.003;
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
         ctx.fillRect(0, 0, c.width, c.height);
         ctx.font = fontSize + 'px monospace';
 
-        // 1. Cascata de código multidirecional
+        hoveredContinent = detectContinent(mouseX, mouseY);
+
+        // 1. Cascata de código
         streams.forEach(s => {
             s.update();
             s.chars.forEach((cObj, i) => {
                 let px = cObj.x * fontSize;
                 let py = cObj.y * fontSize;
-                const mouseDist = Math.hypot(px - mouseX, py - mouseY);
-                if (mouseDist < 80) {
+                const md = Math.hypot(px - mouseX, py - mouseY);
+                if (md < 80) {
                     ctx.fillStyle = '#ffffff';
-                    const angle = Math.atan2(py - mouseY, px - mouseX);
-                    px += Math.cos(angle) * 10;
-                    py += Math.sin(angle) * 10;
+                    const a = Math.atan2(py - mouseY, px - mouseX);
+                    px += Math.cos(a) * 10; py += Math.sin(a) * 10;
                     ctx.fillText(chars[Math.floor(Math.random() * chars.length)], px, py);
                 } else {
-                    const alpha = 1 - (i / s.length);
-                    ctx.fillStyle = (i === 0) ? '#ffffff' : `rgba(0, 255, 65, ${alpha})`;
+                    const al = 1 - (i / s.length);
+                    ctx.fillStyle = (i === 0) ? '#ffffff' : `rgba(0,255,65,${al})`;
                     ctx.fillText(cObj.char, px, py);
                 }
             });
         });
 
-        // 2. Globo terrestre 3D
+        // 2. Globo terrestre
         const x1 = Math.max(0, globeCx - globeR - 2);
-        const x2 = Math.min(Math.floor(cols * 0.5), globeCx + globeR + 2);
+        const x2 = Math.min(Math.floor(cols * 0.52), globeCx + globeR + 2);
         const y1 = Math.max(0, globeCy - globeR - 2);
         const y2 = Math.min(rows, globeCy + globeR + 2);
 
         for (let gx = x1; gx < x2; gx++) {
             for (let gy = y1; gy < y2; gy++) {
-                const dx = gx - globeCx;
-                const dy = gy - globeCy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+                const dx = gx - globeCx, dy = gy - globeCy;
+                const dist = Math.sqrt(dx*dx + dy*dy);
                 if (dist > globeR) continue;
 
-                const nx = dx / globeR;
-                const ny = dy / globeR;
-                const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+                const nx = dx/globeR, ny = dy/globeR;
+                const nz = Math.sqrt(Math.max(0, 1-nx*nx-ny*ny));
                 if (nz < 0.01) continue;
 
-                // Rotação Y
-                const rx = nx * Math.cos(globeAngle) + nz * Math.sin(globeAngle);
-                const rz = -nx * Math.sin(globeAngle) + nz * Math.cos(globeAngle);
+                const rx = nx*Math.cos(globeAngle) + nz*Math.sin(globeAngle);
+                const rz = -nx*Math.sin(globeAngle) + nz*Math.cos(globeAngle);
                 if (rz < 0) continue;
 
                 const lon = Math.atan2(rx, rz);
                 const lat = Math.asin(Math.max(-1, Math.min(1, ny)));
-                const land = isLand(lon, -lat);
-
-                // Atmosfera na borda
+                const info = identifyPoint(lon, -lat);
                 const edgeDist = 1 - dist / globeR;
+                const light = 0.25 + rz * 0.55;
 
-                // Densidade e cor
-                let intensity, r, g, b;
-                const lighting = 0.3 + rz * 0.5;
+                let r, g, b, intensity;
+                const isHovered = info && hoveredContinent === info.cont;
 
-                if (land === 2) {
-                    // ══ BRASIL — verde, azul e amarelo ══
-                    const brNoise = Math.sin(lon * 40 + lat * 40);
-                    if (brNoise > 0.3) {
-                        // Verde
-                        r = 0; g = 180 + Math.floor(lighting * 75); b = 30;
-                    } else if (brNoise > -0.3) {
-                        // Amarelo
-                        r = 220 + Math.floor(lighting * 35); g = 200 + Math.floor(lighting * 55); b = 0;
-                    } else {
-                        // Azul
-                        r = 0; g = 80 + Math.floor(lighting * 40); b = 180 + Math.floor(lighting * 75);
-                    }
-                    intensity = 0.6 + lighting * 0.35;
-                } else if (land === 1) {
-                    // ══ Outros países — verde Matrix ══
-                    r = 0;
-                    g = 100 + Math.floor(lighting * 100);
-                    b = 30 + Math.floor(lighting * 20);
-                    intensity = 0.25 + lighting * 0.35;
+                if (info) {
+                    const cc = CC[info.cont] || [0,200,60];
+                    const boost = isHovered ? 1.4 : 1;
+                    r = Math.min(255, Math.floor(cc[0] * light * boost));
+                    g = Math.min(255, Math.floor(cc[1] * light * boost));
+                    b = Math.min(255, Math.floor(cc[2] * light * boost));
+                    intensity = isHovered ? 0.5 + light * 0.45 : 0.3 + light * 0.4;
                 } else {
-                    // ══ Oceano — escuro com grid ══
-                    const gridLon = Math.abs(lon % 0.5) < 0.025;
-                    const gridLat = Math.abs(lat % 0.5) < 0.025;
-                    if (gridLon || gridLat) {
-                        r = 0; g = 60; b = 30; intensity = 0.15;
-                    } else {
-                        r = 0; g = 25; b = 15; intensity = 0.04;
-                    }
+                    const gl = Math.abs(lon % 0.5) < 0.02 || Math.abs(lat % 0.5) < 0.02;
+                    r = 0; g = gl ? 40 : 15; b = gl ? 25 : 10;
+                    intensity = gl ? 0.1 : 0.03;
                 }
 
-                // Atmosfera glow na borda
-                if (edgeDist < 0.1) {
-                    intensity = Math.max(intensity, 0.35 * (1 - edgeDist / 0.1));
-                    g = Math.max(g, 150);
+                if (edgeDist < 0.09) {
+                    const gw = 0.35 * (1 - edgeDist / 0.09);
+                    intensity = Math.max(intensity, gw); g = Math.max(g, 120);
                 }
+                if (Math.random() > intensity * 0.82 + 0.18) continue;
 
-                // Filtra por densidade
-                if (Math.random() > intensity * 0.85 + 0.15) continue;
+                const px = gx * fontSize, py = gy * fontSize;
+                const ch = chars[Math.floor(Math.random() * chars.length)];
 
-                const px = gx * fontSize;
-                const py = gy * fontSize;
-                const char = chars[Math.floor(Math.random() * chars.length)];
-
-                // Mouse interaction
-                const mDist = Math.hypot(px - mouseX, py - mouseY);
-                if (mDist < 120) {
-                    const prox = 1 - mDist / 120;
-                    ctx.fillStyle = `rgba(200, 255, 220, ${0.4 + prox * 0.6})`;
-                    ctx.shadowBlur = 6 + prox * 10;
-                    ctx.shadowColor = land === 2 ? '#ffdd00' : '#00ff41';
-                } else {
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.55})`;
-                    if (land === 2) {
-                        ctx.shadowBlur = 3;
-                        ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
-                    } else if (intensity > 0.45) {
-                        ctx.shadowBlur = 3;
-                        ctx.shadowColor = '#00ff41';
-                    } else {
-                        ctx.shadowBlur = 0;
-                    }
-                }
-                ctx.fillText(char, px, py);
+                ctx.fillStyle = `rgba(${r},${g},${b},${0.4 + intensity * 0.55})`;
+                ctx.shadowBlur = (isHovered && intensity > 0.4) ? 5 : (intensity > 0.5 ? 2 : 0);
+                ctx.shadowColor = isHovered ? '#ffffff' : `rgba(${r},${g},${b},0.4)`;
+                ctx.fillText(ch, px, py);
                 ctx.shadowBlur = 0;
             }
         }
+
+        // 3. Siglas dos países sobre o globo (CORRIGIDO: Fixadas)
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle'; 
+        for (let i = 0; i < cCenters.length; i++) {
+            const cc = cCenters[i];
+            const p = project(cc.lon, cc.lat);
+            
+            if (!p || p.z < 0.4) continue;
+
+            const isH = hoveredContinent === cc.cont;
+            const col = CC[cc.cont] || [0,200,60];
+            const alpha = (0.4 + p.z * 0.6) * (isH ? 1 : 0.7);
+
+            ctx.font = isH ? 'bold 11px monospace' : '9px monospace';
+            ctx.fillStyle = `rgba(${Math.min(255,col[0]+90)},${Math.min(255,col[1]+90)},${Math.min(255,col[2]+90)},${alpha})`;
+            ctx.shadowBlur = isH ? 6 : 2;
+            ctx.shadowColor = `rgba(${col[0]},${col[1]},${col[2]},0.5)`;
+            ctx.fillText(cc.tag, p.x, p.y);
+            ctx.shadowBlur = 0;
+        }
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'alphabetic'; 
+        ctx.font = fontSize + 'px monospace';
+
+        // 4. HUD de empresas de IA (CORRIGIDO: Proteção de Bordas)
+        if (hoveredContinent && aiCompanies[hoveredContinent]) {
+            const data = aiCompanies[hoveredContinent];
+            const col = CC[hoveredContinent];
+            
+            const hudW = 220;
+            const hudH = 24 + data.companies.length * 18;
+
+            let hudX = mouseX + 15;
+            let hudY = mouseY - (hudH / 2);
+
+            // Proteção para não vazar a tela na direita
+            if (hudX + hudW > window.innerWidth - 20) {
+                hudX = mouseX - hudW - 15;
+            }
+            // Proteção vertical (topo e base)
+            if (hudY < 20) hudY = 20;
+            if (hudY + hudH > window.innerHeight - 20) hudY = window.innerHeight - hudH - 20;
+
+            // Fundo do HUD
+            ctx.fillStyle = 'rgba(0,0,0,0.85)';
+            ctx.strokeStyle = `rgba(${col[0]},${col[1]},${col[2]},0.8)`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(hudX, hudY, hudW, hudH, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // Título do continente
+            ctx.font = 'bold 11px monospace';
+            ctx.fillStyle = `rgb(${Math.min(255,col[0]+60)},${Math.min(255,col[1]+60)},${Math.min(255,col[2]+60)})`;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = `rgba(${col[0]},${col[1]},${col[2]},0.6)`;
+            ctx.textAlign = 'left';
+            ctx.fillText('⬡ ' + data.name + ' — AI', hudX + 10, hudY + 16);
+            ctx.shadowBlur = 0;
+
+            // Lista de empresas
+            ctx.font = '10px monospace';
+            data.companies.forEach((company, idx) => {
+                const yPos = hudY + 34 + idx * 18;
+                const flicker = Math.sin(Date.now() * 0.003 + idx) * 0.15;
+                ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${0.8 + flicker})`;
+                ctx.fillText('› ' + company, hudX + 12, yPos);
+            });
+
+            ctx.font = fontSize + 'px monospace';
+        }
+
         requestAnimationFrame(draw);
     }
     draw();
@@ -339,26 +359,28 @@ function initMatrixEngine() {
     });
 }
 
-/* ═══ HOVER HUD DATA PROFILE DAS PALAVRAS ═══ */
+/* ═══ HOVER HUD DATA PROFILE DAS PALAVRAS (ATUALIZADO COM GLIFOS E HTML) ═══ */
 function initHoverReveal() {
     const hoverElements = document.querySelectorAll('.matrix-hover');
     const revealContainer = document.getElementById('hover-reveal-container');
-    const revealBg = document.getElementById('hover-reveal-bg'); 
-    const hologramDesc = document.getElementById('hologram-desc');
 
-    if (!revealContainer || !revealBg || hoverElements.length === 0) return;
+    if (!revealContainer || hoverElements.length === 0) return;
 
     hoverElements.forEach(el => {
         el.addEventListener('mouseenter', (e) => {
-            const imgSrc = el.getAttribute('data-image');
-            if(imgSrc) {
-                revealBg.style.backgroundImage = `url('${imgSrc}')`;
-            } else {
-                revealBg.style.backgroundImage = 'none';
-            }
-            
             const dataKey = el.textContent.trim().toLowerCase();
-            hologramDesc.textContent = hologramData[dataKey] || "NEURAL LINK // DATA FEED ACTIVE";
+            const data = hologramData[dataKey];
+            
+            if (!data) return;
+
+            // Renderiza o HTML interno com estilo inline (compatível com seu CSS base)
+            revealContainer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(0, 255, 65, 0.3); padding-bottom: 8px;">
+                    <span style="font-size: 28px; color: #00ff41; text-shadow: 0 0 10px #00ff41;">${data.glyph}</span>
+                    <h4 style="margin: 0; font-size: 14px; font-family: monospace; color: #fff; text-shadow: 0 0 8px #00ff41; letter-spacing: 1px;">${data.title}</h4>
+                </div>
+                <p style="margin: 0; font-size: 11px; font-family: monospace; color: #00e5ff; opacity: 0.9;">${data.desc}</p>
+            `;
             
             revealContainer.style.opacity = '1';
             revealContainer.classList.add('glitch-anim');
@@ -366,21 +388,21 @@ function initHoverReveal() {
         });
 
         el.addEventListener('mousemove', (e) => {
-            const x = e.clientX + 30;
-            const y = e.clientY + 30;
+            const x = e.clientX + 20;
+            const y = e.clientY + 20;
             revealContainer.style.transform = `translate(${x}px, ${y}px) scale(1) skew(0deg)`;
         });
 
         el.addEventListener('mouseleave', (e) => {
             revealContainer.style.opacity = '0';
-            const x = e.clientX + 30;
-            const y = e.clientY + 30;
+            const x = e.clientX + 20;
+            const y = e.clientY + 20;
             revealContainer.style.transform = `translate(${x}px, ${y}px) scale(0.8) skew(10deg)`;
         });
     });
 }
 
-/* ═══ MANTIDO 100% INTACTO: SUAS FUNÇÕES ORIGINAIS DO APP.JS ═══ */
+/* ═══ OUTRAS FUNÇÕES DA APLICAÇÃO GERAL ═══ */
 function enterMatrix() {
     const splashContent = document.querySelector('.splash-content');
     const overlay = document.getElementById('transition-overlay');
@@ -520,6 +542,7 @@ function renderPlan(p) {
         c.appendChild(d);
     });
 }
+
 function hlP(n) { document.querySelectorAll('.pi').forEach(e => e.classList.remove('cur')); const e = $('pi-' + n); if (e) { e.classList.add('cur'); e.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
 function dnP(n) { const e = $('pi-' + n); if (e) { e.classList.remove('cur'); e.classList.add('dn'); } }
 
@@ -529,6 +552,7 @@ function addFc(d) {
     c.innerHTML = '<div class="fc-h"><span class="fc-n">' + d.step + '</span><span class="fc-t">' + d.action + '</span></div><div class="fc-b"><div class="fc-d">' + d.desc + '</div><div class="fc-r">⏳ Executando...</div></div>';
     f.appendChild(c); c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
 function doneFc(d) {
     const c = $('fc-' + d.step); if (!c) return;
     c.className = 'fc ' + (d.ok ? 'done' : 'fail');
@@ -540,6 +564,7 @@ function doneFc(d) {
         c.appendChild(im);
     }
 }
+
 function showSk(s) {
     const c = mk('div', 'sk');
     c.innerHTML = '<div class="sk-l">★ SKILLS UNLOCKED ★</div><div class="sk-tags">' + s.map(x => '<span class="sk-tag">' + x.toUpperCase() + '</span>').join('') + '</div>';
@@ -596,8 +621,8 @@ function mk(t, c) { const e = document.createElement(t); if (c) e.className = c;
 
 /* ═══ INICIALIZAÇÃO GERAL ═══ */
 document.addEventListener('DOMContentLoaded', () => {
-    initMatrixEngine(); // Liga a Cascata que interage com o mouse + Holograma
-    initHoverReveal();  // Liga o HUD nas palavras
+    initMatrixEngine(); 
+    initHoverReveal();  
     initSocket();
     
     $('task-input').addEventListener('keydown', e => {

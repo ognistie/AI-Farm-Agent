@@ -47,7 +47,19 @@ PROMPT = (
     '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"oi"},'
     '"objectives":["Teams aberto e visivel","Aba Chat selecionada","Conversa com Joao aberta","Mensagem enviada"],'
     '"depends_on":null}],"skills":["teams"]}\n\n'
-    "Prefira 1 subtask quando possivel. Use depends_on apenas quando uma etapa precisa do resultado da anterior.\n"
+    "Prefira 1 subtask quando possivel. Use depends_on apenas quando uma etapa precisa do resultado da anterior.\n\n"
+    "REGRAS ABSOLUTAS DE DECOMPOSICAO:\n"
+    "- Se a tarefa envolve UM UNICO APP (ex: 'abra notepad e escreva X') → SEMPRE 1 subtask com o texto COMPLETO nos params\n"
+    "- NUNCA separe 'abrir app' e 'escrever no app' em subtasks diferentes\n"
+    "- NUNCA separe 'abrir app' e 'fazer algo no app' — isso é UMA acao\n"
+    "- Use 2+ subtasks APENAS se a tarefa envolve APPS DIFERENTES (ex: 'crie planilha E envie no Teams')\n"
+    "- O param 'text' deve conter EXATAMENTE o que o usuario pediu para escrever, sem inventar\n"
+    "- Se o usuario pede 'escreva de 10 ate 20', o text deve ser '10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20'\n\n"
+    "Exemplo: 'abra o bloco de notas e escreva de 10 ate 20'\n"
+    '{"analysis":"abrir notepad e escrever numeros","subtasks":[{"agent":"DESKTOP","task":"abrir bloco de notas e escrever numeros de 10 a 20",'
+    '"params":{"app":"notepad","action_type":"write_text","text":"10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20"},'
+    '"objectives":["Notepad aberto","Numeros escritos"],'
+    '"depends_on":null}],"skills":["notepad"]}\n\n'
     "Windows PT-BR."
 )
 

@@ -8,7 +8,7 @@ def get_routine(params):
     app = (params.get("app", "") or "").lower().strip()
     action_type = (params.get("action_type", "") or "").lower().strip()
     person = params.get("person", "") or "Contato"
-    message = params.get("message", "") or params.get("text", "") or "Ola!"
+    message = params.get("message", "") or params.get("text", "") or ""
     text = params.get("text", "") or message
 
     if app in ("teams", "microsoft teams"):
@@ -85,12 +85,14 @@ def _whatsapp_msg(person, message):
 
 
 def _notepad(text):
-    """Notepad: abre e digita em sequencia unica. Titulo flexivel."""
-    return [
+    """Notepad: abre e digita. Se text vazio, só abre."""
+    steps = [
         _s(1, "app_search", {"name": "Bloco de Notas"}, "Abrir Notepad"),
         _s(2, "wait", {"seconds": 3}, "Aguardar Notepad abrir"),
-        _s(3, "app_type", {"window_title": "Notas", "text": text}, "Digitar texto"),
     ]
+    if text and text.strip():
+        steps.append(_s(3, "app_type", {"window_title": "Notas", "text": text}, "Digitar texto"))
+    return steps
 
 
 def _word(text):

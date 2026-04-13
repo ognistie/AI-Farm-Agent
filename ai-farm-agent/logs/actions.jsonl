@@ -500,3 +500,76 @@
 {"timestamp": "2026-04-10T16:55:08.107319", "agent": "DESKTOP", "action": "hotkey", "params": {"keys": "['enter']"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 104}
 {"timestamp": "2026-04-10T16:55:08.261571", "agent": "ENGINE", "action": "hotkey", "params": {"keys": "['escape']"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 101}
 {"timestamp": "2026-04-10T16:55:08.262281", "agent": "DESKTOP", "action": "hotkey", "params": {"keys": "['escape']"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 102}
+{"timestamp": "2026-04-13T13:55:46.856099", "agent": "ENGINE", "action": "app_search", "params": {"name": "Microsoft Teams"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4666}
+{"timestamp": "2026-04-13T13:55:46.862781", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Microsoft Teams"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4677}
+{"timestamp": "2026-04-13T13:55:51.916825", "agent": "ENGINE", "action": "wait", "params": {"seconds": "5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 5000}
+{"timestamp": "2026-04-13T13:55:51.921851", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 5004}
+{"timestamp": "2026-04-13T13:55:54.391689", "agent": "ENGINE", "action": "focus_window", "params": {"title": "Teams"}, "result": "FAIL", "error": "❌ 'Teams'", "method": "", "duration_ms": 2417}
+{"timestamp": "2026-04-13T13:55:54.392594", "agent": "DESKTOP", "action": "focus_window", "params": {"title": "Teams"}, "result": "FAIL", "error": "❌ 'Teams'", "method": "", "duration_ms": 2418}
+{"timestamp": "2026-04-13T13:55:55.444489", "agent": "ENGINE", "action": "wait", "params": {"seconds": "1"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1000}
+{"timestamp": "2026-04-13T13:55:55.446194", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "1"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1002}
+{"timestamp": "2026-04-13T13:56:40.663741", "agent": "ENGINE", "action": "vision_click", "params": {"description": "texto 'Chat' na barra lateral esquerda DENTRO da janela do Teams, e um dos icones na coluna vertical"}, "result": "FAIL", "error": "❌ texto 'Chat' na barra lateral esquerda DENTRO da janela do Teams, e um dos icones na coluna vertical do lado esquerdo com texto 'Chat' embaixo: Error code: 529 - {'type': 'error', 'error': {'type': ", "method": "", "duration_ms": 45164}
+{"timestamp": "2026-04-13T17:20:06.283301", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4646}
+{"timestamp": "2026-04-13T17:20:06.451335", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4815}
+{"timestamp": "2026-04-13T17:20:09.511507", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3002}
+{"timestamp": "2026-04-13T17:20:09.519600", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3014}
+{"timestamp": "2026-04-13T17:20:12.806142", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "FAIL", "error": "❌ Janela: 'Notas'", "method": "", "duration_ms": 3228}
+{"timestamp": "2026-04-13T17:20:12.808106", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "FAIL", "error": "❌ Janela: 'Notas'", "method": "", "duration_ms": 3234}
+{"timestamp": "2026-04-13T17:20:17.567169", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4684}
+{"timestamp": "2026-04-13T17:20:17.568477", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4686}
+{"timestamp": "2026-04-13T17:20:20.621751", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:20:20.623425", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3002}
+{"timestamp": "2026-04-13T17:20:23.917034", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"}, "result": "FAIL", "error": "❌ Janela: 'Notas'", "method": "", "duration_ms": 3239}
+{"timestamp": "2026-04-13T17:20:23.919004", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"}, "result": "FAIL", "error": "❌ Janela: 'Notas'", "method": "", "duration_ms": 3241}
+{"timestamp": "2026-04-13T17:20:52.375698", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4627}
+{"timestamp": "2026-04-13T17:20:52.376788", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4628}
+{"timestamp": "2026-04-13T17:20:55.429596", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:20:55.431796", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3002}
+{"timestamp": "2026-04-13T17:20:56.012693", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 526}
+{"timestamp": "2026-04-13T17:20:56.020033", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 536}
+{"timestamp": "2026-04-13T17:21:00.878764", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4800}
+{"timestamp": "2026-04-13T17:21:00.879960", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4802}
+{"timestamp": "2026-04-13T17:21:03.934861", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:21:03.936931", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3002}
+{"timestamp": "2026-04-13T17:21:04.505668", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 516}
+{"timestamp": "2026-04-13T17:21:04.511449", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 520}
+{"timestamp": "2026-04-13T17:21:41.283957", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4720}
+{"timestamp": "2026-04-13T17:21:41.286882", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4724}
+{"timestamp": "2026-04-13T17:21:44.344446", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:21:44.346227", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3003}
+{"timestamp": "2026-04-13T17:21:44.926108", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola Mundo"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 521}
+{"timestamp": "2026-04-13T17:21:44.931561", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola Mundo"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 527}
+{"timestamp": "2026-04-13T17:24:33.629360", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4674}
+{"timestamp": "2026-04-13T17:24:33.632518", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4682}
+{"timestamp": "2026-04-13T17:24:36.685737", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:24:36.687412", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3002}
+{"timestamp": "2026-04-13T17:24:37.295168", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 546}
+{"timestamp": "2026-04-13T17:24:37.299405", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 551}
+{"timestamp": "2026-04-13T17:28:49.754902", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4628}
+{"timestamp": "2026-04-13T17:28:49.757055", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4631}
+{"timestamp": "2026-04-13T17:28:52.810089", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:28:52.827108", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3015}
+{"timestamp": "2026-04-13T17:28:53.422889", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 528}
+{"timestamp": "2026-04-13T17:28:53.430850", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "Ola!"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 549}
+{"timestamp": "2026-04-13T17:28:58.231354", "agent": "ENGINE", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 4743}
+{"timestamp": "2026-04-13T17:28:58.711763", "agent": "DESKTOP", "action": "app_search", "params": {"name": "Bloco de Notas"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 5223}
+{"timestamp": "2026-04-13T17:29:01.765975", "agent": "ENGINE", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3000}
+{"timestamp": "2026-04-13T17:29:01.767299", "agent": "DESKTOP", "action": "wait", "params": {"seconds": "3"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3001}
+{"timestamp": "2026-04-13T17:29:02.336779", "agent": "ENGINE", "action": "app_type", "params": {"window_title": "Notas", "text": "10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 517}
+{"timestamp": "2026-04-13T17:29:02.339481", "agent": "DESKTOP", "action": "app_type", "params": {"window_title": "Notas", "text": "10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 520}
+{"timestamp": "2026-04-13T17:33:31.652269", "agent": "ENGINE", "action": "web_new_tab", "params": {"url": "https://www.google.com"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2}
+{"timestamp": "2026-04-13T17:33:31.655003", "agent": "WEB", "action": "web_new_tab", "params": {"url": "https://www.google.com"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 5}
+{"timestamp": "2026-04-13T17:33:33.783720", "agent": "ENGINE", "action": "wait", "params": {"seconds": "1.5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1500}
+{"timestamp": "2026-04-13T17:33:33.786949", "agent": "WEB", "action": "wait", "params": {"seconds": "1.5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1504}
+{"timestamp": "2026-04-13T17:33:33.840322", "agent": "ENGINE", "action": "web_type", "params": {"field": "textarea[name=q]", "text": "youtube"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 0}
+{"timestamp": "2026-04-13T17:33:33.841349", "agent": "WEB", "action": "web_type", "params": {"field": "textarea[name=q]", "text": "youtube"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2}
+{"timestamp": "2026-04-13T17:33:34.249709", "agent": "ENGINE", "action": "web_key", "params": {"key": "Enter"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2}
+{"timestamp": "2026-04-13T17:33:34.255801", "agent": "WEB", "action": "web_key", "params": {"key": "Enter"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 9}
+{"timestamp": "2026-04-13T17:33:36.719278", "agent": "ENGINE", "action": "wait", "params": {"seconds": "2"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2000}
+{"timestamp": "2026-04-13T17:33:36.722975", "agent": "WEB", "action": "wait", "params": {"seconds": "2"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2004}
+{"timestamp": "2026-04-13T17:33:36.777557", "agent": "ENGINE", "action": "web_goto", "params": {"url": "https://www.youtube.com"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1}
+{"timestamp": "2026-04-13T17:33:36.779251", "agent": "WEB", "action": "web_goto", "params": {"url": "https://www.youtube.com"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 3}
+{"timestamp": "2026-04-13T17:33:38.731721", "agent": "ENGINE", "action": "wait", "params": {"seconds": "1.5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1500}
+{"timestamp": "2026-04-13T17:33:38.735126", "agent": "WEB", "action": "wait", "params": {"seconds": "1.5"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 1503}
+{"timestamp": "2026-04-13T17:33:38.790405", "agent": "ENGINE", "action": "web_type", "params": {"field": "input#search", "text": "skate"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 2}
+{"timestamp": "2026-04-13T17:33:38.793770", "agent": "WEB", "action": "web_type", "params": {"field": "input#search", "text": "skate"}, "result": "SUCCESS", "error": "", "method": "", "duration_ms": 5}

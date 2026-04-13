@@ -1,0 +1,59 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar nova planilha em branco",
+      "concept": "interface_excel",
+      "insight": "Excel 2013 oferece templates profissionais mas criar do zero permite customização total"
+    },
+    {
+      "what": "Definir estrutura com colunas: ID, Produto, Categoria, Preço, Estoque, Total",
+      "concept": "data_modeling",
+      "insight": "Uma boa estrutura de colunas facilita análises e relatórios futuros"
+    },
+    {
+      "what": "Adicionar formatação com cabeçalho em negrito, cores e bordas",
+      "concept": "formatting",
+      "insight": "Formatação visual melhora legibilidade e profissionalismo do documento"
+    },
+    {
+      "what": "Inserir dados de produtos com preços e quantidades em estoque",
+      "concept": "data_entry",
+      "insight": "Dados realistas permitem testes efetivos de fórmulas e cálculos"
+    },
+    {
+      "what": "Criar fórmulas de cálculo: Total = Preço × Estoque",
+      "concept": "formulas_basicas",
+      "insight": "Fórmulas automatizam cálculos e reduzem erros manuais"
+    },
+    {
+      "what": "Adicionar linha de totalizadores com SUM para faturamento total",
+      "concept": "aggregate_functions",
+      "insight": "Funções de agregação permitem análises rápidas de performance"
+    },
+    {
+      "what": "Aplicar formatação condicional para alertar estoque baixo (<10 unidades)",
+      "concept": "conditional_formatting",
+      "insight": "Formatação condicional destaca dados críticos automaticamente"
+    },
+    {
+      "what": "Criar tabela dinâmica para análise por categoria",
+      "concept": "pivot_tables",
+      "insight": "Tabelas dinâmicas permitem visualizar dados de múltiplas perspectivas"
+    }
+  ],
+  "general": {
+    "summary": "Planilha profissional de supermercado criada com estrutura dados, fórmulas de cálculo, formatação visual e análises dinâmicas para gestão de estoque e faturamento.",
+    "skills": [
+      "excel_2013",
+      "data_modeling",
+      "formulas",
+      "conditional_formatting",
+      "pivot_tables",
+      "business_spreadsheets"
+    ],
+    "xp_earned": 250,
+    "next_level": "Integrar dados de vendas diárias e criar dashboard com gráficos de tendências"
+  },
+  "task": "abra o excel 2013 e faça uma planilha profissional de um supermercado",
+  "generated_at": "2026-04-10T16:34:25.241852"
+}

@@ -1,0 +1,60 @@
+{
+  "steps": [
+    {
+      "what": "Criar estrutura base da planilha com cabeçalhos e dados de vendas de bebidas",
+      "concept": "spreadsheet_structure",
+      "insight": "Organização clara facilita análise e visualização de dados"
+    },
+    {
+      "what": "Adicionar categorias de bebidas (água, refrigerante, suco, cerveja, vinho) com quantidades vendidas",
+      "concept": "data_categorization",
+      "insight": "Segmentação por tipo permite identificar produtos mais populares"
+    },
+    {
+      "what": "Calcular total de vendas e aplicar fórmula de percentual para cada categoria",
+      "concept": "percentage_calculation",
+      "insight": "Percentuais revelam participação de cada bebida no faturamento total"
+    },
+    {
+      "what": "Aplicar formatação profissional: cores, bordas, fonte corporativa e alinhamento",
+      "concept": "excel_formatting",
+      "insight": "Apresentação visual adequada comunica profissionalismo e facilita leitura"
+    },
+    {
+      "what": "Inserir gráfico de pizza mostrando proporção de cada categoria de bebida",
+      "concept": "pie_chart",
+      "insight": "Visualização circular é ideal para comparar participação percentual"
+    },
+    {
+      "what": "Criar gráfico de barras comparando volume de vendas por semana de março",
+      "concept": "bar_chart",
+      "insight": "Gráfico de barras destaca tendências e picos de demanda ao longo do mês"
+    },
+    {
+      "what": "Adicionar tabela resumida com KPIs: maior vendedor, menor vendedor, ticket médio",
+      "concept": "kpi_metrics",
+      "insight": "Indicadores-chave guiam decisões comerciais e estratégia de estoque"
+    },
+    {
+      "what": "Aplicar filtros automáticos nos dados para facilitar consultas rápidas",
+      "concept": "data_filtering",
+      "insight": "Filtros permitem análises dinâmicas sem modificar dados originais"
+    }
+  ],
+  "general": {
+    "summary": "Planilha profissional de bebidas para março com dados segmentados, percentuais calculados, formatação corporativa e dois gráficos analíticos (pizza e barras) para visualização clara de tendências e performance.",
+    "skills": [
+      "excel_2013_advanced",
+      "data_analysis",
+      "percentage_formulas",
+      "chart_creation",
+      "professional_formatting",
+      "business_analytics",
+      "spreadsheet_design"
+    ],
+    "xp_earned": 380,
+    "next_level": "Adicionar previsão de demanda usando análise de tendências e criar dashboard interativo com slicers"
+  },
+  "task": "abra o excel 2013 faça uma planilha profissional da sessao de bebidas do mes de março de um supermercado com graficos, porcentagem",
+  "generated_at": "2026-04-10T16:51:28.684772"
+}

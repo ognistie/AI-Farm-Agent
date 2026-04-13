@@ -59,7 +59,10 @@ class BrowserController:
             self.browser = self.pw.chromium.launch(headless=False, args=["--start-maximized"])
             self.page = self.browser.new_context(no_viewport=True).new_page()
             self._started = True; return True
-        except Exception as e: print(f"  ⚠️ Playwright: {e}"); return False
+        except Exception as e:
+            print(f"  ⚠️ Playwright indisponível: {e}")
+            print(f"  ℹ️ Dica: rode 'pip install playwright && python -m playwright install chromium'")
+            return False
 
     def ensure(self):
         if not self._started: self.start()

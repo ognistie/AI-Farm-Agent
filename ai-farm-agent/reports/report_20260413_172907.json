@@ -1,0 +1,45 @@
+{
+  "steps": [
+    {
+      "what": "Localizou e abriu o aplicativo Bloco de Notas com sucesso.",
+      "concept": "app_search",
+      "insight": "Busca de aplicativos é essencial para iniciar tarefas de automação."
+    },
+    {
+      "what": "Aguardou 3 segundos para a interface carregar completamente.",
+      "concept": "wait",
+      "insight": "Tempo de espera evita erros de digitação em aplicativos lentos."
+    },
+    {
+      "what": "Digitou 'Olá!' como mensagem de boas-vindas no bloco de notas.",
+      "concept": "app_type",
+      "insight": "Input de texto requer sincronização com o estado da aplicação."
+    },
+    {
+      "what": "Reatualizou a busca do Bloco de Notas para garantir foco na janela.",
+      "concept": "app_search",
+      "insight": "Refocagem previne perda de contexto durante execução de tarefas longas."
+    },
+    {
+      "what": "Aguardou novamente antes de digitar a sequência numérica.",
+      "concept": "wait",
+      "insight": "Pausas estratégicas aumentam confiabilidade em automações sensíveis ao timing."
+    },
+    {
+      "what": "Digitou números de 10 a 20 em sequência com quebras de linha.",
+      "concept": "app_type",
+      "insight": "Entrada de múltiplas linhas requer caracteres de escape para formatação correta."
+    }
+  ],
+  "summary": "Automatizou com sucesso a abertura do Bloco de Notas e digitação de números 10-20. Demonstrou uso eficiente de esperas e busca de aplicativos.",
+  "skills": [
+    "app_automation",
+    "timing_management",
+    "text_input",
+    "process_focus"
+  ],
+  "xp_earned": 85,
+  "next_level": "Domine automação multi-janela e dados estruturados em formatações complexas.",
+  "task": "abra o bloco de notas e escreva de 10 ate 20",
+  "generated_at": "2026-04-13T17:29:07.477010"
+}
