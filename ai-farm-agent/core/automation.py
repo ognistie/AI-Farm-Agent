@@ -59,10 +59,7 @@ class BrowserController:
             self.browser = self.pw.chromium.launch(headless=False, args=["--start-maximized"])
             self.page = self.browser.new_context(no_viewport=True).new_page()
             self._started = True; return True
-        except Exception as e:
-            print(f"  ⚠️ Playwright indisponível: {e}")
-            print(f"  ℹ️ Dica: rode 'pip install playwright && python -m playwright install chromium'")
-            return False
+        except Exception as e: print(f"  ⚠️ Playwright: {e}"); return False
 
     def ensure(self):
         if not self._started: self.start()
@@ -86,13 +83,30 @@ class BrowserController:
 
     def type_in(self, field, text):
         if not self.ensure(): return "⚠️"
-        for fn in [lambda:self.page.get_by_placeholder(field).first, lambda:self.page.get_by_role("textbox").first, lambda:self.page.get_by_role("searchbox").first]:
-            try:
-                loc=fn()
-                if loc.is_visible(timeout=2000): loc.fill(text); return f"🌐 Digitou: '{text[:30]}'"
-            except: pass
-        try: self.page.fill(field, text, timeout=3000); return f"🌐 Digitou"
-        except: return f"❌ '{field[:20]}'"
+        # Tenta múltiplos seletores (field pode ter alternativas separadas por vírgula)
+        selectors = [s.strip() for s in field.split(",")]
+        for sel in selectors:
+            for fn in [
+                lambda: self.page.locator(sel).first,
+                lambda: self.page.get_by_placeholder(sel).first,
+                lambda: self.page.get_by_role("searchbox").first,
+                lambda: self.page.get_by_role("textbox").first,
+            ]:
+                try:
+                    loc = fn()
+                    if loc.is_visible(timeout=2000):
+                        loc.click(); time.sleep(0.3)
+                        loc.fill(text)
+                        return f"🌐 Digitou: '{text[:30]}'"
+                except: pass
+        # Fallback: tenta clicar na área de busca e digitar via teclado
+        try:
+            self.page.keyboard.press("Tab")
+            time.sleep(0.2)
+            self.page.keyboard.type(text, delay=50)
+            return f"🌐 Digitou (keyboard): '{text[:30]}'"
+        except: pass
+        return f"❌ '{field[:20]}'"
 
     def press(self, key):
         if not self.ensure(): return "⚠️"

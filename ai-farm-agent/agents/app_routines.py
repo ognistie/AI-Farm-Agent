@@ -1,10 +1,13 @@
 """
-AppRoutines v6 — Titulos flexiveis, rotinas de passo unico onde possivel.
+AppRoutines v7 — Rotinas limpas, sem conteúdo inventado.
+MUDANÇAS v7:
+- Removido fallback 'Ola!' em message/text
+- _notepad() só digita se text não vazio
+- _word() só digita se text não vazio
 """
 
 
 def get_routine(params):
-    """Recebe params estruturados e retorna steps."""
     app = (params.get("app", "") or "").lower().strip()
     action_type = (params.get("action_type", "") or "").lower().strip()
     person = params.get("person", "") or "Contato"
@@ -14,8 +17,11 @@ def get_routine(params):
     if app in ("teams", "microsoft teams"):
         if action_type in ("call",): return _teams_call(person)
         if action_type in ("video_call",): return _teams_video(person)
-        return _teams_msg(person, message)
-    if app in ("whatsapp", "whats", "zap"): return _whatsapp_msg(person, message)
+        if message: return _teams_msg(person, message)
+        return None  # Sem mensagem → LLM decide
+    if app in ("whatsapp", "whats", "zap"):
+        if message: return _whatsapp_msg(person, message)
+        return None
     if app in ("notepad", "bloco de notas"): return _notepad(text)
     if app in ("word", "microsoft word"): return _word(text)
     if app in ("excel", "microsoft excel"): return _excel_open()
@@ -52,7 +58,7 @@ def _teams_call(person):
         _s(2, "wait_for_window", {"title": "Teams", "timeout": 15}, "Aguardar"),
         _s(3, "uia_click", {"app_name": "Teams", "element": "chat"}, "Chat"),
         _s(4, "wait", {"seconds": 2}, "Aguardar"),
-        _s(5, "uia_click", {"app_name": "Teams", "element": person}, "Conversa: " + person),
+        _s(5, "uia_click", {"app_name": "Teams", "element": person}, person),
         _s(6, "wait", {"seconds": 2}, "Aguardar"),
         _s(7, "vision_click", {"description": "icone de telefone no canto superior direito da conversa DENTRO do Teams"}, "Ligar"),
     ]
@@ -64,7 +70,7 @@ def _teams_video(person):
         _s(2, "wait_for_window", {"title": "Teams", "timeout": 15}, "Aguardar"),
         _s(3, "uia_click", {"app_name": "Teams", "element": "chat"}, "Chat"),
         _s(4, "wait", {"seconds": 2}, "Aguardar"),
-        _s(5, "uia_click", {"app_name": "Teams", "element": person}, "Conversa: " + person),
+        _s(5, "uia_click", {"app_name": "Teams", "element": person}, person),
         _s(6, "wait", {"seconds": 2}, "Aguardar"),
         _s(7, "vision_click", {"description": "icone de camera no canto superior direito DENTRO do Teams"}, "Video"),
     ]
@@ -85,7 +91,6 @@ def _whatsapp_msg(person, message):
 
 
 def _notepad(text):
-    """Notepad: abre e digita. Se text vazio, só abre."""
     steps = [
         _s(1, "app_search", {"name": "Bloco de Notas"}, "Abrir Notepad"),
         _s(2, "wait", {"seconds": 3}, "Aguardar Notepad abrir"),
@@ -96,13 +101,15 @@ def _notepad(text):
 
 
 def _word(text):
-    return [
+    steps = [
         _s(1, "app_search", {"name": "Word"}, "Abrir Word"),
         _s(2, "wait", {"seconds": 5}, "Aguardar Word"),
         _s(3, "uia_click", {"app_name": "Word", "element": "blank_doc"}, "Documento em branco"),
         _s(4, "wait", {"seconds": 3}, "Aguardar documento"),
-        _s(5, "type_text", {"text": text}, "Digitar"),
     ]
+    if text and text.strip():
+        steps.append(_s(5, "type_text", {"text": text}, "Digitar"))
+    return steps
 
 
 def _excel_open():
@@ -139,26 +146,34 @@ def _outlook(params):
     to = params.get("person", "")
     subject = params.get("subject", "Sem assunto")
     body = params.get("message", "") or params.get("text", "")
-    return [
+    steps = [
         _s(1, "app_search", {"name": "Outlook"}, "Abrir Outlook"),
         _s(2, "wait", {"seconds": 5}, "Aguardar Outlook"),
         _s(3, "uia_click", {"app_name": "Outlook", "element": "new_email"}, "Novo Email"),
         _s(4, "wait", {"seconds": 2}, "Aguardar"),
-        _s(5, "uia_type", {"app_name": "Outlook", "field": "to", "text": to}, "Destinatario"),
-        _s(6, "hotkey", {"keys": ["tab"]}, "Tab"),
-        _s(7, "type_text", {"text": subject}, "Assunto"),
-        _s(8, "hotkey", {"keys": ["tab"]}, "Tab"),
-        _s(9, "type_text", {"text": body}, "Corpo"),
-        _s(10, "uia_click", {"app_name": "Outlook", "element": "send"}, "Enviar"),
     ]
+    n = 4
+    if to:
+        n += 1; steps.append(_s(n, "uia_type", {"app_name": "Outlook", "field": "to", "text": to}, "Destinatario"))
+        n += 1; steps.append(_s(n, "hotkey", {"keys": ["tab"]}, "Tab"))
+    n += 1; steps.append(_s(n, "type_text", {"text": subject}, "Assunto"))
+    n += 1; steps.append(_s(n, "hotkey", {"keys": ["tab"]}, "Tab"))
+    if body:
+        n += 1; steps.append(_s(n, "type_text", {"text": body}, "Corpo"))
+    n += 1; steps.append(_s(n, "uia_click", {"app_name": "Outlook", "element": "send"}, "Enviar"))
+    return steps
 
 
 def _spotify(query):
-    return [
+    steps = [
         _s(1, "app_search", {"name": "Spotify"}, "Abrir Spotify"),
         _s(2, "wait", {"seconds": 4}, "Aguardar Spotify"),
-        _s(3, "uia_click", {"app_name": "Spotify", "element": "search"}, "Pesquisa"),
-        _s(4, "type_text", {"text": query}, "Digitar: " + str(query)[:30]),
-        _s(5, "hotkey", {"keys": ["enter"]}, "Buscar"),
-        _s(6, "wait", {"seconds": 2}, "Aguardar resultados"),
     ]
+    if query and query.strip():
+        steps.extend([
+            _s(3, "uia_click", {"app_name": "Spotify", "element": "search"}, "Pesquisa"),
+            _s(4, "type_text", {"text": query}, "Digitar: " + str(query)[:30]),
+            _s(5, "hotkey", {"keys": ["enter"]}, "Buscar"),
+            _s(6, "wait", {"seconds": 2}, "Aguardar resultados"),
+        ])
+    return steps

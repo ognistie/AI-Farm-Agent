@@ -1,6 +1,11 @@
 """
-Maestro v13 — Migrado para ai_client centralizado.
-Mantém cache, memória, e lógica de roteamento intactos.
+Maestro v15 — Inteligência de contexto entre subtarefas.
+MUDANÇAS v15:
+- Lista EXPLÍCITA de variáveis válidas no prompt
+- Regra: NUNCA usar variável que não está na lista
+- Exemplo de pesquisa + envio com web_read e {output_text_N}
+- Campo forbidden_assumptions
+- Validação pós-LLM: limpa texto inventado
 """
 
 from core.ai_client import get_client
@@ -8,59 +13,90 @@ from core.config import get_config
 from core.json_validator import safe_parse
 
 PROMPT = (
-    "Voce e o MAESTRO do AI Farm Agent.\n\n"
-    "Decompor tarefa em OBJETIVOS VERIFICAVEIS + params estruturados. JSON PURO.\n\n"
-    "AGENTES: DATA (Excel), WEB (navegacao), CODE (criar codigo), DESKTOP (apps visuais), FILE (arquivos)\n"
-    "ROTEAMENTO: Excel->DATA | Web->WEB | Codigo->CODE | Apps->DESKTOP | Arquivos->FILE\n\n"
-    "PARAMS:\n"
-    "- app: nome do app\n"
-    "- person: APENAS nome\n"
-    "- message: APENAS conteudo (sem instrucoes de envio)\n"
-    "- text: texto a escrever\n"
-    "- action_type: send_message/write_text/open/call/create_file/search/send_file\n\n"
-    "VARIAVEIS DE CONTEXTO (para subtarefas com depends_on):\n"
-    "Quando uma subtarefa depende da anterior (depends_on: N), use essas variaveis nos params:\n"
-    "  {output_folder_N}    → pasta criada/usada pela subtarefa N\n"
-    "  {output_path_N}      → caminho principal (arquivo ou pasta) da subtarefa N\n"
-    "  {output_files_N}     → primeiro arquivo criado pela subtarefa N\n"
-    "  {output_all_files_N} → todos os arquivos separados por ponto-e-virgula\n"
-    "  {output_url_N}       → URL visitada pela subtarefa N\n\n"
-    "EXEMPLOS MULTI-SUBTAREFA:\n\n"
-    "Tarefa: 'crie um site e envie os arquivos pelo Teams para Joao'\n"
-    '{"analysis":"criar site e enviar via Teams","subtasks":['
-    '{"agent":"CODE","task":"criar site HTML/CSS","params":{},"objectives":["Arquivos criados no Desktop"],"depends_on":null},'
-    '{"agent":"DESKTOP","task":"enviar arquivos do site pelo Teams para Joao",'
-    '"params":{"app":"teams","action_type":"send_file","person":"Joao",'
-    '"files":"{output_all_files_1}","message":"Segue o site criado!"},'
-    '"objectives":["Teams aberto","Arquivos anexados","Mensagem enviada"],"depends_on":1}'
-    '],"skills":["code","teams"]}\n\n'
-    "Tarefa: 'crie um projeto python e faca commit no github'\n"
-    '{"analysis":"criar projeto e fazer commit","subtasks":['
-    '{"agent":"CODE","task":"criar projeto Python","params":{},"objectives":["Arquivos criados"],"depends_on":null},'
-    '{"agent":"CODE","task":"fazer git init, add e commit na pasta {output_folder_1}",'
-    '"params":{"folder":"{output_folder_1}","action_type":"git_commit","message":"initial commit"},'
-    '"objectives":["Commit criado"],"depends_on":1}'
-    '],"skills":["code","git"]}\n\n'
-    "Para DESKTOP, gere objectives (condicoes da tela):\n"
-    "Exemplo simples: 'mande oi para Joao no Teams'\n"
-    '{"analysis":"enviar msg no Teams","subtasks":[{"agent":"DESKTOP","task":"enviar mensagem",'
-    '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"oi"},'
-    '"objectives":["Teams aberto e visivel","Aba Chat selecionada","Conversa com Joao aberta","Mensagem enviada"],'
-    '"depends_on":null}],"skills":["teams"]}\n\n'
-    "Prefira 1 subtask quando possivel. Use depends_on apenas quando uma etapa precisa do resultado da anterior.\n\n"
-    "REGRAS ABSOLUTAS DE DECOMPOSICAO:\n"
-    "- Se a tarefa envolve UM UNICO APP (ex: 'abra notepad e escreva X') → SEMPRE 1 subtask com o texto COMPLETO nos params\n"
-    "- NUNCA separe 'abrir app' e 'escrever no app' em subtasks diferentes\n"
-    "- NUNCA separe 'abrir app' e 'fazer algo no app' — isso é UMA acao\n"
-    "- Use 2+ subtasks APENAS se a tarefa envolve APPS DIFERENTES (ex: 'crie planilha E envie no Teams')\n"
-    "- O param 'text' deve conter EXATAMENTE o que o usuario pediu para escrever, sem inventar\n"
-    "- Se o usuario pede 'escreva de 10 ate 20', o text deve ser '10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20'\n\n"
-    "Exemplo: 'abra o bloco de notas e escreva de 10 ate 20'\n"
-    '{"analysis":"abrir notepad e escrever numeros","subtasks":[{"agent":"DESKTOP","task":"abrir bloco de notas e escrever numeros de 10 a 20",'
+    "Voce e o MAESTRO do AI Farm Agent — o cerebro central.\n"
+    "Entenda a INTENCAO REAL do usuario e gere um plano preciso.\n\n"
+
+    "═══ PRINCIPIO ═══\n"
+    "PROCEDIMENTO (como fazer) ≠ CONTEUDO (o que escrever/digitar).\n"
+    "Se o usuario NAO pediu texto → text deve ser ''.\n"
+    "NUNCA invente texto, mensagens ou conteudo.\n\n"
+
+    "═══ AGENTES ═══\n"
+    "DATA: Excel | WEB: navegacao web | CODE: criar codigo\n"
+    "DESKTOP: apps (Teams, WhatsApp, Notepad, Paint) | FILE: arquivos\n\n"
+
+    "═══ ROTEAMENTO ═══\n"
+    "Excel→DATA | Browser/site/pesquisa→WEB | Codigo→CODE | Apps→DESKTOP | Arquivos→FILE\n\n"
+
+    "═══ PARAMS ═══\n"
+    "app, person, message, text, action_type, query, url\n\n"
+
+    "═══ VARIAVEIS DE CONTEXTO (SOMENTE ESTAS EXISTEM) ═══\n"
+    "Quando depends_on: N, use APENAS estas variaveis:\n"
+    "  {output_folder_N}     → pasta criada pela subtask N\n"
+    "  {output_path_N}       → caminho principal\n"
+    "  {output_files_N}      → primeiro arquivo\n"
+    "  {output_all_files_N}  → todos os arquivos\n"
+    "  {output_url_N}        → URL visitada\n"
+    "  {output_text_N}       → conteudo textual (resultado de pesquisa, leitura)\n\n"
+    "⚠️ NUNCA use variaveis que NAO estao nesta lista.\n"
+    "⚠️ NUNCA invente variaveis como {output_search_content}, {resultado}, etc.\n\n"
+
+    "═══ REGRAS DE DECOMPOSICAO ═══\n"
+    "1. UM APP = 1 subtask (nunca separe abrir/usar)\n"
+    "2. 2+ subtasks APENAS quando APPS DIFERENTES cooperam\n"
+    "3. Se a subtask WEB precisa capturar conteudo para a proxima, inclua web_read nos objectives\n"
+    "4. text='' se usuario nao pediu para escrever\n"
+    "5. forbidden_assumptions lista o que NAO presumir\n\n"
+
+    "═══ EXEMPLOS ═══\n\n"
+
+    "Tarefa: 'abra o bloco de notas'\n"
+    '{"analysis":"apenas abrir","subtasks":[{"agent":"DESKTOP",'
+    '"task":"abrir bloco de notas","params":{"app":"notepad","action_type":"open","text":""},'
+    '"objectives":["Notepad aberto"],'
+    '"forbidden_assumptions":["NAO escrever nenhum texto"],'
+    '"depends_on":null}],"skills":["notepad"]}\n\n'
+
+    "Tarefa: 'abra o notepad e escreva de 10 ate 20'\n"
+    '{"analysis":"abrir notepad e escrever numeros","subtasks":[{"agent":"DESKTOP",'
+    '"task":"abrir notepad e escrever numeros 10-20",'
     '"params":{"app":"notepad","action_type":"write_text","text":"10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20"},'
     '"objectives":["Notepad aberto","Numeros escritos"],'
+    '"forbidden_assumptions":["NAO escrever Ola"],'
     '"depends_on":null}],"skills":["notepad"]}\n\n'
-    "Windows PT-BR."
+
+    "Tarefa: 'abra o youtube e pesquise videos de skate'\n"
+    '{"analysis":"youtube + pesquisa","subtasks":[{"agent":"WEB",'
+    '"task":"abrir youtube e pesquisar videos de skate",'
+    '"params":{"url":"https://www.youtube.com","query":"videos de skate","action_type":"search"},'
+    '"objectives":["YouTube aberto","Pesquisa realizada"],'
+    '"forbidden_assumptions":["NAO pesquisar termo diferente"],'
+    '"depends_on":null}],"skills":["youtube"]}\n\n'
+
+    "Tarefa: 'pesquise sobre o Palmeiras e envie no Teams para Joao'\n"
+    '{"analysis":"pesquisar + enviar via Teams","subtasks":['
+    '{"agent":"WEB","task":"pesquisar sobre Palmeiras e ler resultado",'
+    '"params":{"url":"https://www.google.com","query":"historia do Palmeiras","action_type":"search"},'
+    '"objectives":["Pesquisa realizada","Conteudo lido com web_read"],'
+    '"forbidden_assumptions":["NAO inventar conteudo"],'
+    '"depends_on":null},'
+    '{"agent":"DESKTOP","task":"enviar resultado da pesquisa para Joao no Teams",'
+    '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"{output_text_1}"},'
+    '"objectives":["Teams aberto","Mensagem enviada"],'
+    '"forbidden_assumptions":["NAO enviar texto inventado"],'
+    '"depends_on":1}'
+    '],"skills":["web","teams"]}\n\n'
+
+    "Tarefa: 'abra o paint e desenhe uma casa'\n"
+    '{"analysis":"abrir paint e desenhar","subtasks":[{"agent":"DESKTOP",'
+    '"task":"abrir paint e desenhar uma casa",'
+    '"params":{"app":"paint","action_type":"draw","text":"casa"},'
+    '"objectives":["Paint aberto","Desenho realizado"],'
+    '"forbidden_assumptions":["NAO apenas abrir sem desenhar"],'
+    '"depends_on":null}],"skills":["paint"]}\n\n'
+
+    "Prefira 1 subtask. Windows PT-BR. JSON PURO."
 )
 
 
@@ -74,7 +110,6 @@ class Maestro:
     def analyze(self, task):
         print("\n[Maestro] Analisando...")
 
-        # Cache (só retorna se tem subtasks válidas)
         key = task.lower().strip()[:80]
         if key in self._cache:
             cached = self._cache[key]
@@ -97,6 +132,7 @@ class Maestro:
                         "task": wf["task"],
                         "params": wf.get("params", {}),
                         "objectives": wf.get("objectives", []),
+                        "forbidden_assumptions": [],
                         "depends_on": None,
                     }],
                     "skills": list(wf.get("tags", [])),
@@ -104,7 +140,7 @@ class Maestro:
         except Exception:
             pass
 
-        # API via client centralizado
+        # API
         try:
             raw = self._client.message(
                 model=self.model,
@@ -116,6 +152,25 @@ class Maestro:
 
             if "subtasks" not in plan or len(plan.get("subtasks", [])) == 0:
                 return {"error": True, "message": "Sem subtasks"}
+
+            # Validação pós-LLM
+            for sub in plan.get("subtasks", []):
+                params = sub.get("params", {})
+                forbidden = sub.get("forbidden_assumptions", [])
+
+                # Bloqueia texto genérico inventado
+                text_val = params.get("text", "")
+                msg_val = params.get("message", "")
+                generics = ["Ola!", "Ola", "Olá", "Hello", "Hi", "Oi", "Bom dia"]
+
+                for rule in forbidden:
+                    if "NAO escrever" in rule:
+                        if text_val in generics:
+                            params["text"] = ""
+                            print(f"  [Maestro] Bloqueou text inventado: '{text_val}'")
+                        if msg_val in generics and "message" not in task.lower():
+                            params["message"] = ""
+                            print(f"  [Maestro] Bloqueou message inventada: '{msg_val}'")
 
             self._cache[key] = plan
             print(f"[Maestro] {len(plan['subtasks'])} subtask(s)")
