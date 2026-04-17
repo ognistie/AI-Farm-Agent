@@ -1,0 +1,42 @@
+{
+  "steps": [
+    {
+      "what": "Abrir VS Code e criar pasta do projeto",
+      "concept": "project-setup",
+      "insight": "Organização de diretórios é fundamental para manutenção de código"
+    },
+    {
+      "what": "Criar arquivo index.html com estrutura semântica e conteúdo sobre macacos da Amazônia",
+      "concept": "semantic-html",
+      "insight": "Tags semânticas melhoram SEO e acessibilidade do site"
+    },
+    {
+      "what": "Criar arquivo style.css com design responsivo, cores da Amazônia e tipografia profissional",
+      "concept": "responsive-design",
+      "insight": "Mobile-first garante experiência consistente em todos os dispositivos"
+    },
+    {
+      "what": "Implementar navbar navegável, seções hero, galeria de espécies e footer",
+      "concept": "ux-layout",
+      "insight": "Hierarquia visual clara guia o usuário através do conteúdo"
+    },
+    {
+      "what": "Aplicar paleta verde-marrom-azul, gradientes naturais e sombras sutis",
+      "concept": "color-theory",
+      "insight": "Cores temáticas reforçam identidade e contextualizam o assunto"
+    }
+  ],
+  "summary": "Criação de site profissional sobre macacos da Amazônia com HTML semântico, CSS responsivo e design atrativo. Estrutura modular pronta para expansão de conteúdo.",
+  "skills": [
+    "html5-semantics",
+    "css3-layout",
+    "responsive-design",
+    "color-psychology",
+    "web-typography",
+    "ux-design"
+  ],
+  "xp_earned": 250,
+  "next_level": "Integrar JavaScript para interatividade de galeria e adicionar animações CSS avançadas",
+  "task": "Abara o vs code e crie dois arquivos HTMl, CSS de um site profissional e bonito sobre Macao da amazonia",
+  "generated_at": "2026-04-15T13:40:56.743304"
+}

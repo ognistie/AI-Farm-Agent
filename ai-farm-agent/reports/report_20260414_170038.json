@@ -1,0 +1,73 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar novo arquivo com estrutura de 4 abas",
+      "concept": "spreadsheet_setup",
+      "insight": "Fundação para organização financeira com separação clara de dados"
+    },
+    {
+      "what": "Implementar aba Receitas com colunas: Data, Descrição, Categoria, Valor, Status",
+      "concept": "data_organization",
+      "insight": "Estrutura padronizada facilita filtros e análises automáticas"
+    },
+    {
+      "what": "Implementar aba Despesas com mesma estrutura e categorias específicas (alimentação, transporte, etc)",
+      "concept": "categorical_data",
+      "insight": "Categorização permite comparações e insights por tipo de gasto"
+    },
+    {
+      "what": "Criar aba Resumo com fórmulas SUMIF para totais por categoria e mês",
+      "concept": "formula_automation",
+      "insight": "Cálculos automáticos eliminam erros e atualizam em tempo real"
+    },
+    {
+      "what": "Adicionar filtros automáticos (AutoFilter) em todas as abas de dados",
+      "concept": "data_filtering",
+      "insight": "Usuário pode visualizar dados específicos sem alterar original"
+    },
+    {
+      "what": "Criar Dashboard com gráficos de comparação receitas vs despesas mensal",
+      "concept": "data_visualization",
+      "insight": "Visualização gráfica comunica tendências financeiras instantaneamente"
+    },
+    {
+      "what": "Implementar tabela dinâmica com totais por mês, categoria e comparativo YoY",
+      "concept": "pivot_analysis",
+      "insight": "Análise multidimensional revela padrões e anomalias"
+    },
+    {
+      "what": "Adicionar indicador visual de saúde financeira (lucro/prejuízo em cores)",
+      "concept": "conditional_formatting",
+      "insight": "Formatação condicional torna status financeiro imediatamente óbvio"
+    },
+    {
+      "what": "Criar comparativo mensal com mês anterior e variação percentual",
+      "concept": "comparative_analysis",
+      "insight": "Contexto histórico permite avaliar tendências e crescimento"
+    },
+    {
+      "what": "Validar fórmulas, testar filtros e exportar como arquivo .xlsx funcional",
+      "concept": "quality_assurance",
+      "insight": "Testes garantem confiabilidade da ferramenta de gestão financeira"
+    }
+  ],
+  "general": {
+    "summary": "Planilha dinâmica de controle financeiro construída com 4 abas integradas, filtros automáticos, fórmulas de cálculo, gráficos comparativos e dashboard executivo. Ferramenta completa para gestão mensal de receitas e despesas.",
+    "skills": [
+      "excel_2013_advanced",
+      "spreadsheet_design",
+      "formula_automation",
+      "pivot_tables",
+      "data_visualization",
+      "conditional_formatting",
+      "financial_analysis",
+      "dashboard_creation",
+      "autofilter_implementation",
+      "comparative_reporting"
+    ],
+    "xp_earned": 450,
+    "next_level": "Integrar validação de dados, criar macro para backup automático e implementar análise de tendências com regressão linear"
+  },
+  "task": "Abra o excel 2013 e Crie uma planilha dinâmica de controle financeiro mensal com abas de Receitas, Despesas, Resumo e Dashboard. A planilha deve ter filtros, totais automáticos, categorias, gráficos e comparação entre receitas e despesas por mês.",
+  "generated_at": "2026-04-14T17:00:38.916699"
+}

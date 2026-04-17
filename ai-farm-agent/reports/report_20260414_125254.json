@@ -1,0 +1,39 @@
+{
+  "steps": [
+    {
+      "what": "Abrir VS Code e criar estrutura de pastas para o projeto",
+      "concept": "project_setup",
+      "insight": "Organizar arquivos em diretórios separados melhora manutenção do código"
+    },
+    {
+      "what": "Criar arquivo index.html com estrutura semântica sobre macacos amazônicos",
+      "concept": "html_semantics",
+      "insight": "Tags semânticas como <header>, <main>, <section> melhoram SEO e acessibilidade"
+    },
+    {
+      "what": "Implementar CSS responsivo com grid e flexbox para layout profissional",
+      "concept": "css_layout",
+      "insight": "Flexbox e Grid permitem designs adaptativos sem media queries excessivas"
+    },
+    {
+      "what": "Adicionar imagens e conteúdo sobre espécies: bugio, macaco-prego, sagui",
+      "concept": "content_structure",
+      "insight": "Estrutura visual clara com cards facilita compreensão do usuário"
+    },
+    {
+      "what": "Aplicar paleta de cores verde/marrom representando floresta amazônica",
+      "concept": "design_systems",
+      "insight": "Cores consistentes criam identidade visual profissional e coerente"
+    },
+    {
+      "what": "Abrir arquivo no navegador usando Live Server ou clique duplo",
+      "concept": "local_preview",
+      "insight": "Testar localmente antes de deploy evita erros em produção"
+    }
+  ],
+  "files_created": {
+    "index.html": "<!DOCTYPE html><html lang=\"pt-BR\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Macacos da Amazônia Brasileira</title><link rel=\"stylesheet\" href=\"style.css\"></head><body><header><h1>🐵 Macacos da Floresta Amazônica</h1><p>Biodiversidade e Conservação</p></header><nav><ul><li><a href=\"#especies\">Espécies</a></li><li><a href=\"#habitat\">Habitat</a></li><li><a href=\"#conservacao\">Conservação</a></li></ul></nav><main><section id=\"especies\"><h2>Principais Espécies</h2><div class=\"cards\"><article class=\"card\"><h3>Bugio</h3><p>Conhecido por seus sons característicos na floresta amazônica.</p></article><article class=\"card\"><h3>Macaco-prego</h3><p>Inteligente e adaptável, utiliza ferramentas para se alimentar.</p></article><article class=\"card\"><h3>Sagui</h3><p>Pequeno e ágil, vive em grupos nas copas das árvores.</p></article></div></section><section id=\"habitat\"><h2>Habitat Natural</h2><p>Os macacos amazônicos habitam as florestas tropicais úmidas da bacia amazônica.</p></section><section id=\"conservacao\"><h2>Conservação</h2><p>Proteger estas espécies é fundamental para a preservação da biodiversidade.</p></section></main><footer><p>&copy; 2024 Macacos da Amazônia. Todos os direitos reservados.</p></footer></body></html>"
+  },
+  "task": "Abra o vs code e crie 2 arquivos html e css com codigos de um site profisisonal com o tema macacos que vivem na floresta amazonia no brasil, e depois abra ele no browser",
+  "generated_at": "2026-04-14T12:52:54.831219"
+}

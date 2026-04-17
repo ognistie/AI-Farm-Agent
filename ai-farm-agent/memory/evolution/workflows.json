@@ -1,0 +1,1351 @@
+[
+  {
+    "hash": "768acdadfe3c",
+    "original_task": "abra o bloco de notas",
+    "plan": {
+      "analysis": "apenas abrir bloco de notas",
+      "subtasks": [
+        {
+          "agent": "DESKTOP",
+          "task": "abrir bloco de notas",
+          "params": {
+            "app": "notepad",
+            "action_type": "open",
+            "text": "",
+            "message": ""
+          },
+          "objectives": [
+            "Bloco de notas aberto"
+          ],
+          "forbidden_assumptions": [
+            "NAO escrever nenhum texto"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "notepad"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "DESKTOP"
+    ],
+    "executions": 2,
+    "successes": 2,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:30:50.650711",
+    "last_used": "2026-04-16T15:38:35.310789",
+    "avg_time_ms": 11270,
+    "tags": [
+      "bloco",
+      "notas",
+      "abra"
+    ]
+  },
+  {
+    "hash": "79ecb9365223",
+    "original_task": "abra o vs code e crie dois 3 arquivos HTML,JAVASCRIPT,CSS de um site profissional com tema escuro/noite de inteligencia artificial",
+    "plan": {
+      "analysis": "criar 3 arquivos (HTML, JavaScript, CSS) de um site profissional sobre IA com tema escuro no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar 3 arquivos (index.html, style.css, script.js) de um site profissional sobre inteligência artificial com tema escuro e abrir no VS Code",
+          "params": {
+            "action_type": "create_multiple_files",
+            "files": [
+              {
+                "name": "index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>AI Intelligence - Soluções em Inteligência Artificial</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <nav class=\"navbar\">\n        <div class=\"container\">\n            <div class=\"logo\">AI Intelligence</div>\n            <ul class=\"nav-menu\">\n                <li><a href=\"#home\">Home</a></li>\n                <li><a href=\"#servicos\">Serviços</a></li>\n                <li><a href=\"#sobre\">Sobre</a></li>\n                <li><a href=\"#contato\">Contato</a></li>\n            </ul>\n        </div>\n    </nav>\n\n    <section id=\"home\" class=\"hero\">\n        <div class=\"container\">\n            <h1>Transforme seu Negócio com Inteligência Artificial</h1>\n            <p>Soluções inovadoras para o futuro digital</p>\n            <button class=\"btn btn-primary\">Comece Agora</button>\n        </div>\n    </section>\n\n    <section id=\"servicos\" class=\"services\">\n        <div class=\"container\">\n            <h2>Nossos Serviços</h2>\n            <div class=\"services-grid\">\n                <div class=\"service-card\">\n                    <h3>Machine Learning</h3>\n                    <p>Algoritmos avançados para análise de dados e previsões precisas.</p>\n                </div>\n                <div class=\"service-card\">\n                    <h3>Processamento de Linguagem</h3>\n                    <p>Soluções de NLP para compreensão e geração de texto.</p>\n                </div>\n            </div>\n        </div>\n    </section>\n    <script src=\"script.js\"></script>\n</body>\n</html>"
+              },
+              {
+                "name": "style.css",
+                "content": "* {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n}\n\nbody {\n    background-color: #0d1117;\n    color: #c9d1d9;\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;\n    line-height: 1.6;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 0 20px;\n}\n\n.navbar {\n    background-color: #161b22;\n    padding: 1rem 0;\n    border-bottom: 1px solid #30363d;\n}\n\n.navbar .container {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n}\n\n.logo {\n    font-size: 1.5rem;\n    font-weight: bold;\n    color: #58a6ff;\n}\n\n.nav-menu {\n    display: flex;\n    list-style: none;\n    gap: 2rem;\n}\n\n.nav-menu a {\n    color: #c9d1d9;\n    text-decoration: none;\n    transition: color 0.3s;\n}\n\n.nav-menu a:hover {\n    color: #58a6ff;\n}\n\n.hero {\n    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);\n    padding: 6rem 0;\n    text-align: center;\n}\n\n.hero h1 {\n    font-size: 3rem;\n    margin-bottom: 1rem;\n    color: #58a6ff;\n}\n\n.hero p {\n    font-size: 1.2rem;\n    margin-bottom: 2rem;\n}\n\n.btn {\n    padding: 0.75rem 2rem;\n    border: none;\n    border-radius: 6px;\n    cursor: pointer;\n    font-size: 1rem;\n    transition: all 0.3s;\n}\n\n.btn-primary {\n    background-color: #58a6ff;\n    color: #0d1117;\n    font-weight: bold;\n}\n\n.btn-primary:hover {\n    background-color: #79c0ff;\n}\n\n.services {\n    padding: 4rem 0;\n}\n\n.services h2 {\n    text-align: center;\n    font-size: 2rem;\n    margin-bottom: 3rem;\n    color: #58a6ff;\n}\n\n.services-grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n    gap: 2rem;\n}\n\n.service-card {\n    background-color: #161b22;\n    padding: 2rem;\n    border-radius: 8px;\n    border: 1px solid #30363d;\n    transition: all 0.3s;\n}\n\n.service-card:hover {\n    border-color: #58a6ff;\n    box-shadow: 0 0 20px rgba(88, 166, 255, 0.2);\n}"
+              },
+              {
+                "name": "script.js",
+                "content": "document.addEventListener('DOMContentLoaded', function() {\n    console.log('AI Intelligence - Site carregado com sucesso');\n    \n    const navLinks = document.querySelectorAll('.nav-menu a');\n    navLinks.forEach(link => {\n        link.addEventListener('click', function(e) {\n            e.preventDefault();\n            const targetId = this.getAttribute('href');\n            const targetSection = document.querySelector(targetId);\n            if (targetSection) {\n                targetSection.scrollIntoView({ behavior: 'smooth' });\n            }\n        });\n    });\n    \n    const btnPrimary = document.querySelector('.btn-primary');\n    btnPrimary.addEventListener('click', function() {\n        alert('Obrigado pelo interesse! Em breve entraremos em contato.');\n    });\n});"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:33:23.536223",
+    "last_used": "2026-04-16T10:33:23.536250",
+    "avg_time_ms": 49827,
+    "tags": [
+      "javascript",
+      "crie",
+      "arquivos",
+      "site",
+      "escuro",
+      "inteligencia",
+      "abra",
+      "code",
+      "artificial",
+      "profissional"
+    ]
+  },
+  {
+    "hash": "1229e52ed32f",
+    "original_task": "abra o vs code e crie dois arquivos HTML, CSS de um site profissional sobre a historia do brasil",
+    "plan": {
+      "analysis": "criar dois arquivos (HTML e CSS) para site profissional sobre história do Brasil no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar arquivo HTML com conteúdo sobre história do Brasil",
+          "params": {
+            "app": "vscode",
+            "action_type": "create_file",
+            "file_name": "index.html",
+            "file_type": "html",
+            "text": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>História do Brasil</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <header>\n        <nav class=\"navbar\">\n            <div class=\"container\">\n                <h1 class=\"logo\">Brasil Histórico</h1>\n                <ul class=\"nav-links\">\n                    <li><a href=\"#inicio\">Início</a></li>\n                    <li><a href=\"#colonial\">Período Colonial</a></li>\n                    <li><a href=\"#imperio\">Império</a></li>\n                    <li><a href=\"#republica\">República</a></li>\n                </ul>\n            </div>\n        </nav>\n    </header>\n    \n    <main>\n        <section id=\"inicio\" class=\"hero\">\n            <div class=\"hero-content\">\n                <h2>A História do Brasil</h2>\n                <p>Conheça os momentos mais importantes que moldaram nossa nação</p>\n            </div>\n        </section>\n        \n        <section id=\"colonial\" class=\"period\">\n            <div class=\"container\">\n                <h3>Período Colonial (1500-1822)</h3>\n                <p>O Brasil foi colonizado pelos portugueses a partir de 1500. Durante este período, o país foi explorado economicamente através da extração de recursos naturais e trabalho escravo.</p>\n                <ul>\n                    <li>Chegada de Pedro Álvares Cabral - 1500</li>\n                    <li>Implantação do Sistema de Capitanias Hereditárias</li>\n                </ul>\n            </div>\n        </section>\n    </main>\n</body>\n</html>"
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:35:02.365130",
+    "last_used": "2026-04-16T10:35:02.365144",
+    "avg_time_ms": 50024,
+    "tags": [
+      "crie",
+      "arquivos",
+      "site",
+      "sobre",
+      "historia",
+      "abra",
+      "code",
+      "profissional",
+      "css",
+      "html"
+    ]
+  },
+  {
+    "hash": "22a9e4df736f",
+    "original_task": "abra o vs code",
+    "plan": {
+      "analysis": "apenas abrir VS Code",
+      "subtasks": [
+        {
+          "agent": "DESKTOP",
+          "task": "abrir VS Code",
+          "params": {
+            "app": "vscode",
+            "action_type": "open",
+            "text": "",
+            "message": ""
+          },
+          "objectives": [
+            "VS Code aberto"
+          ],
+          "forbidden_assumptions": [
+            "NAO criar arquivo",
+            "NAO escrever conteudo"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "vscode"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "DESKTOP"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:38:14.477609",
+    "last_used": "2026-04-16T10:38:14.477623",
+    "avg_time_ms": 10354,
+    "tags": [
+      "abra",
+      "code"
+    ]
+  },
+  {
+    "hash": "cf10ae7c266d",
+    "original_task": "Abra o microsoft teams, va ate a conversa com JackSon Missias alves e escreva a seguinte mensagem: Bom Dia, Testando so fiote e envie a mensagem",
+    "plan": {
+      "analysis": "abrir teams, navegar para conversa com Jackson Missias Alves e enviar mensagem",
+      "subtasks": [
+        {
+          "agent": "DESKTOP",
+          "task": "abrir microsoft teams, acessar conversa com Jackson Missias Alves e enviar mensagem",
+          "params": {
+            "app": "teams",
+            "action_type": "send_message",
+            "person": "Jackson Missias Alves",
+            "message": "Bom Dia, Testando so fiote"
+          },
+          "objectives": [
+            "Teams aberto",
+            "Conversa com Jackson Missias Alves acessada",
+            "Mensagem 'Bom Dia, Testando so fiote' enviada"
+          ],
+          "forbidden_assumptions": [
+            "NAO alterar o texto da mensagem",
+            "NAO enviar para outro contato"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "teams",
+        "messaging"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "DESKTOP"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:39:52.042689",
+    "last_used": "2026-04-16T10:39:52.042709",
+    "avg_time_ms": 39863,
+    "tags": [
+      "ate",
+      "envie",
+      "seguinte",
+      "fiote",
+      "abra",
+      "conversa",
+      "microsoft",
+      "alves",
+      "teams",
+      "missias"
+    ]
+  },
+  {
+    "hash": "b788d589d3d9",
+    "original_task": "Abra o google e entre no youtube e pesquise video de skate 90s",
+    "plan": {
+      "analysis": "abrir google, navegar para youtube e pesquisar videos de skate dos anos 90",
+      "subtasks": [
+        {
+          "agent": "WEB",
+          "task": "abrir youtube e pesquisar videos de skate 90s",
+          "params": {
+            "url": "https://www.youtube.com",
+            "query": "skate 90s",
+            "action_type": "search"
+          },
+          "objectives": [
+            "YouTube aberto",
+            "Pesquisa por 'skate 90s' realizada",
+            "Resultados de videos exibidos"
+          ],
+          "forbidden_assumptions": [
+            "NAO pesquisar termo diferente",
+            "NAO abrir google separadamente (youtube ja contem a funcao de pesquisa)"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "youtube",
+        "web_search"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "WEB"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T10:44:39.173255",
+    "last_used": "2026-04-16T10:44:39.173270",
+    "avg_time_ms": 38905,
+    "tags": [
+      "google",
+      "skate",
+      "entre",
+      "pesquise",
+      "video",
+      "90s",
+      "youtube",
+      "abra"
+    ]
+  },
+  {
+    "hash": "f06ac00e9ed6",
+    "original_task": "abra o vs code e crie um sistema python de credenciamento",
+    "plan": {
+      "analysis": "criar sistema python de credenciamento no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar sistema python de credenciamento",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo Python criado com sistema de credenciamento",
+            "Código funcional com autenticação"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar arquivo incompleto ou placeholder"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "authentication"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:16:16.828485",
+    "last_used": "2026-04-16T11:16:16.828500",
+    "avg_time_ms": 6326,
+    "tags": [
+      "credenciamento",
+      "python",
+      "code",
+      "sistema",
+      "abra",
+      "crie"
+    ]
+  },
+  {
+    "hash": "2d1b90ed6b00",
+    "original_task": "abra o vs code e crie um sistema python de agendamento de computador",
+    "plan": {
+      "analysis": "criar arquivo python com sistema de agendamento no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar arquivo python com sistema de agendamento de computador",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo python criado com sistema de agendamento funcional"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar arquivo sem conteudo"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "scheduling"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:17:47.509656",
+    "last_used": "2026-04-16T11:17:47.509671",
+    "avg_time_ms": 8397,
+    "tags": [
+      "python",
+      "computador",
+      "code",
+      "sistema",
+      "abra",
+      "crie",
+      "agendamento"
+    ]
+  },
+  {
+    "hash": "ad840eec0a43",
+    "original_task": "abra o vs code e crie um sistema python profissional de agendamento de computador",
+    "plan": {
+      "analysis": "criar sistema python profissional de agendamento de computador no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar sistema profissional de agendamento de computador em Python",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo Python criado com sistema de agendamento profissional",
+            "Sistema funcional com classes, banco de dados e interface"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar sistema basico ou incompleto"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "poo",
+        "banco_de_dados",
+        "agendamento"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 2,
+    "successes": 2,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:20:30.823264",
+    "last_used": "2026-04-16T11:36:03.057634",
+    "avg_time_ms": 7275,
+    "tags": [
+      "crie",
+      "python",
+      "computador",
+      "code",
+      "abra",
+      "profissional",
+      "sistema",
+      "agendamento"
+    ]
+  },
+  {
+    "hash": "fc43b0084752",
+    "original_task": "abra o vs code e crie um site profissional com html css e javascript da historia do brasil",
+    "plan": {
+      "analysis": "criar site profissional com HTML, CSS e JavaScript sobre história do Brasil no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar site profissional com HTML, CSS e JavaScript sobre história do Brasil e abrir no VS Code",
+          "params": {
+            "action_type": "create_project",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo index.html criado",
+            "Arquivo style.css criado",
+            "Arquivo script.js criado",
+            "Site profissional sobre história do Brasil estruturado e funcionando"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar arquivos incompletos"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "html",
+        "css",
+        "javascript",
+        "vscode"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:22:32.545667",
+    "last_used": "2026-04-16T11:22:32.545685",
+    "avg_time_ms": 14838,
+    "tags": [
+      "html",
+      "historia",
+      "crie",
+      "brasil",
+      "css",
+      "javascript",
+      "code",
+      "abra",
+      "profissional",
+      "site"
+    ]
+  },
+  {
+    "hash": "1d94d9b568a0",
+    "original_task": "abra o vs code e crie um site profissional com html css e javascript da historia brasileira",
+    "plan": {
+      "analysis": "criar site profissional sobre história brasileira com HTML, CSS e JavaScript no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar site profissional sobre história brasileira com HTML, CSS e JavaScript e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo HTML criado com estrutura profissional",
+            "CSS integrado com estilo responsivo",
+            "JavaScript funcional para interatividade",
+            "Site sobre história brasileira completo"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar site sem CSS ou JavaScript",
+            "NAO usar design amador"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "html",
+        "css",
+        "javascript",
+        "vscode",
+        "web_design"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:24:51.667017",
+    "last_used": "2026-04-16T11:24:51.667068",
+    "avg_time_ms": 5414,
+    "tags": [
+      "profissional",
+      "javascript",
+      "html",
+      "abra",
+      "css",
+      "code",
+      "historia",
+      "brasileira",
+      "site",
+      "crie"
+    ]
+  },
+  {
+    "hash": "b70393759b1d",
+    "original_task": "abra o vs code e crie um site profissional com html css sobre a historia do brasil",
+    "plan": {
+      "analysis": "criar site profissional em HTML/CSS sobre história do Brasil e abrir no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar arquivo HTML/CSS com site profissional sobre história do Brasil e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo index.html criado com estrutura profissional",
+            "Arquivo style.css criado com estilos modernos",
+            "Site sobre história do Brasil com conteúdo completo"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar site genérico sem conteúdo sobre Brasil",
+            "NAO usar design amador"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "html",
+        "css",
+        "vscode",
+        "web design"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T11:40:34.103635",
+    "last_used": "2026-04-16T11:40:34.103651",
+    "avg_time_ms": 3832,
+    "tags": [
+      "code",
+      "abra",
+      "sobre",
+      "crie",
+      "site",
+      "css",
+      "brasil",
+      "html",
+      "historia",
+      "profissional"
+    ]
+  },
+  {
+    "hash": "9c78782e26b8",
+    "original_task": "abra o vs code e crie um site profissional com html css e javascript sobre a história do brasil",
+    "plan": {
+      "analysis": "criar site profissional HTML/CSS/JavaScript sobre história do Brasil no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar site profissional com HTML, CSS e JavaScript sobre história do Brasil e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo HTML criado com estrutura profissional",
+            "CSS integrado com design responsivo",
+            "JavaScript implementado com interatividades",
+            "Site sobre história do Brasil funcional"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar site incompleto ou sem conteúdo sobre Brasil",
+            "NAO ignorar CSS ou JavaScript"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "html",
+        "css",
+        "javascript",
+        "vscode",
+        "web design"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T12:00:24.399678",
+    "last_used": "2026-04-16T12:00:24.399692",
+    "avg_time_ms": 5470,
+    "tags": [
+      "site",
+      "sobre",
+      "html",
+      "crie",
+      "profissional",
+      "javascript",
+      "css",
+      "code",
+      "história",
+      "brasil"
+    ]
+  },
+  {
+    "hash": "762b15df2b83",
+    "original_task": "Abra o teams va ate a conversa com Jackson Missias Alves e ligue para ele",
+    "plan": {
+      "analysis": "abrir Teams e fazer ligação para Jackson Missias Alves",
+      "subtasks": [
+        {
+          "agent": "DESKTOP",
+          "task": "abrir Teams, navegar até conversa com Jackson Missias Alves e fazer ligação",
+          "params": {
+            "app": "teams",
+            "action_type": "call",
+            "person": "Jackson Missias Alves",
+            "text": ""
+          },
+          "objectives": [
+            "Teams aberto",
+            "Conversa com Jackson Missias Alves localizada",
+            "Ligação iniciada"
+          ],
+          "forbidden_assumptions": [
+            "NAO enviar mensagem de texto",
+            "NAO conversar em voz antes da ligação ser iniciada"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "teams",
+        "video_call"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "DESKTOP"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T13:34:19.505239",
+    "last_used": "2026-04-16T13:34:19.505255",
+    "avg_time_ms": 46037,
+    "tags": [
+      "ate",
+      "teams",
+      "ele",
+      "conversa",
+      "ligue",
+      "missias",
+      "alves",
+      "abra",
+      "jackson"
+    ]
+  },
+  {
+    "hash": "9f9b050a78a4",
+    "original_task": "abra o vs code e crie um sistema medio em python de uma cafeteria",
+    "plan": {
+      "analysis": "abrir VS Code e criar sistema completo de cafeteria em Python",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar sistema de cafeteria em Python e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "language": "python"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Sistema de cafeteria criado e funcional",
+            "Arquivo Python pronto para uso"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar sistema simples - deve ser MEDIO com classes e funcionalidades"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "poo",
+        "vscode"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T13:51:49.133756",
+    "last_used": "2026-04-16T13:51:49.133777",
+    "avg_time_ms": 7134,
+    "tags": [
+      "sistema",
+      "medio",
+      "cafeteria",
+      "code",
+      "python",
+      "abra",
+      "crie"
+    ]
+  },
+  {
+    "hash": "b872fe83e66a",
+    "original_task": "abra o vs code e crie um sistema profissional em python e um CRM",
+    "plan": {
+      "analysis": "criar sistema profissional python (CRM) e abrir no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar sistema CRM profissional em Python e abrir no VS Code",
+          "params": {
+            "action_type": "create_project"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Projeto CRM criado com estrutura profissional",
+            "Arquivos Python gerados",
+            "Sistema pronto para uso"
+          ],
+          "forbidden_assumptions": [
+            "NAO criar apenas um arquivo vazio",
+            "NAO abrir VS Code sem gerar codigo"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "crm",
+        "sistema_profissional"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T13:54:11.378288",
+    "last_used": "2026-04-16T13:54:11.378302",
+    "avg_time_ms": 7501,
+    "tags": [
+      "sistema",
+      "profissional",
+      "crm",
+      "code",
+      "python",
+      "abra",
+      "crie"
+    ]
+  },
+  {
+    "hash": "86add87c6e00",
+    "original_task": "abra o vs code e crie um sistema profissional em python de um jogo de xadrez",
+    "plan": {
+      "analysis": "criar sistema profissional de jogo de xadrez em python no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar sistema profissional de jogo de xadrez em python e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "app": "vscode"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo python com sistema de xadrez criado",
+            "Classes para tabuleiro, peças e regras implementadas",
+            "Sistema de movimentação validado",
+            "Interface básica funcional"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar arquivo incompleto",
+            "NAO usar bibliotecas externas sem justificativa"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "orientacao_a_objetos",
+        "logica_de_jogo",
+        "validacao_de_movimentos"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T13:55:19.135829",
+    "last_used": "2026-04-16T13:55:19.135849",
+    "avg_time_ms": 9030,
+    "tags": [
+      "sistema",
+      "profissional",
+      "jogo",
+      "code",
+      "xadrez",
+      "python",
+      "abra",
+      "crie"
+    ]
+  },
+  {
+    "hash": "6ffa54c4c6a9",
+    "original_task": "Abra o teams va ate a conversa com Igor Henrique Alves e escreva a seguinte mensagem: Aqui e o Robo e depois clique em enviar",
+    "plan": {
+      "analysis": "abrir Teams, navegar para conversa com Igor Henrique Alves e enviar mensagem",
+      "subtasks": [
+        {
+          "agent": "DESKTOP",
+          "task": "abrir Teams, encontrar conversa com Igor Henrique Alves e enviar mensagem",
+          "params": {
+            "app": "teams",
+            "action_type": "send_message",
+            "person": "Igor Henrique Alves",
+            "message": "Aqui e o Robo"
+          },
+          "objectives": [
+            "Teams aberto",
+            "Conversa com Igor Henrique Alves localizada",
+            "Mensagem enviada"
+          ],
+          "forbidden_assumptions": [
+            "NAO enviar para outro contato",
+            "NAO modificar a mensagem"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "teams"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "DESKTOP"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T15:42:00.024726",
+    "last_used": "2026-04-16T15:42:00.024741",
+    "avg_time_ms": 39093,
+    "tags": [
+      "igor",
+      "teams",
+      "abra",
+      "aqui",
+      "seguinte",
+      "ate",
+      "mensagem",
+      "enviar",
+      "henrique",
+      "conversa"
+    ]
+  },
+  {
+    "hash": "362c17e3f656",
+    "original_task": "Abra o google e pesquise por youtube e procure videos de skate 90s",
+    "plan": {
+      "analysis": "abrir google, pesquisar youtube e buscar videos de skate dos anos 90",
+      "subtasks": [
+        {
+          "agent": "WEB",
+          "task": "abrir google, pesquisar por youtube e procurar videos de skate 90s",
+          "params": {
+            "url": "https://www.google.com",
+            "query": "youtube videos de skate 90s",
+            "action_type": "search"
+          },
+          "objectives": [
+            "Google aberto",
+            "Pesquisa realizada",
+            "Resultados exibidos"
+          ],
+          "forbidden_assumptions": [
+            "NAO pesquisar termo diferente",
+            "NAO inventar resultados"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "google",
+        "web_search"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "WEB"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T15:43:05.765040",
+    "last_used": "2026-04-16T15:43:05.765050",
+    "avg_time_ms": 30105,
+    "tags": [
+      "skate",
+      "abra",
+      "pesquise",
+      "youtube",
+      "videos",
+      "90s",
+      "google",
+      "procure"
+    ]
+  },
+  {
+    "hash": "f1f141a4e6f9",
+    "original_task": "abra o vs code e crie dois arquivos HTMl e CSS de um site profissional sobre a historia do povo asteca",
+    "plan": {
+      "analysis": "criar dois arquivos (HTML e CSS) de um site profissional sobre história asteca no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar arquivo HTML e CSS de site profissional sobre história dos astecas e abrir no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "files": [
+              {
+                "name": "index.html",
+                "language": "html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>História do Povo Asteca</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <header>\n        <nav class=\"navbar\">\n            <div class=\"logo\">Astecas</div>\n            <ul class=\"nav-links\">\n                <li><a href=\"#inicio\">Início</a></li>\n                <li><a href=\"#historia\">História</a></li>\n                <li><a href=\"#cultura\">Cultura</a></li>\n                <li><a href=\"#legado\">Legado</a></li>\n            </ul>\n        </nav>\n    </header>\n\n    <main>\n        <section id=\"inicio\" class=\"hero\">\n            <div class=\"hero-content\">\n                <h1>O Império Asteca</h1>\n                <p>Uma das civilizações mais avançadas da Mesoamérica</p>\n            </div>\n        </section>\n\n        <section id=\"historia\" class=\"content-section\">\n            <div class=\"container\">\n                <h2>História</h2>\n                <p>O Império Asteca, também conhecido como Império Mexica, foi uma das maiores civilizações da Mesoamérica. Fundado em 1345 com a construção de Tenochtitlan, o império se expandiu através de conquistas militares e alianças estratégicas.</p>\n                <p>Os astecas desenvolveram uma sociedade complexa com estrutura hierárquica, sistema de escrita avançado, e conhecimentos sofisticados em matemática, astronomia e arquitetura.</p>\n            </div>\n        </section>\n    </main>\n</body>\n</html>"
+              },
+              {
+                "name": "style.css",
+                "language": "css",
+                "content": "* {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n}\n\nbody {\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n    line-height: 1.6;\n    color: #333;\n}\n\nheader {\n    background-color: #1a1a1a;\n    color: #fff;\n    padding: 1rem 0;\n}\n\n.navbar {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 0 2rem;\n}\n\n.logo {\n    font-size: 1.8rem;\n    font-weight: bold;\n}\n\n.nav-links {\n    display: flex;\n    list-style: none;\n    gap: 2rem;\n}\n\n.nav-links a {\n    color: #fff;\n    text-decoration: none;\n    transition: color 0.3s;\n}\n\n.nav-links a:hover {\n    color: #ffd700;\n}\n\n.hero {\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    color: #fff;\n    padding: 6rem 2rem;\n    text-align: center;\n}\n\n.hero-content h1 {\n    font-size: 3rem;\n    margin-bottom: 1rem;\n}\n\n.hero-content p {\n    font-size: 1.3rem;\n}\n\n.content-section {\n    padding: 3rem 2rem;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n}\n\n.content-section h2 {\n    font-size: 2rem;\n    margin-bottom: 1.5rem;\n    color: #667eea;\n}\n\n.content-section p {\n    margin-bottom: 1rem;\n    text-align: justify;\n}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-16T16:43:25.366380",
+    "last_used": "2026-04-16T16:43:25.366394",
+    "avg_time_ms": 19096,
+    "tags": [
+      "sobre",
+      "css",
+      "site",
+      "html",
+      "historia",
+      "profissional",
+      "crie",
+      "povo",
+      "arquivos",
+      "code"
+    ]
+  },
+  {
+    "hash": "5364e999f22b",
+    "original_task": "abra o vs code e crie um arquivo em python de um sistema profissional de agendamento de computador",
+    "plan": {
+      "analysis": "criar arquivo python com sistema profissional de agendamento de computador no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar arquivo python com sistema profissional de agendamento de computador",
+          "params": {
+            "action_type": "create_file",
+            "file_extension": "py",
+            "file_name": "sistema_agendamento.py"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo python criado com sistema de agendamento profissional",
+            "Código funcionando com recursos de agendamento"
+          ],
+          "forbidden_assumptions": [
+            "NAO apenas abrir VS Code vazio",
+            "NAO criar arquivo sem conteudo de agendamento"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "agendamento",
+        "sistema profissional"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 2,
+    "successes": 2,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T10:55:12.044372",
+    "last_used": "2026-04-17T11:23:23.872276",
+    "avg_time_ms": 53208,
+    "tags": [
+      "python",
+      "sistema",
+      "abra",
+      "arquivo",
+      "code",
+      "crie",
+      "agendamento",
+      "profissional",
+      "computador"
+    ]
+  },
+  {
+    "hash": "ee284410bb38",
+    "original_task": "abra o vs code e crie 2 arquivos em HTML, CSS de um site profissional sobre a historia do povo asteca",
+    "plan": {
+      "analysis": "criar 2 arquivos (HTML e CSS) de site profissional sobre historia asteca no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar arquivo HTML sobre historia do povo asteca e arquivo CSS com estilo profissional, abrir ambos no VS Code",
+          "params": {
+            "action_type": "create_file",
+            "files": [
+              {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Historia do Povo Asteca</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <header>\n        <nav class=\"navbar\">\n            <div class=\"logo\">Astecas</div>\n            <ul class=\"nav-links\">\n                <li><a href=\"#origem\">Origem</a></li>\n                <li><a href=\"#imperio\">Imperio</a></li>\n                <li><a href=\"#cultura\">Cultura</a></li>\n                <li><a href=\"#conquista\">Conquista</a></li>\n            </ul>\n        </nav>\n    </header>\n    <main>\n        <section class=\"hero\">\n            <h1>O Povo Asteca</h1>\n            <p>Uma civilizacao milenaria do Mexico antigo</p>\n        </section>\n        <section id=\"origem\" class=\"content-section\">\n            <h2>Origem e Fundacao</h2>\n            <p>Os astecas originaram-se de Aztlan, uma regiao lendaria do norte do Mexico. Segundo suas tradicoes, foram guiados pelo deus Huitzilopochtli ate encontrar um lugar sagrado marcado por uma aguia pousada em um cacto. Este local, Tenochtitlan, foi fundado em 1325 d.C. e tornou-se a capital do imperio.</p>\n        </section>\n        <section id=\"imperio\" class=\"content-section\">\n            <h2>O Imperio Asteca</h2>\n            <p>Em seu apice, entre os seculos XV e XVI, o Imperio Asteca (Mexica) era uma das maiores potencias do mundo. Tenochtitlan era uma cidade extraordinaria, construida em uma ilha.</p>\n        </section>\n    </main>\n</body>\n</html>"
+              },
+              {
+                "filename": "style.css",
+                "content": "* {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n}\n\nbody {\n    font-family: 'Arial', sans-serif;\n    line-height: 1.6;\n    color: #333;\n}\n\nheader {\n    background-color: #2c3e50;\n    padding: 1rem 0;\n    box-shadow: 0 2px 5px rgba(0,0,0,0.1);\n}\n\n.navbar {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 0 2rem;\n}\n\n.logo {\n    font-size: 1.8rem;\n    font-weight: bold;\n    color: #e74c3c;\n}\n\n.nav-links {\n    display: flex;\n    list-style: none;\n    gap: 2rem;\n}\n\n.nav-links a {\n    color: #ecf0f1;\n    text-decoration: none;\n    transition: color 0.3s;\n}\n\n.nav-links a:hover {\n    color: #e74c3c;\n}\n\n.hero {\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    color: white;\n    padding: 4rem 2rem;\n    text-align: center;\n}\n\n.hero h1 {\n    font-size: 3rem;\n    margin-bottom: 1rem;\n}\n\n.hero p {\n    font-size: 1.2rem;\n}\n\n.content-section {\n    max-width: 1200px;\n    margin: 2rem auto;\n    padding: 2rem;\n    background-color: #f8f9fa;\n    border-radius: 8px;\n}\n\n.content-section h2 {\n    color: #2c3e50;\n    margin-bottom: 1rem;\n    border-bottom: 3px solid #e74c3c;\n    padding-bottom: 0.5rem;\n}\n\n.content-section p {\n    text-align: justify;\n}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T11:27:10.623104",
+    "last_used": "2026-04-17T11:27:10.623120",
+    "avg_time_ms": 117013,
+    "tags": [
+      "html",
+      "historia",
+      "sobre",
+      "arquivos",
+      "crie",
+      "site",
+      "code",
+      "abra",
+      "asteca",
+      "povo"
+    ]
+  },
+  {
+    "hash": "ca0606551190",
+    "original_task": "abra o vs code e crie 2 arquivos em HTML e CSS de um site profissional sobre a historia do povo asteca",
+    "plan": {
+      "analysis": "criar 2 arquivos (HTML e CSS) de site profissional sobre história asteca no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar arquivo HTML e CSS para site profissional sobre história dos astecas",
+          "params": {
+            "action_type": "create_file",
+            "files": [
+              {
+                "filename": "index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>História do Povo Asteca</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <header>\n        <nav class=\"navbar\">\n            <div class=\"container\">\n                <h1 class=\"logo\">Civilização Asteca</h1>\n                <ul class=\"nav-links\">\n                    <li><a href=\"#origem\">Origem</a></li>\n                    <li><a href=\"#imperio\">Império</a></li>\n                    <li><a href=\"#cultura\">Cultura</a></li>\n                    <li><a href=\"#conquista\">Conquista</a></li>\n                </ul>\n            </div>\n        </nav>\n    </header>\n\n    <main>\n        <section class=\"hero\">\n            <div class=\"container\">\n                <h2>A Grande Civilização Asteca</h2>\n                <p>Explore a história de um dos povos mais avançados da Mesoamérica</p>\n            </div>\n        </section>\n\n        <section id=\"origem\" class=\"section\">\n            <div class=\"container\">\n                <h3>Origem e Fundação</h3>\n                <p>Os astecas, também conhecidos como mexicas, eram um povo nahua que se estabeleceu no Vale do México. Segundo suas lendas, migraram de Aztlán no século XII, finalmente se instalando em Tenochtitlán em 1325, que se tornou a capital de seu império.</p>\n            </div>\n        </section>\n\n        <section id=\"imperio\" class=\"section\">\n            <div class=\"container\">\n                <h3>Império Asteca</h3>\n                <p>O império asteca foi uma das maiores potências do mundo pré-colombiano, expandindo-se através de conquistas militares e alianças estratégicas.</p>\n            </div>\n        </section>\n    </main>\n</body>\n</html>"
+              },
+              {
+                "filename": "style.css",
+                "content": "* {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n}\n\nbody {\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n    line-height: 1.6;\n    color: #333;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 0 20px;\n}\n\nheader {\n    background-color: #2c3e50;\n    color: white;\n    padding: 1rem 0;\n    position: sticky;\n    top: 0;\n    z-index: 100;\n}\n\n.navbar {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n}\n\n.logo {\n    font-size: 1.8rem;\n    font-weight: bold;\n}\n\n.nav-links {\n    display: flex;\n    list-style: none;\n    gap: 2rem;\n}\n\n.nav-links a {\n    color: white;\n    text-decoration: none;\n    transition: color 0.3s;\n}\n\n.nav-links a:hover {\n    color: #f39c12;\n}\n\n.hero {\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    color: white;\n    padding: 6rem 0;\n    text-align: center;\n}\n\n.hero h2 {\n    font-size: 3rem;\n    margin-bottom: 1rem;\n}\n\n.section {\n    padding: 4rem 0;\n    border-bottom: 1px solid #eee;\n}\n\n.section h3 {\n    font-size: 2rem;\n    margin-bottom: 1rem;\n    color: #2c3e50;\n}\n\n.section p {\n    font-size: 1rem;\n    line-height: 1.8;\n    color: #555;\n}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T11:30:18.417473",
+    "last_used": "2026-04-17T11:30:18.417521",
+    "avg_time_ms": 119151,
+    "tags": [
+      "html",
+      "historia",
+      "sobre",
+      "arquivos",
+      "crie",
+      "site",
+      "code",
+      "abra",
+      "asteca",
+      "povo"
+    ]
+  },
+  {
+    "hash": "3ee25b5310f9",
+    "original_task": "abra o vs code e crie 2 arquivos HTML e CSS de um site profissional sobre a historia do povo asteca",
+    "plan": {
+      "analysis": "criar 2 arquivos (HTML e CSS) de site profissional sobre história asteca no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "criar arquivo HTML e CSS de site profissional sobre história do povo asteca",
+          "params": {
+            "action_type": "create_file",
+            "files": [
+              {
+                "name": "index.html",
+                "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>História do Povo Asteca</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n</head>\n<body>\n    <header>\n        <nav class=\"navbar\">\n            <div class=\"container\">\n                <h1 class=\"logo\">Civilização Asteca</h1>\n                <ul class=\"nav-links\">\n                    <li><a href=\"#historia\">História</a></li>\n                    <li><a href=\"#cultura\">Cultura</a></li>\n                    <li><a href=\"#legado\">Legado</a></li>\n                    <li><a href=\"#contato\">Contato</a></li>\n                </ul>\n            </div>\n        </nav>\n        <section class=\"hero\">\n            <div class=\"hero-content\">\n                <h2>O Império Asteca</h2>\n                <p>Uma das civilizações mais avançadas da Mesoamérica</p>\n            </div>\n        </section>\n    </header>\n\n    <main>\n        <section id=\"historia\" class=\"section\">\n            <div class=\"container\">\n                <h2>História</h2>\n                <p>Os astecas foram uma civilização mesoamericana que floresceu entre os séculos XIV e XVI. Fundaram Tenochtitlán em 1325, uma das maiores cidades do mundo antigo. Seu império se expandiu através de conquistas militares e alianças estratégicas.</p>\n                <p>A civilização asteca era conhecida por sua arquitetura monumental, sistema de escrita hieroglífica, calendários precisos e práticas religiosas complexas.</p>\n            </div>\n        </section>\n    </main>\n</body>\n</html>"
+              },
+              {
+                "name": "style.css",
+                "content": "* {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n}\n\nbody {\n    font-family: Arial, sans-serif;\n    line-height: 1.6;\n    color: #333;\n}\n\n.container {\n    max-width: 1200px;\n    margin: 0 auto;\n    padding: 0 20px;\n}\n\nheader {\n    background-color: #1a1a1a;\n    color: white;\n}\n\n.navbar {\n    padding: 1rem 0;\n    background-color: #2a2a2a;\n}\n\n.navbar .container {\n    display: flex;\n    justify-content: space-between;\n    align-items: center;\n}\n\n.logo {\n    font-size: 1.8rem;\n    font-weight: bold;\n}\n\n.nav-links {\n    display: flex;\n    list-style: none;\n    gap: 2rem;\n}\n\n.nav-links a {\n    color: white;\n    text-decoration: none;\n    transition: color 0.3s;\n}\n\n.nav-links a:hover {\n    color: #ffd700;\n}\n\n.hero {\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    padding: 6rem 2rem;\n    text-align: center;\n}\n\n.hero-content h2 {\n    font-size: 3rem;\n    margin-bottom: 1rem;\n}\n\n.hero-content p {\n    font-size: 1.3rem;\n    opacity: 0.9;\n}\n\n.section {\n    padding: 4rem 0;\n}\n\n.section h2 {\n    font-size: 2.2rem;\n    margin-bottom: 1.5rem;\n    color: #667eea;\n}\n\n.section p {\n    margin-bottom: 1rem;\n    text-align: justify;\n    font-size: 1.1rem;\n}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T11:37:16.320373",
+    "last_used": "2026-04-17T11:37:16.320401",
+    "avg_time_ms": 33919,
+    "tags": [
+      "profissional",
+      "css",
+      "historia",
+      "arquivos",
+      "asteca",
+      "code",
+      "html",
+      "crie",
+      "site",
+      "abra"
+    ]
+  },
+  {
+    "hash": "7cb8fecad978",
+    "original_task": "abra o vs code e crie 1 arquivo em python de um sistema de agendamento de computador de sala",
+    "plan": {
+      "analysis": "criar arquivo python com sistema de agendamento de sala de computador no VS Code",
+      "subtasks": [
+        {
+          "agent": "CODE",
+          "task": "abrir VS Code e criar arquivo python com sistema de agendamento de computador de sala",
+          "params": {
+            "action_type": "create_file",
+            "language": "python",
+            "filename": "sistema_agendamento_sala.py"
+          },
+          "objectives": [
+            "VS Code aberto",
+            "Arquivo python criado com sistema de agendamento de sala",
+            "Código funcional implementado"
+          ],
+          "forbidden_assumptions": [
+            "NAO criar arquivo vazio",
+            "NAO apenas abrir VS Code sem criar arquivo"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "python",
+        "vscode",
+        "sistema de agendamento"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "CODE"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T11:41:08.502204",
+    "last_used": "2026-04-17T11:41:08.502238",
+    "avg_time_ms": 35420,
+    "tags": [
+      "computador",
+      "sala",
+      "sistema",
+      "arquivo",
+      "code",
+      "crie",
+      "python",
+      "agendamento",
+      "abra"
+    ]
+  },
+  {
+    "hash": "76c1cf3edd21",
+    "original_task": "abra o google va ate o youtube e pesquise por masterchef brasil",
+    "plan": {
+      "analysis": "abrir google, navegar para youtube e pesquisar masterchef brasil",
+      "subtasks": [
+        {
+          "agent": "WEB",
+          "task": "abrir youtube e pesquisar por masterchef brasil",
+          "params": {
+            "url": "https://www.youtube.com",
+            "query": "masterchef brasil",
+            "action_type": "search"
+          },
+          "objectives": [
+            "YouTube aberto",
+            "Pesquisa realizada com termo 'masterchef brasil'",
+            "Resultados exibidos"
+          ],
+          "forbidden_assumptions": [
+            "NAO pesquisar termo diferente",
+            "NAO abrir google primeiro (ir direto ao youtube)"
+          ],
+          "depends_on": null
+        }
+      ],
+      "skills": [
+        "youtube",
+        "web"
+      ]
+    },
+    "subtasks_count": 1,
+    "agents_used": [
+      "WEB"
+    ],
+    "executions": 1,
+    "successes": 1,
+    "success_rate": 1.0,
+    "created_at": "2026-04-17T11:45:23.789979",
+    "last_used": "2026-04-17T11:45:23.789996",
+    "avg_time_ms": 33058,
+    "tags": [
+      "youtube",
+      "pesquise",
+      "ate",
+      "google",
+      "brasil",
+      "abra",
+      "masterchef"
+    ]
+  }
+]

@@ -34,6 +34,7 @@ from core.automation import AutomationEngine
 from core.capture import ScreenCapture
 from core.narrator import ReportNarrator
 from core.context_manager import ContextManager
+from core.evolution_engine import get_evolution_engine
 
 # Opcionais — nao travam se falharem
 try:
@@ -98,6 +99,15 @@ def serve_rep(f):
         abort(403)
     return send_from_directory(rep_dir, f)
 
+@app.route("/evolution/stats")
+def evolution_stats():
+    """Retorna estatísticas do aprendizado contínuo."""
+    evo = get_evolution_engine()
+    return jsonify({
+        "stats": evo.get_stats(),
+        "top_workflows": evo.list_top_workflows(10),
+    })
+
 @socketio.on("connect")
 def on_connect():
     # === AUTENTICACAO: Verifica token no connect ===
@@ -124,11 +134,25 @@ def on_stop():
 def _run(task, dry_run, gen_report):
     state["running"] = True
     all_success = True
+    task_start = time.time()
+    TASK_TIMEOUT = 120
+
+    # Evolution Engine
+    evolution = get_evolution_engine()
+
     try:
         socketio.emit("phase", {"phase": "maestro", "msg": "Analisando..."})
-        api_usage["calls"] += 1
-        api_usage["tokens_est"] += 500
-        plan = maestro.analyze(task)
+
+        # Evolution: tenta usar workflow aprendido
+        learned = evolution.find_learned_workflow(task)
+        if learned and not dry_run:
+            socketio.emit("phase", {"phase": "evolution", "msg": "Workflow aprendido reutilizado"})
+            plan = learned.get("plan", {})
+        else:
+            api_usage["calls"] += 1
+            api_usage["tokens_est"] += 500
+            plan = maestro.analyze(task)
+
         if plan.get("error"):
             socketio.emit("error", {"msg": plan.get("message", "Erro")})
             return
@@ -308,6 +332,14 @@ def _run(task, dry_run, gen_report):
                 )
             except Exception:
                 pass
+
+        # Evolution: registra execução para aprendizado contínuo
+        if not dry_run:
+            try:
+                exec_time = int((time.time() - task_start) * 1000)
+                evolution.record_execution(task, plan, all_success, exec_time)
+            except Exception as e:
+                print(f"  [Evolution] Erro ao registrar: {e}")
 
         socketio.emit("task_done", {
             "msg": "Concluido",

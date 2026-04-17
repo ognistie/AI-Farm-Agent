@@ -1,22 +1,17 @@
 """
-DesktopAgent v14 — Agente inteligente de apps desktop.
-MUDANÇAS v14:
-- REMOVIDO fallback 'Ola!' — nunca inventa conteúdo
-- Notepad só digita se text não vazio
-- Apps genéricos (Paint, Calculadora) com ação complexa → LLM resolve
-- Prompt fallback com conhecimento real de como humanos usam apps
-- Detecção de tarefa complexa vs simples
+DesktopAgent v16 — Rotinas utilitárias + Few-shot LLM.
+- NOVAS: minimize_all, close_all, screenshot, alt_tab, lock, volume
+- Few-shot no prompt LLM (Paint círculo, Calculadora 15+20, Spotify lofi)
+- Sem 'Ola!', Paint→LLM, Notepad sem digitar vazio
 """
 
-import json
-import os
+import json, os
 from core.ai_client import get_client
 from core.config import get_config
 from core.json_validator import safe_parse
 
 
 def _build_steps(app, params):
-    """Constroi steps para apps conhecidos."""
     action_type = (params.get("action_type", "") or "").lower()
     person = params.get("person", "") or ""
     message = params.get("message", "") or params.get("text", "") or ""
@@ -28,139 +23,194 @@ def _build_steps(app, params):
         n[0] += 1
         steps.append({"step": n[0], "action": action, "params": p, "description": desc, "agent": "DESKTOP"})
 
-    # === TEAMS ===
     if app in ("teams", "microsoft teams"):
         add("app_search", {"name": "Microsoft Teams"}, "Abrir Teams")
-        add("wait", {"seconds": 5}, "Aguardar Teams carregar")
-        add("focus_window", {"title": "Teams"}, "Focar janela do Teams")
-        add("wait", {"seconds": 1}, "Aguardar foco")
-        add("vision_click", {"description": "texto 'Chat' na barra lateral esquerda DENTRO da janela do Teams"}, "Ir para aba Chat")
-        add("wait", {"seconds": 2}, "Aguardar lista de chats")
-        add("hotkey", {"keys": ["ctrl", "shift", "f"]}, "Filtrar chats")
-        add("wait", {"seconds": 1}, "Aguardar campo de filtro")
-        add("type_text", {"text": person}, "Filtrar por: " + person)
-        add("wait", {"seconds": 2}, "Aguardar resultados")
-        add("vision_click", {"description": "conversa com " + person + " na lista filtrada DENTRO do Teams"}, "Abrir conversa")
-        add("wait", {"seconds": 2}, "Aguardar conversa")
-        add("vision_click", {"description": "campo de texto 'Digite uma mensagem' na PARTE INFERIOR da conversa DENTRO do Teams"}, "Focar campo")
+        add("wait", {"seconds": 5}, "Aguardar")
+        add("focus_window", {"title": "Teams"}, "Focar")
+        add("wait", {"seconds": 1}, "Aguardar")
+        add("vision_click", {"description": "texto 'Chat' na barra lateral esquerda DENTRO do Teams"}, "Chat")
+        add("wait", {"seconds": 2}, "Aguardar")
+        add("hotkey", {"keys": ["ctrl", "shift", "f"]}, "Filtrar")
+        add("wait", {"seconds": 1}, "Aguardar")
+        add("type_text", {"text": person}, "Filtrar: " + person)
+        add("wait", {"seconds": 2}, "Aguardar")
+        add("vision_click", {"description": "conversa com " + person + " DENTRO do Teams"}, "Abrir")
+        add("wait", {"seconds": 2}, "Aguardar")
+        add("vision_click", {"description": "campo 'Digite uma mensagem' na PARTE INFERIOR DENTRO do Teams"}, "Focar")
         add("wait", {"seconds": 0.5}, "Aguardar")
         if action_type in ("send_message", "") and message:
-            add("type_text", {"text": message}, "Digitar: " + message[:40])
+            add("type_text", {"text": message}, "Digitar")
             add("wait", {"seconds": 1}, "Aguardar")
             add("hotkey", {"keys": ["enter"]}, "Enviar")
         elif action_type == "call":
-            add("vision_click", {"description": "icone de telefone no canto superior direito DENTRO do Teams"}, "Ligar")
+            add("vision_click", {"description": "icone de telefone DENTRO do Teams"}, "Ligar")
         elif action_type == "video_call":
-            add("vision_click", {"description": "icone de camera no canto superior direito DENTRO do Teams"}, "Video")
-        add("hotkey", {"keys": ["escape"]}, "Limpar filtro")
+            add("vision_click", {"description": "icone de camera DENTRO do Teams"}, "Video")
+        add("hotkey", {"keys": ["escape"]}, "Limpar")
         return steps
 
-    # === WHATSAPP ===
     if app in ("whatsapp", "whats", "zap"):
         add("app_search", {"name": "WhatsApp"}, "Abrir WhatsApp")
         add("wait", {"seconds": 4}, "Aguardar")
-        add("focus_window", {"title": "WhatsApp"}, "Focar WhatsApp")
+        add("focus_window", {"title": "WhatsApp"}, "Focar")
         add("wait", {"seconds": 1}, "Aguardar")
-        add("vision_click", {"description": "campo de pesquisa com lupa NO TOPO da barra lateral DENTRO do WhatsApp"}, "Pesquisa")
+        add("vision_click", {"description": "campo de pesquisa DENTRO do WhatsApp"}, "Pesquisa")
         add("wait", {"seconds": 1}, "Aguardar")
-        add("type_text", {"text": person}, "Pesquisar: " + person)
-        add("wait", {"seconds": 2}, "Aguardar busca")
-        add("vision_click", {"description": "resultado com " + person + " DENTRO do WhatsApp"}, person)
-        add("wait", {"seconds": 2}, "Aguardar conversa")
-        add("vision_click", {"description": "campo 'Digite uma mensagem' na parte inferior DENTRO do WhatsApp"}, "Focar campo")
+        add("type_text", {"text": person}, "Pesquisar")
+        add("wait", {"seconds": 2}, "Aguardar")
+        add("vision_click", {"description": "resultado " + person + " DENTRO do WhatsApp"}, person)
+        add("wait", {"seconds": 2}, "Aguardar")
+        add("vision_click", {"description": "campo 'Digite uma mensagem' DENTRO do WhatsApp"}, "Focar")
         if message:
-            add("type_text", {"text": message}, "Digitar mensagem")
+            add("type_text", {"text": message}, "Digitar")
             add("hotkey", {"keys": ["enter"]}, "Enviar")
         return steps
 
-    # === NOTEPAD ===
     if app in ("notepad", "bloco de notas"):
         add("app_search", {"name": "Bloco de Notas"}, "Abrir Notepad")
-        add("wait", {"seconds": 3}, "Aguardar abrir")
+        add("wait", {"seconds": 3}, "Aguardar")
         if text and text.strip():
-            add("app_type", {"window_title": "Notas", "text": text}, "Digitar texto")
+            add("app_type", {"window_title": "Notas", "text": text}, "Digitar")
         return steps
 
-    # === WORD ===
     if app in ("word", "microsoft word"):
         add("app_search", {"name": "Word"}, "Abrir Word")
         add("wait", {"seconds": 5}, "Aguardar")
-        add("vision_click", {"description": "opcao Documento em branco na tela inicial DENTRO do Word"}, "Novo documento")
+        add("vision_click", {"description": "Documento em branco DENTRO do Word"}, "Novo")
         add("wait", {"seconds": 3}, "Aguardar")
         if text and text.strip():
-            add("type_text", {"text": text}, "Digitar texto")
+            add("type_text", {"text": text}, "Digitar")
         return steps
 
-    # === EXCEL ===
     if app in ("excel", "microsoft excel"):
         add("app_search", {"name": "Excel"}, "Abrir Excel")
         add("wait", {"seconds": 5}, "Aguardar")
-        add("vision_click", {"description": "opcao Pasta de trabalho em branco na tela inicial DENTRO do Excel"}, "Nova planilha")
+        add("vision_click", {"description": "Pasta de trabalho em branco DENTRO do Excel"}, "Nova")
         add("wait", {"seconds": 3}, "Aguardar")
         return steps
 
-    # === VS CODE ===
     if app in ("vscode", "vs code", "visual studio code"):
         add("app_search", {"name": "Visual Studio Code"}, "Abrir VS Code")
         add("wait", {"seconds": 4}, "Aguardar")
         return steps
 
-    # === APPS GENÉRICOS (só abre se tarefa é simples) ===
     generic = {"paint": "Paint", "calculadora": "Calculadora", "calculator": "Calculadora", "spotify": "Spotify"}
     if app in generic:
         if action_type and action_type not in ("open", ""):
-            return None  # Tarefa complexa → LLM resolve
+            return None
         add("app_search", {"name": generic[app]}, "Abrir " + generic[app])
         add("wait", {"seconds": 3}, "Aguardar")
         return steps
 
     if app in ("explorer", "explorador"):
-        add("hotkey", {"keys": ["win", "e"]}, "Abrir Explorer (Win+E)")
+        add("hotkey", {"keys": ["win", "e"]}, "Abrir Explorer")
         add("wait", {"seconds": 2}, "Aguardar")
         return steps
 
-    # === OUTLOOK ===
     if app == "outlook":
         add("app_search", {"name": "Outlook"}, "Abrir Outlook")
         add("wait", {"seconds": 5}, "Aguardar")
-        add("hotkey", {"keys": ["ctrl", "n"]}, "Novo Email (Ctrl+N)")
+        add("hotkey", {"keys": ["ctrl", "n"]}, "Novo")
         add("wait", {"seconds": 2}, "Aguardar")
         if person:
-            add("type_text", {"text": person}, "Destinatario")
+            add("type_text", {"text": person}, "Para")
             add("hotkey", {"keys": ["tab"]}, "Tab")
-        add("hotkey", {"keys": ["tab"]}, "Tab para corpo")
+        add("hotkey", {"keys": ["tab"]}, "Tab")
         if message:
             add("type_text", {"text": message}, "Corpo")
-        add("hotkey", {"keys": ["ctrl", "enter"]}, "Enviar (Ctrl+Enter)")
+        add("hotkey", {"keys": ["ctrl", "enter"]}, "Enviar")
         return steps
 
     return None
 
 
+def _utility_steps(task_lower):
+    s = lambda n, a, p, d: {"step": n, "action": a, "params": p, "description": d, "agent": "DESKTOP"}
+
+    if any(kw in task_lower for kw in ["minimize tudo", "minimizar tudo", "minimizar todas", "minimize todas", "mostrar desktop", "mostrar area de trabalho"]):
+        return [s(1, "hotkey", {"keys": ["win", "d"]}, "Minimizar tudo (Win+D)")]
+
+    if any(kw in task_lower for kw in ["feche tudo", "fechar tudo", "feche todos", "fechar todos"]):
+        return [s(1, "hotkey", {"keys": ["alt", "f4"]}, "Fechar janela"),
+                s(2, "wait", {"seconds": 1}, "Aguardar"),
+                s(3, "hotkey", {"keys": ["alt", "f4"]}, "Fechar próxima"),
+                s(4, "wait", {"seconds": 1}, "Aguardar"),
+                s(5, "hotkey", {"keys": ["alt", "f4"]}, "Fechar próxima")]
+
+    if any(kw in task_lower for kw in ["print da tela", "screenshot", "captura de tela", "tire um print", "tirar print"]):
+        return [s(1, "run_python", {
+            "code": "import pyautogui, os, subprocess\nfrom datetime import datetime\ndesktop = os.path.join(os.path.expanduser('~'), 'Desktop')\nfp = os.path.join(desktop, f'screenshot_{datetime.now().strftime(\"%H%M%S\")}.png')\npyautogui.screenshot().save(fp)\nsubprocess.Popen(['explorer', '/select,', fp])\nprint(f'Salvo: {fp}')",
+            "description": "Capturar tela"}, "Screenshot → Desktop")]
+
+    if any(kw in task_lower for kw in ["volta pra tela", "trocar janela", "alt tab", "janela anterior"]):
+        return [s(1, "hotkey", {"keys": ["alt", "tab"]}, "Alt+Tab")]
+
+    if any(kw in task_lower for kw in ["bloquear tela", "bloquear pc", "lock", "travar tela"]):
+        return [s(1, "hotkey", {"keys": ["win", "l"]}, "Bloquear (Win+L)")]
+
+    if "aumentar volume" in task_lower or "volume mais alto" in task_lower:
+        return [s(1, "hotkey", {"keys": ["volumeup"]}, "Vol+"),
+                s(2, "hotkey", {"keys": ["volumeup"]}, "Vol+"),
+                s(3, "hotkey", {"keys": ["volumeup"]}, "Vol+")]
+    if "diminuir volume" in task_lower or "abaixar volume" in task_lower:
+        return [s(1, "hotkey", {"keys": ["volumedown"]}, "Vol-"),
+                s(2, "hotkey", {"keys": ["volumedown"]}, "Vol-"),
+                s(3, "hotkey", {"keys": ["volumedown"]}, "Vol-")]
+    if "mutar" in task_lower or "silenciar" in task_lower or "mudo" in task_lower:
+        return [s(1, "hotkey", {"keys": ["volumemute"]}, "Mutar")]
+
+    return None
+
+
 PROMPT_FALLBACK = (
-    "Voce e o DESKTOP AGENT — especialista em operar apps Windows como um humano.\n"
-    "Pense passo a passo: o que um usuario faria para cumprir esta tarefa?\n\n"
-    "ACOES DISPONIVEIS:\n"
-    "- app_search(name): abre app pelo menu iniciar\n"
-    "- app_type(window_title, text): digita texto na janela com esse titulo\n"
-    "- focus_window(title): foca uma janela\n"
-    "- vision_click(description): clica em elemento visual DENTRO do app\n"
-    "- vision_type(description, text): clica em campo e digita\n"
-    "- type_text(text): digita via clipboard no campo ativo\n"
-    "- hotkey(keys): atalho (ex: ['ctrl','n'])\n"
-    "- wait(seconds): espera\n"
-    "- click(x, y): clique em coordenada\n\n"
-    "CONHECIMENTO DE APPS:\n"
-    "- Paint: Pincel ja vem selecionado. Para desenhar, use click(x,y) em sequencia.\n"
-    "  Para formas: vision_click('ferramenta Retangulo') → click e arraste.\n"
-    "  Para cores: vision_click('cor vermelha na paleta de cores').\n"
-    "- Calculadora: vision_click('botao 5'), vision_click('botao +'), etc.\n"
-    "- Spotify: vision_click('campo de pesquisa') → type_text(consulta).\n\n"
-    "REGRAS CRITICAS:\n"
+    "Voce e o DESKTOP AGENT — especialista em operar apps Windows.\n"
+    "Pense como humano: o que faria passo a passo?\n\n"
+    "ACOES:\n"
+    "app_search(name) | app_type(window_title, text) | focus_window(title)\n"
+    "vision_click(description) | vision_type(description, text)\n"
+    "type_text(text) | hotkey(keys) | wait(seconds) | click(x,y)\n"
+    "run_python(code, description)\n\n"
+
+    "═══ EXEMPLOS (few-shot) ═══\n\n"
+
+    "Tarefa: 'abra o paint e desenhe um circulo'\n"
+    '{"steps":['
+    '{"step":1,"action":"app_search","params":{"name":"Paint"},"description":"Abrir Paint"},'
+    '{"step":2,"action":"wait","params":{"seconds":4},"description":"Aguardar"},'
+    '{"step":3,"action":"vision_click","params":{"description":"ferramenta Circulo ou Oval DENTRO do Paint"},"description":"Selecionar circulo"},'
+    '{"step":4,"action":"wait","params":{"seconds":0.5},"description":"Aguardar"},'
+    '{"step":5,"action":"click","params":{"x":400,"y":350},"description":"Ponto inicial"},'
+    '{"step":6,"action":"run_python","params":{"code":"import pyautogui; pyautogui.drag(200,200,duration=0.5)","description":"Arrastar"},"description":"Desenhar"}'
+    ']}\n\n'
+
+    "Tarefa: 'abra a calculadora e calcule 15+20'\n"
+    '{"steps":['
+    '{"step":1,"action":"app_search","params":{"name":"Calculadora"},"description":"Abrir"},'
+    '{"step":2,"action":"wait","params":{"seconds":3},"description":"Aguardar"},'
+    '{"step":3,"action":"vision_click","params":{"description":"botao 1 na calculadora"},"description":"1"},'
+    '{"step":4,"action":"vision_click","params":{"description":"botao 5 na calculadora"},"description":"5"},'
+    '{"step":5,"action":"vision_click","params":{"description":"botao + na calculadora"},"description":"+"},'
+    '{"step":6,"action":"vision_click","params":{"description":"botao 2 na calculadora"},"description":"2"},'
+    '{"step":7,"action":"vision_click","params":{"description":"botao 0 na calculadora"},"description":"0"},'
+    '{"step":8,"action":"vision_click","params":{"description":"botao = na calculadora"},"description":"="}'
+    ']}\n\n'
+
+    "Tarefa: 'abra o spotify e toque musica lofi'\n"
+    '{"steps":['
+    '{"step":1,"action":"app_search","params":{"name":"Spotify"},"description":"Abrir"},'
+    '{"step":2,"action":"wait","params":{"seconds":5},"description":"Aguardar"},'
+    '{"step":3,"action":"vision_click","params":{"description":"campo Pesquisar DENTRO do Spotify"},"description":"Pesquisa"},'
+    '{"step":4,"action":"wait","params":{"seconds":1},"description":"Aguardar"},'
+    '{"step":5,"action":"type_text","params":{"text":"lofi"},"description":"lofi"},'
+    '{"step":6,"action":"hotkey","params":{"keys":["enter"]},"description":"Buscar"},'
+    '{"step":7,"action":"wait","params":{"seconds":2},"description":"Aguardar"},'
+    '{"step":8,"action":"vision_click","params":{"description":"primeira playlist DENTRO do Spotify"},"description":"Tocar"}'
+    ']}\n\n'
+
+    "REGRAS:\n"
     "- SEMPRE wait(3-5) apos abrir app\n"
-    "- Descricoes de vision_click DENTRO DO APP (nunca taskbar)\n"
+    "- Descricoes DENTRO DO APP (nunca taskbar)\n"
     "- NUNCA invente texto que o usuario nao pediu\n"
-    "- Se o usuario nao pediu para escrever nada, NAO escreva\n"
     "- Maximo 15 passos. JSON puro.\n\n"
     '{"steps":[{"step":1,"description":"...","action":"...","params":{}}]}'
 )
@@ -183,20 +233,21 @@ class DesktopAgent:
             params = context
 
         app = (params.get("app", "") or "").lower().strip()
+        task_lower = str(task_text).lower()
 
-        # Tenta rotina hardcoded ($0)
         if app:
             steps = _build_steps(app, params)
             if steps:
                 print(f"  [DESKTOP] Rotina: {len(steps)} steps ($0)")
                 return {"steps": steps, "agent": "DESKTOP"}
 
-        # Detecção por keyword com inteligência
-        task_lower = str(task_text).lower()
-        complex_keywords = ["desenh", "pint", "calcul", "som", "toc", "play", "ouç", "escrev", "digit"]
+        util = _utility_steps(task_lower)
+        if util:
+            print(f"  [DESKTOP] Utilitário: {len(util)} steps ($0)")
+            return {"steps": util, "agent": "DESKTOP"}
 
-        # Verifica se a tarefa pede ação complexa em app genérico
-        task_is_complex = any(ck in task_lower for ck in complex_keywords)
+        complex_kw = ["desenh", "pint", "calcul", "som", "toc", "play", "ouç"]
+        is_complex = any(ck in task_lower for ck in complex_kw)
 
         for kw, detected in {
             "teams": "teams", "whatsapp": "whatsapp", "whats": "whatsapp",
@@ -206,25 +257,20 @@ class DesktopAgent:
             "spotify": "spotify", "explorer": "explorer",
         }.items():
             if kw in task_lower:
-                # Apps genéricos com tarefa complexa → LLM
-                if detected in ("paint", "calculadora", "calculator", "spotify") and task_is_complex:
+                if detected in ("paint", "calculadora", "calculator", "spotify") and is_complex:
                     break
                 steps = _build_steps(detected, {"app": detected, "action_type": "open"})
                 if steps:
                     return {"steps": steps, "agent": "DESKTOP"}
 
-        # LLM fallback — o agente pensa como humano
         print("  [DESKTOP] LLM fallback ($)")
         try:
             raw = self._client.message(
-                model=self.model,
-                system=PROMPT_FALLBACK,
-                user_content=f"TAREFA: {task_text}\nJSON puro.",
-                max_tokens=3000,
+                model=self.model, system=PROMPT_FALLBACK,
+                user_content=f"TAREFA: {task_text}\nJSON puro.", max_tokens=3000,
             )
             plan = safe_parse(raw, self.model)
-            for st in plan.get("steps", []):
-                st["agent"] = "DESKTOP"
+            for st in plan.get("steps", []): st["agent"] = "DESKTOP"
             return {"steps": plan.get("steps", []), "agent": "DESKTOP"}
         except Exception as ex:
             return {"steps": [], "error": str(ex), "agent": "DESKTOP"}

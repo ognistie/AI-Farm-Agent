@@ -1,0 +1,37 @@
+{
+  "steps": [
+    {
+      "what": "Navegou para YouTube com sucesso.",
+      "concept": "web_navigation",
+      "insight": "Acesso direto a plataforma de vídeos estabelecido."
+    },
+    {
+      "what": "Aguardou 2 segundos para carregamento da página.",
+      "concept": "timing_management",
+      "insight": "Espera estratégica garante renderização completa antes de interação."
+    },
+    {
+      "what": "Deve localizar barra de pesquisa e digitar 'skate 90s'.",
+      "concept": "search_interaction",
+      "insight": "Pesquisa específica por tema vintage de skate requer entrada de texto precisa."
+    },
+    {
+      "what": "Deve clicar no primeiro resultado de vídeo retornado.",
+      "concept": "element_selection",
+      "insight": "Seleção do resultado primário indica confiança no ranking do algoritmo."
+    }
+  ],
+  "general": {
+    "summary": "Iniciou navegação no YouTube e preparou-se para pesquisar vídeos de skate dos anos 90, executando etapas de acesso e timing.",
+    "skills": [
+      "web_navigation",
+      "timing_management",
+      "search_interaction",
+      "element_selection"
+    ],
+    "xp_earned": 75,
+    "next_level": "Complete a pesquisa digitando o termo e selecionando o primeiro vídeo para ganhar mais XP."
+  },
+  "task": "Abra o youtube em meu navegador e na barra de pesquisa do youtube pesquise por videos de skate 90s, depois clique no primeiro que aparecer",
+  "generated_at": "2026-04-14T12:42:08.799780"
+}

@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "what": "Navegou para YouTube usando o comando web_goto.",
+      "concept": "web_navigation",
+      "insight": "Compreendeu que web_goto permite transição direta para URLs específicas."
+    },
+    {
+      "what": "Aguardou 2 segundos para carregamento completo da página.",
+      "concept": "timing_control",
+      "insight": "Timing apropriado garante que elementos estejam renderizados antes de interagir."
+    },
+    {
+      "what": "Digitou 'masterchef brasil' no campo de pesquisa usando web_type.",
+      "concept": "text_input",
+      "insight": "web_type simula digitação precisa em campos de entrada de texto."
+    },
+    {
+      "what": "Pressionou Enter para executar a pesquisa.",
+      "concept": "keyboard_interaction",
+      "insight": "web_key dispara ações baseadas em teclas, ativando submissões de formulário."
+    },
+    {
+      "what": "Aguardou 2 segundos para carregamento dos resultados de pesquisa.",
+      "concept": "async_waiting",
+      "insight": "Pausas estratégicas evitam erros de timing em operações assíncronas."
+    }
+  ],
+  "summary": "Completou com sucesso navegação para YouTube, digitação de busca e execução de pesquisa por 'masterchef brasil' com timing apropriado.",
+  "skills": [
+    "web_navigation",
+    "text_input",
+    "keyboard_interaction",
+    "timing_control",
+    "search_execution"
+  ],
+  "xp_earned": 150,
+  "next_level": "Domine interação com resultados de busca e extração de dados de páginas dinâmicas.",
+  "task": "abra o google va ate o youtube e pesquise por masterchef brasil",
+  "generated_at": "2026-04-17T11:45:28.508262"
+}

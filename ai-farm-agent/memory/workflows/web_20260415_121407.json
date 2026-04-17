@@ -1,0 +1,13 @@
+{
+  "task": "abra o navegador entre no youtube e pesquise por video de skate 90s",
+  "agent": "WEB",
+  "steps": [
+    "🌐 YouTube",
+    "⏳ 2s",
+    "🌐 Digitou: 'skate 90s'",
+    "🌐 Enter",
+    "⏳ 2s"
+  ],
+  "created_at": "2026-04-15T12:14:07.417478",
+  "success_count": 1,
+  "tags": 

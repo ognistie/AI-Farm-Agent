@@ -1,0 +1,47 @@
+{
+  "steps": [
+    {
+      "what": "Navegou para Google e digitou 'historia do Palmeiras' na barra de pesquisa.",
+      "concept": "web_navigation",
+      "insight": "Localização correta da ferramenta de busca é essencial para iniciar pesquisas eficientes."
+    },
+    {
+      "what": "Encontrou erro ao pressionar tecla Return, mas aguardou e releu os resultados.",
+      "concept": "error_recovery",
+      "insight": "Implementar fallback quando comandos de teclado falham mantém o fluxo funcional."
+    },
+    {
+      "what": "Abriu Microsoft Teams via busca de aplicativo e navegou até a janela correta.",
+      "concept": "app_switching",
+      "insight": "Usar busca de aplicativo é mais confiável que cliques em ícones pequenos."
+    },
+    {
+      "what": "Usou Ctrl+Shift+F para abrir busca de conversas e digitou 'Jackson Missias'.",
+      "concept": "hotkey_efficiency",
+      "insight": "Atalhos de teclado aceleram localização de contatos em aplicativos de comunicação."
+    },
+    {
+      "what": "Clicou na conversa encontrada e navegou até o campo de mensagem.",
+      "concept": "ui_interaction",
+      "insight": "Usar coordenadas visuais (vision_click) é mais robusto que seletores CSS instáveis."
+    },
+    {
+      "what": "Digitou mensagem sobre história do Palmeiras e enviou com Enter.",
+      "concept": "message_delivery",
+      "insight": "Confirmar envio com tecla Enter é padrão em aplicativos de chat."
+    }
+  ],
+  "summary": "Pesquisa sobre história do Palmeiras no Google com erro em tecla Return, seguida de navegação ao Teams, busca de conversa com Jackson Missias e envio de mensagem sobre o tema. Demonstrou recovery de falhas e uso eficiente de atalhos.",
+  "skills": [
+    "web_navigation",
+    "error_recovery",
+    "app_switching",
+    "hotkey_efficiency",
+    "vision_based_clicking",
+    "message_composition"
+  ],
+  "xp_earned": 180,
+  "next_level": "Explore automação de buscas com múltiplos filtros e integração entre aplicativos sem falhas de teclado.",
+  "task": "Faça uma pesquisa no google sobre a historia do time palmeiras, depois abra o microsoft teams, va ate a conversa com jackson missias e escreva para ele sobre a historia do time palmeiras",
+  "generated_at": "2026-04-14T16:49:20.557442"
+}

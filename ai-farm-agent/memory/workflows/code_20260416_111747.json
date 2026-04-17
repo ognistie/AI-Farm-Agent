@@ -1,0 +1,10 @@
+{
+  "task": "abra o vs code e crie um sistema python de agendamento de computador",
+  "agent": "CODE",
+  "steps": [
+    "🐍 Criar projeto Python com arquivo real e abrir no VS Code\nPASTA: C:/Users/guilherme.franco\\Desktop\\de_agendamento_de_computador_python\nARQUIVO: C:/Users/guilherme.franco\\Desktop\\de_agendamento_de_computador_python\\main.py",
+    "📄 main.py (1KB)"
+  ],
+  "created_at": "2026-04-16T11:17:47.507180",
+  "success_count": 1,
+  "tags": 

@@ -1,0 +1,37 @@
+{
+  "steps": [
+    {
+      "what": "Acessou Google e realizou pesquisa sobre história do Palmeiras.",
+      "concept": "web_search",
+      "insight": "Motor de busca é o primeiro passo para coletar informações estruturadas."
+    },
+    {
+      "what": "Localizou e abriu Microsoft Teams na máquina.",
+      "concept": "app_launch",
+      "insight": "Integração entre aplicações web e desktop requer foco de janela explícito."
+    },
+    {
+      "what": "Navegou até conversa específica com Jackson Missias Alves usando busca.",
+      "concept": "contact_search",
+      "insight": "Filtros e busca reduzem tempo de navegação em listas grandes de contatos."
+    },
+    {
+      "what": "Digitou conteúdo pesquisado sobre Palmeiras e enviou a mensagem.",
+      "concept": "message_delivery",
+      "insight": "Fluxo completo: pesquisa → app → contato → composição → envio."
+    }
+  ],
+  "summary": "Executou pesquisa sobre história do Palmeiras, localizou informações e as compartilhou via Teams com contato específico. Demonstrou domínio de integração entre navegador e aplicação de comunicação.",
+  "skills": [
+    "web_search",
+    "app_navigation",
+    "contact_management",
+    "message_composition",
+    "keyboard_shortcuts",
+    "cross_app_workflow"
+  ],
+  "xp_earned": 120,
+  "next_level": "Automatize buscas complexas combinando múltiplas queries e filtros avançados do Google.",
+  "task": "Faça uma pesquisa sobre a Historia do Time de futebol Palmeiras Abra o microsoft teams, va ate a conversa com jackson missias alves e escreva para ele sobre a historia do Palmeiras e clique em enviar",
+  "generated_at": "2026-04-14T16:30:08.957125"
+}

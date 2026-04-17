@@ -24,7 +24,7 @@ if not api_key or api_key == "sk-ant-COLE_SUA_CHAVE_AQUI":
     print("=" * 60 + "\n")
     sys.exit(1)
 
-# Verifica SECRET_KEY (seguranca do Flask)
+# Verifica SECRET_KEY
 secret_key = os.getenv("SECRET_KEY", "")
 if not secret_key or secret_key == "GERE_UMA_CHAVE_SECRETA_AQUI":
     print("\n" + "=" * 60)
@@ -34,7 +34,7 @@ if not secret_key or secret_key == "GERE_UMA_CHAVE_SECRETA_AQUI":
     print("=" * 60 + "\n")
     sys.exit(1)
 
-# Verifica AUTH_TOKEN (autenticacao SocketIO)
+# Verifica AUTH_TOKEN
 auth_token = os.getenv("AUTH_TOKEN", "")
 if not auth_token or auth_token == "GERE_UM_TOKEN_AQUI":
     print("\n" + "=" * 60)
@@ -44,14 +44,13 @@ if not auth_token or auth_token == "GERE_UM_TOKEN_AQUI":
     print("=" * 60 + "\n")
     sys.exit(1)
 
-# Cria diretórios necessários
+# Diretórios necessários
 BASE_DIR = Path(__file__).parent
 CAPTURES_DIR = BASE_DIR / "captures"
 REPORTS_DIR = BASE_DIR / "reports"
 CAPTURES_DIR.mkdir(exist_ok=True)
 REPORTS_DIR.mkdir(exist_ok=True)
 
-# Configurações do servidor
 HOST = "127.0.0.1"
 PORT = 5000
 
@@ -72,14 +71,12 @@ def main():
     print("  🌐 CORS: " + os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5000"))
     print("=" * 60 + "\n")
 
-    # Importa servidor aqui para garantir que .env já foi carregado
+    # Importa o servidor só depois do .env estar carregado
     from ui.server import app, socketio
 
-    # Abre browser em thread separada
     browser_thread = threading.Thread(target=open_browser, daemon=True)
     browser_thread.start()
 
-    # Inicia servidor
     socketio.run(
         app,
         host=HOST,

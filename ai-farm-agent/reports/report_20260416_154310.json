@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "what": "Navegou até YouTube usando o navegador web.",
+      "concept": "web_navigation",
+      "insight": "Compreendeu que acessar a plataforma é o primeiro passo para buscar conteúdo."
+    },
+    {
+      "what": "Aguardou o carregamento da página por 2 segundos.",
+      "concept": "timing_control",
+      "insight": "Reconheceu a importância de esperar a interface estar pronta antes de interagir."
+    },
+    {
+      "what": "Digitou 'skate 90s' na barra de pesquisa.",
+      "concept": "search_input",
+      "insight": "Utilizou palavras-chave específicas para refinar a busca por conteúdo relevante."
+    },
+    {
+      "what": "Pressionou Enter para executar a pesquisa.",
+      "concept": "form_submission",
+      "insight": "Acionou o comando de busca para recuperar resultados relacionados."
+    },
+    {
+      "what": "Aguardou 2 segundos para os resultados carregarem.",
+      "concept": "async_waiting",
+      "insight": "Permitiu que a plataforma processasse a consulta e exibisse os vídeos."
+    }
+  ],
+  "summary": "Completou a tarefa de pesquisar vídeos de skate dos anos 90 no YouTube com sucesso, demonstrando domínio de navegação web e interação com formulários de busca.",
+  "skills": [
+    "web_navigation",
+    "search_optimization",
+    "form_handling",
+    "timing_management",
+    "web_interaction"
+  ],
+  "xp_earned": 150,
+  "next_level": "Explore filtros avançados de YouTube para refinar ainda mais suas buscas por data, duração e relevância.",
+  "task": "Abra o google e pesquise por youtube e procure videos de skate 90s",
+  "generated_at": "2026-04-16T15:43:10.766486"
+}

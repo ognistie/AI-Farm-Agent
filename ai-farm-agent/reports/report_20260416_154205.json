@@ -1,0 +1,66 @@
+{
+  "steps": [
+    {
+      "what": "Abriu o Microsoft Teams",
+      "concept": "app_launch",
+      "insight": "Aplicação localizada e focada com sucesso"
+    },
+    {
+      "what": "Aguardou 5 segundos para carregamento",
+      "concept": "wait_time",
+      "insight": "Tempo suficiente para interface renderizar"
+    },
+    {
+      "what": "Focou na janela de chat ativa",
+      "concept": "window_focus",
+      "insight": "Identificou contexto correto antes de buscar contato"
+    },
+    {
+      "what": "Acionou busca global com Ctrl+Shift+F",
+      "concept": "search_shortcut",
+      "insight": "Atalho eficiente para localizar conversas"
+    },
+    {
+      "what": "Digitou 'Igor Henrique Alves' no campo de busca",
+      "concept": "text_input",
+      "insight": "Nome completo fornecido corretamente"
+    },
+    {
+      "what": "Clicou no resultado da busca para abrir conversa",
+      "concept": "vision_selection",
+      "insight": "Identificou contato correto com 95% de confiança"
+    },
+    {
+      "what": "Clicou no campo de mensagem",
+      "concept": "focus_input",
+      "insight": "Preparou interface para inserção de texto"
+    },
+    {
+      "what": "Digitou 'Aqui e o Robo'",
+      "concept": "message_compose",
+      "insight": "Mensagem inserida conforme solicitado"
+    },
+    {
+      "what": "Pressionou Enter para enviar mensagem",
+      "concept": "message_send",
+      "insight": "Comando executado com sucesso"
+    },
+    {
+      "what": "Pressionou Escape para fechar menus",
+      "concept": "ui_cleanup",
+      "insight": "Interface retornada ao estado inicial"
+    }
+  ],
+  "summary": "Navegou com sucesso até conversa com Igor Henrique Alves e enviou mensagem 'Aqui e o Robo' via Teams. Tarefa completada com 18 etapas.",
+  "skills": [
+    "app_navigation",
+    "search_functionality",
+    "keyboard_shortcuts",
+    "message_composition",
+    "vision_recognition"
+  ],
+  "xp_earned": 150,
+  "next_level": "Automatizar buscas em múltiplos contatos e envio em lote",
+  "task": "Abra o teams va ate a conversa com Igor Henrique Alves e escreva a seguinte mensagem: Aqui e o Robo e depois clique em enviar",
+  "generated_at": "2026-04-16T15:42:05.179196"
+}

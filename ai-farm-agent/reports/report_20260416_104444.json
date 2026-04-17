@@ -1,0 +1,41 @@
+{
+  "steps": [
+    {
+      "what": "Navegou até o YouTube usando o navegador web.",
+      "concept": "web_goto",
+      "insight": "A navegação direta economiza tempo comparado a buscar através do Google."
+    },
+    {
+      "what": "Aguardou 2 segundos para a página carregar completamente.",
+      "concept": "wait",
+      "insight": "Pausas estratégicas garantem que elementos dinâmicos estejam prontos para interação."
+    },
+    {
+      "what": "Digitou 'skate 90s' no campo de busca do YouTube.",
+      "concept": "web_type",
+      "insight": "A entrada de texto precisa corresponder exatamente ao termo desejado para resultados relevantes."
+    },
+    {
+      "what": "Pressionou Enter para enviar a consulta de busca.",
+      "concept": "web_key",
+      "insight": "Simular pressionamento de teclas é essencial para submeter formulários programaticamente."
+    },
+    {
+      "what": "Aguardou 2 segundos para os resultados de busca renderizarem.",
+      "concept": "wait",
+      "insight": "Timestamps apropriados permitem que a página carregue antes de extrair dados."
+    }
+  ],
+  "summary": "Executou com sucesso uma pesquisa no YouTube por vídeos de skate dos anos 90, navegando até a plataforma, digitando o termo de busca e aguardando o carregamento dos resultados.",
+  "skills": [
+    "web_navigation",
+    "web_automation",
+    "timing_control",
+    "form_submission",
+    "search_optimization"
+  ],
+  "xp_earned": 120,
+  "next_level": "Aprenda a extrair e filtrar dados dos resultados de busca para encontrar vídeos específicos.",
+  "task": "Abra o google e entre no youtube e pesquise video de skate 90s",
+  "generated_at": "2026-04-16T10:44:44.079632"
+}

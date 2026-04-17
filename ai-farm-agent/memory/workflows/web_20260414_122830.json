@@ -1,0 +1,14 @@
+{
+  "task": "Abra o youtube em meu navegador, e pesquise por videos de skate e clique no primeiro que aparecer",
+  "agent": "WEB",
+  "steps": [
+    "🐍 Abrir https://www.youtube.com no browser padrão\nAberto: https://www.youtube.com",
+    "⏳ 2s",
+    "⏳ 2s",
+    "Digitado: skate e clicar no primeiro resultado",
+    "⌨️ enter",
+    "⏳ 2s"
+  ],
+  "created_at": "2026-04-14T12:28:30.557870",
+  "success_count": 1,
+  "tags": 

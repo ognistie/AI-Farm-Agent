@@ -1,0 +1,25 @@
+{
+  "steps": [
+    {
+      "what": "Tentativa de navegação para Google falhou por erro de thread no web_goto.",
+      "concept": "threading-error",
+      "insight": "Contexto de execução foi perdido entre chamadas assíncronas."
+    },
+    {
+      "what": "Sistema aguardou 1.5 segundos para recuperação.",
+      "concept": "wait-recovery",
+      "insight": "Delays podem restaurar estado mas não resolvem falha raiz de concorrência."
+    }
+  ],
+  "summary": "Execução parcial com falha crítica em navegação web por problema de gerenciamento de threads. Aguarde não resolverá o problema estrutural.",
+  "skills": [
+    "web-automation",
+    "error-handling",
+    "async-debugging",
+    "thread-management"
+  ],
+  "xp_earned": 75,
+  "next_level": "Implemente context manager para manter thread ativa ou use selenium/playwright com gestão correta de ciclo de vida.",
+  "task": "Abra o google e pesquise por github",
+  "generated_at": "2026-04-16T15:43:47.437561"
+}

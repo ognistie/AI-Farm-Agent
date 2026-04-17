@@ -1,0 +1,13 @@
+{
+  "task": "abra o google va ate o youtube e pesquise por masterchef brasil",
+  "agent": "WEB",
+  "steps": [
+    "🌐 YouTube",
+    "⏳ 2s",
+    "🌐 Digitou: 'masterchef brasil'",
+    "🌐 Enter",
+    "⏳ 2s"
+  ],
+  "created_at": "2026-04-17T11:45:23.787990",
+  "success_count": 1,
+  "tags": 

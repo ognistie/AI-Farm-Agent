@@ -1,0 +1,10 @@
+{
+  "task": "abra o vs code e crie um sistema profissional em python e um CRM",
+  "agent": "CODE",
+  "steps": [
+    "🐍 Criar sistema Python profissional sobre criar sistema CRM profissional em Python e\nINTENT_JSON: {\"raw_task\": \"criar sistema CRM profissional em Python e abrir no VS Code\", \"cleaned_task\": \"criar sistema CRM profissional em Python e abrir no VS Code\", \"project_family\": \"python_desktop\", \"subject\": \"criar sistema CRM profissional em Python e\", \"title\": \"Criar Sistema Crm Profissional em Python e\", \"level\": \"professional\", \"technologies\": [\"python\"], \"open_in_vscode\": true, \"open_in_browser\": false, \"run_after_create\": true, \"deliverables\": [\"main.py\", \"ui.py\", \"storage.py\", \"mod",
+    "📄 main.py (155B)\n📄 models.py (169B)\n📄 storage.py (586B)\n📄 theme.py (110B)\n📄 ui.py (4KB)"
+  ],
+  "created_at": "2026-04-16T13:54:11.374920",
+  "success_count": 1,
+  "tags": 

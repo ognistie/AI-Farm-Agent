@@ -1,13 +1,12 @@
 """
-WebAgent v15 — Rotinas inteligentes + web_read para captura de conteúdo.
-MUDANÇAS v15:
-- Rotinas de pesquisa agora incluem web_read() no final
-- Isso permite que {output_text_N} funcione no ContextManager
-- Seletores YouTube/Google robustos (múltiplos fallbacks)
+WebAgent v16 — Rotinas completas + clique em resultados.
+- Rotina YouTube com clique no primeiro vídeo
+- Rotina Google com clique no primeiro resultado (h3)
+- web_read em pesquisas
+- Seletores múltiplos robustos
 """
 
-import json
-import re
+import json, re
 from agents.base_agent import BaseAgent
 
 YT_SEARCH = "input#search, ytd-searchbox input, input[name=search_query], [aria-label=Pesquisar], [aria-label=Search]"
@@ -21,13 +20,18 @@ def _s(step, action, params, desc):
 def _detect_web_routine(task):
     t = task.lower().strip()
 
-    for kw in ["pesquise no google", "pesquisa no google", "busque no google",
-               "procure no google", "google sobre", "google o que"]:
+    click_first = any(kw in t for kw in ["clique no primeiro", "clica no primeiro", "abra o primeiro", "primeiro resultado", "primeiro video", "primeiro vídeo"])
+
+    for kw in ["pesquise no google", "pesquisa no google", "busque no google", "procure no google", "google sobre"]:
         if kw in t:
             query = t.split(kw)[-1].strip().strip('"\'')
+            for stop in [", depois", ", e depois", " e clique", ", clique"]:
+                if stop in query: query = query.split(stop)[0].strip()
             if not query:
                 for w in ["sobre ", "o que é ", "o que e "]:
                     if w in t: query = t.split(w)[-1].strip(); break
+            if click_first:
+                return _google_search_click(query or "pesquisa")
             return _google_search(query or "pesquisa")
 
     for kw in ["youtube e pesquise", "youtube e procure", "youtube e busque",
@@ -38,6 +42,8 @@ def _detect_web_routine(task):
             query = t.split(kw)[-1].strip().strip('"\'')
             for stop in [", depois", ", e depois", " e clique", ", clique"]:
                 if stop in query: query = query.split(stop)[0].strip()
+            if click_first:
+                return _youtube_search_click(query or "videos")
             return _youtube_search(query or "videos")
 
     if "youtube" in t:
@@ -51,6 +57,8 @@ def _detect_web_routine(task):
                         query = query.replace("no youtube", "").replace("youtube", "").strip()
                         if "nova guia" in t or "nova aba" in t:
                             return _youtube_search_new_tab(query)
+                        if click_first:
+                            return _youtube_search_click(query)
                         return _youtube_search(query)
         if "abr" in t or "entr" in t or "acess" in t:
             return _youtube_open()
@@ -98,50 +106,50 @@ def _detect_web_routine(task):
 
 
 def _google_open():
-    return [_s(1,"web_goto",{"url":"https://www.google.com"},"Abrir Google"),
-            _s(2,"wait",{"seconds":1.5},"Aguardar")]
+    return [_s(1,"web_goto",{"url":"https://www.google.com"},"Abrir Google"), _s(2,"wait",{"seconds":1.5},"Aguardar")]
 
 def _google_search(q):
-    return [_s(1,"web_goto",{"url":"https://www.google.com"},"Abrir Google"),
-            _s(2,"wait",{"seconds":1.5},"Aguardar"),
-            _s(3,"web_type",{"field":G_SEARCH,"text":q},f"Digitar: {q[:40]}"),
-            _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
-            _s(5,"wait",{"seconds":2},"Aguardar resultados"),
-            _s(6,"web_read",{},"Ler conteudo da pagina")]
+    return [_s(1,"web_goto",{"url":"https://www.google.com"},"Abrir Google"), _s(2,"wait",{"seconds":1.5},"Aguardar"),
+            _s(3,"web_type",{"field":G_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":2},"Aguardar"), _s(6,"web_read",{},"Ler conteudo")]
+
+def _google_search_click(q):
+    return [_s(1,"web_goto",{"url":"https://www.google.com"},"Abrir Google"), _s(2,"wait",{"seconds":1.5},"Aguardar"),
+            _s(3,"web_type",{"field":G_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":2},"Aguardar"),
+            _s(6,"web_click",{"target":"h3"},"Clicar primeiro resultado"), _s(7,"wait",{"seconds":2},"Aguardar"),
+            _s(8,"web_read",{},"Ler")]
 
 def _google_search_new_tab(q):
-    return [_s(1,"web_new_tab",{"url":"https://www.google.com"},"Nova guia — Google"),
-            _s(2,"wait",{"seconds":1.5},"Aguardar"),
-            _s(3,"web_type",{"field":G_SEARCH,"text":q},f"Digitar: {q[:40]}"),
-            _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
-            _s(5,"wait",{"seconds":2},"Aguardar resultados"),
-            _s(6,"web_read",{},"Ler conteudo da pagina")]
+    return [_s(1,"web_new_tab",{"url":"https://www.google.com"},"Nova guia Google"), _s(2,"wait",{"seconds":1.5},"Aguardar"),
+            _s(3,"web_type",{"field":G_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":2},"Aguardar"), _s(6,"web_read",{},"Ler")]
 
 def _youtube_open():
-    return [_s(1,"web_goto",{"url":"https://www.youtube.com"},"Abrir YouTube"),
-            _s(2,"wait",{"seconds":2},"Aguardar")]
+    return [_s(1,"web_goto",{"url":"https://www.youtube.com"},"Abrir YouTube"), _s(2,"wait",{"seconds":2},"Aguardar")]
 
 def _youtube_search(q):
-    return [_s(1,"web_goto",{"url":"https://www.youtube.com"},"Abrir YouTube"),
-            _s(2,"wait",{"seconds":2},"Aguardar"),
-            _s(3,"web_type",{"field":YT_SEARCH,"text":q},f"Digitar: {q[:40]}"),
-            _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
-            _s(5,"wait",{"seconds":2},"Aguardar resultados")]
+    return [_s(1,"web_goto",{"url":"https://www.youtube.com"},"Abrir YouTube"), _s(2,"wait",{"seconds":2},"Aguardar"),
+            _s(3,"web_type",{"field":YT_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":2},"Aguardar")]
+
+def _youtube_search_click(q):
+    return [_s(1,"web_goto",{"url":"https://www.youtube.com"},"Abrir YouTube"), _s(2,"wait",{"seconds":2},"Aguardar"),
+            _s(3,"web_type",{"field":YT_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":3},"Aguardar"),
+            _s(6,"web_click",{"target":"ytd-video-renderer a#video-title, ytd-video-renderer a, ytd-rich-item-renderer a"},"Clicar primeiro video"),
+            _s(7,"wait",{"seconds":2},"Aguardar video")]
 
 def _youtube_search_new_tab(q):
-    return [_s(1,"web_new_tab",{"url":"https://www.youtube.com"},"Nova guia — YouTube"),
-            _s(2,"wait",{"seconds":2},"Aguardar"),
-            _s(3,"web_type",{"field":YT_SEARCH,"text":q},f"Digitar: {q[:40]}"),
-            _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
-            _s(5,"wait",{"seconds":2},"Aguardar resultados")]
+    return [_s(1,"web_new_tab",{"url":"https://www.youtube.com"},"Nova guia YouTube"), _s(2,"wait",{"seconds":2},"Aguardar"),
+            _s(3,"web_type",{"field":YT_SEARCH,"text":q},f"Digitar: {q[:40]}"), _s(4,"web_key",{"key":"Enter"},"Pesquisar"),
+            _s(5,"wait",{"seconds":2},"Aguardar")]
 
 def _open_url(url):
-    return [_s(1,"web_goto",{"url":url},f"Abrir {url[:50]}"),
-            _s(2,"wait",{"seconds":2},"Aguardar")]
+    return [_s(1,"web_goto",{"url":url},f"Abrir {url[:50]}"), _s(2,"wait",{"seconds":2},"Aguardar")]
 
 def _new_tab():
-    return [_s(1,"web_new_tab",{"url":"about:blank"},"Nova guia"),
-            _s(2,"wait",{"seconds":1},"Aguardar")]
+    return [_s(1,"web_new_tab",{"url":"about:blank"},"Nova guia"), _s(2,"wait",{"seconds":1},"Aguardar")]
 
 
 def _native_fallback(steps):
@@ -156,15 +164,13 @@ def _native_fallback(steps):
             if url != "about:blank":
                 native.append(_s(n,"run_python",{"code":f'import subprocess; subprocess.Popen(\'start "" "{url}"\', shell=True); print("OK")',"description":"Nova guia"},f"Nova guia"))
             else: native.append(_s(n,"hotkey",{"keys":["ctrl","t"]},"Nova guia"))
-        elif a == "wait":
-            n+=1; s=dict(step); s["step"]=n; native.append(s)
+        elif a == "wait": n+=1; s=dict(step); s["step"]=n; native.append(s)
         elif a == "web_type":
-            n+=1; native.append(_s(n,"wait",{"seconds":2},"Aguardar browser"))
+            n+=1; native.append(_s(n,"wait",{"seconds":2},"Aguardar"))
             n+=1; native.append(_s(n,"type_text",{"text":p.get("text","")},f"Digitar: {p.get('text','')[:40]}"))
         elif a == "web_key":
             n+=1; native.append(_s(n,"hotkey",{"keys":[p.get("key","Enter").lower()]},f"{p.get('key','Enter')}"))
-        elif a == "web_read":
-            pass  # Não tem como ler DOM sem Playwright
+        elif a in ("web_read","web_click"): pass
     return native if native else None
 
 
@@ -173,10 +179,11 @@ SYSTEM_PROMPT = (
     "ACOES: web_goto(url) | web_type(field, text) | web_click(target)\n"
     "       web_key(key) | web_read() | web_new_tab(url) | wait(seconds)\n\n"
     "SELETORES:\n"
-    "- YouTube: 'input#search, ytd-searchbox input'\n"
-    "- Google: 'textarea[name=q], input[name=q]'\n"
-    "- Primeiro resultado: web_click('primeiro video') ou web_click('primeiro resultado')\n"
-    "- Se precisa capturar conteudo para outra subtarefa, use web_read() no final\n"
+    "- YouTube busca: 'input#search, ytd-searchbox input'\n"
+    "- YouTube primeiro video: 'ytd-video-renderer a#video-title'\n"
+    "- Google busca: 'textarea[name=q]'\n"
+    "- Google primeiro resultado: 'h3'\n"
+    "- use web_read() para capturar conteudo\n"
     "- Maximo 8 passos. JSON puro. NUNCA invente termos.\n\n"
     '{"steps":[{"step":1,"description":"...","action":"...","params":{}}]}'
 )
@@ -202,7 +209,7 @@ class WebAgent(BaseAgent):
                 return {"steps": routine, "agent": "WEB"}
             native = _native_fallback(routine)
             if native:
-                self.logger.info(f"Rotina nativa: {len(native)} steps")
+                self.logger.info(f"Nativo: {len(native)} steps")
                 return {"steps": native, "agent": "WEB"}
 
         self.logger.info("LLM fallback")

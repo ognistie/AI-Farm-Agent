@@ -1,0 +1,10 @@
+{
+  "task": "Abra o bloco de notas",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Bloco de Notas",
+    "⏳ 3s"
+  ],
+  "created_at": "2026-04-16T15:38:35.306135",
+  "success_count": 1,
+  "tags": 

@@ -1,0 +1,9 @@
+{
+  "task": "Abara o vs code e crie dois arquivos HTMl, CSS de um site profissional e bonito sobre Macao da amazonia",
+  "agent": "CODE",
+  "steps": [
+    "🐍 Criar projeto de site profissional sobre Macacos da Amazônia com arquivos HTML e CSS separados, abrir no VS Code\nProjeto criado em: C:\\Users\\guilherme.franco.ITUNIVERSECORP\\Desktop\\Macacos_da_Amazonia"
+  ],
+  "created_at": "2026-04-15T13:40:52.265893",
+  "success_count": 1,
+  "tags": 

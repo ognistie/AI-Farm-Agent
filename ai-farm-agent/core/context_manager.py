@@ -1,19 +1,11 @@
 """
-ContextManager v2 — Passagem de contexto entre subtarefas.
-
-MUDANÇAS v2:
-- NOVO: {output_text_N} → conteúdo textual extraído (web_read, prints, resultados)
-- NOVO: limpa variáveis não resolvidas para evitar enviar "{output_X}" literal
-- NOVO: extrai texto de resultados web_read e run_python
-- Mantém toda a lógica v1 intacta
-
-VARIÁVEIS DISPONÍVEIS:
-  {output_folder_N}     → pasta principal
-  {output_path_N}       → caminho principal (arquivo ou pasta)
-  {output_files_N}      → primeiro arquivo
-  {output_all_files_N}  → todos os arquivos separados por ;
-  {output_url_N}        → última URL visitada
-  {output_text_N}       → conteúdo textual extraído (pesquisa, leitura, resultado)
+ContextManager v3 — Interpolação segura de contexto entre subtarefas.
+MUDANÇAS v3:
+- _sanitize_for_json(): escapa TODOS os caracteres problemáticos antes de interpolar
+- Resolve "Invalid control character at line 1 column X"
+- Trunca texto longo a 400 chars para evitar mensagens gigantes
+- Gera summary automático quando texto > 400 chars
+- Variáveis: output_text, output_summary, output_folder, output_path, output_files, output_url
 """
 
 import os
@@ -27,8 +19,6 @@ _FILE_EXTS = {
     ".xlsx", ".csv", ".pdf", ".docx", ".pptx", ".png", ".jpg",
     ".jpeg", ".gif", ".svg", ".mp4", ".mov", ".zip", ".exe",
 }
-
-# Padrão para detectar variáveis não resolvidas
 _UNRESOLVED_VAR = re.compile(r'\{output_\w+_\d+\}')
 
 
@@ -38,19 +28,11 @@ def _clean_path(raw):
     return p
 
 
-def _is_file(path):
-    _, ext = os.path.splitext(path)
-    return ext.lower() in _FILE_EXTS
-
-
 def _extract_paths(text):
-    found = []
-    seen = set()
-    for match in _PATH_RE.finditer(text):
-        p = _clean_path(match.group())
-        if p and p not in seen:
-            seen.add(p)
-            found.append(p)
+    found, seen = [], set()
+    for m in _PATH_RE.finditer(text):
+        p = _clean_path(m.group())
+        if p and p not in seen: seen.add(p); found.append(p)
     return found
 
 
@@ -58,38 +40,50 @@ def _extract_urls(text):
     return re.findall(r'https?://[\w./\-?=&#%:@+]+', text)
 
 
+def _sanitize_for_json(text):
+    """Escapa texto para ser seguro dentro de string JSON.
+    Remove caracteres de controle, escapa aspas e barras."""
+    if not text:
+        return ""
+    # Remove caracteres de controle (0x00-0x1F exceto \n \r \t)
+    clean = ""
+    for ch in text:
+        code = ord(ch)
+        if code < 32:
+            if ch == '\n': clean += "\\n"
+            elif ch == '\r': clean += ""  # Remove \r
+            elif ch == '\t': clean += " "  # Tab vira espaço
+            else: clean += ""  # Remove outros controles
+        elif ch == '"': clean += '\\"'
+        elif ch == '\\': clean += '\\\\'
+        else: clean += ch
+    return clean
+
+
 def _extract_text_content(step_results):
-    """Extrai conteúdo textual útil dos resultados das steps."""
+    """Extrai conteúdo textual útil dos resultados."""
     texts = []
     for r in step_results:
         r_str = str(r)
-        # Remove prefixos de status (emojis, marcadores)
         clean = re.sub(r'^[🌐🐍✅❌⚠️📊📁📄⏳👁️📸⌨️🎯📦\s]+', '', r_str).strip()
-
-        # Pula resultados curtos ou de status
-        if len(clean) < 10:
-            continue
-        if any(skip in clean.lower() for skip in [
-            "ok", "digitou", "clicou", "aguard", "aberto", "focado",
-            "enviado", "instalado", "failsafe", "timeout"
-        ]):
-            continue
-
-        # Conteúdo de web_read (começa com título da página)
-        if "🌐" in r_str and len(clean) > 50:
-            texts.append(clean[:1500])
-            continue
-
-        # Resultado de run_python com output
-        if "🐍" in r_str and len(clean) > 30:
-            texts.append(clean[:1500])
-            continue
-
-        # Qualquer resultado com conteúdo substancial
-        if len(clean) > 50:
-            texts.append(clean[:1000])
-
+        if len(clean) < 15: continue
+        skip = ["ok", "digitou", "clicou", "aguard", "aberto", "focado",
+                "enviado", "instalado", "failsafe", "timeout", "enter"]
+        if any(s in clean.lower()[:30] for s in skip): continue
+        texts.append(clean[:1500])
     return "\n".join(texts) if texts else ""
+
+
+def _make_summary(text, max_len=400):
+    """Cria resumo truncado do texto."""
+    if not text or len(text) <= max_len:
+        return text
+    # Corta na última frase completa antes do limite
+    truncated = text[:max_len]
+    last_period = truncated.rfind('.')
+    if last_period > max_len * 0.5:
+        return truncated[:last_period + 1]
+    return truncated + "..."
 
 
 class ContextManager:
@@ -98,84 +92,59 @@ class ContextManager:
 
     def extract(self, subtask_index, agent_name, step_results, engine_workspace, workspace_snapshot):
         idx = subtask_index + 1
-
         result = {
-            "agent": agent_name,
-            "files": [],
-            "folder": None,
-            "url": None,
-            "primary_path": None,
-            "text": "",  # NOVO v2
-            "output": list(step_results),
+            "agent": agent_name, "files": [], "folder": None,
+            "url": None, "primary_path": None,
+            "text": "", "summary": "", "output": list(step_results),
         }
 
         all_text = " ".join(str(r) for r in step_results)
-
-        delta_workspace = {
-            k: v for k, v in engine_workspace.items()
-            if k not in workspace_snapshot
-        }
-        ws_text = " ".join(
-            str(v.get("result", "")) if isinstance(v, dict) else str(v)
-            for v in delta_workspace.values()
-        )
-
+        delta = {k: v for k, v in engine_workspace.items() if k not in workspace_snapshot}
+        ws_text = " ".join(str(v.get("result", "")) if isinstance(v, dict) else str(v) for v in delta.values())
         combined = f"{all_text} {ws_text}"
 
-        # --- Extrai caminhos ---
-        seen_paths = set()
-        for raw_path in _extract_paths(combined):
-            p = raw_path
-            if p in seen_paths:
-                continue
-            seen_paths.add(p)
-
+        # Caminhos
+        seen = set()
+        for p in _extract_paths(combined):
+            if p in seen: continue
+            seen.add(p)
             if os.path.isfile(p):
                 result["files"].append(p)
-                if not result["primary_path"]:
-                    result["primary_path"] = p
+                if not result["primary_path"]: result["primary_path"] = p
             elif os.path.isdir(p):
-                if not result["folder"]:
-                    result["folder"] = p
-                    if not result["primary_path"]:
-                        result["primary_path"] = p
+                if not result["folder"]: result["folder"] = p
+                if not result["primary_path"]: result["primary_path"] = p
 
         if result["folder"] and not result["files"]:
             try:
-                for fname in os.listdir(result["folder"]):
-                    full = os.path.join(result["folder"], fname).replace("\\", "/")
-                    if os.path.isfile(full):
-                        result["files"].append(full)
-            except OSError:
-                pass
+                for f in os.listdir(result["folder"]):
+                    full = os.path.join(result["folder"], f).replace("\\", "/")
+                    if os.path.isfile(full): result["files"].append(full)
+            except: pass
 
-        # --- Extrai URLs ---
+        # URLs
         urls = _extract_urls(combined)
-        if urls:
-            result["url"] = urls[-1]
+        if urls: result["url"] = urls[-1]
 
-        # --- NOVO v2: Extrai conteúdo textual ---
-        result["text"] = _extract_text_content(step_results)
+        # Texto
+        full_text = _extract_text_content(step_results)
+        result["text"] = full_text
+        result["summary"] = _make_summary(full_text, 400)
 
-        # --- Fallback paths ---
+        # Fallback paths
         if not result["primary_path"]:
-            icon_pattern = re.compile(r'(?:✅|📁|📄|🐍|→)\s*([A-Za-z]:[/\\][\w/\\ .()\-]+)')
-            for m in icon_pattern.finditer(combined):
+            for m in re.finditer(r'(?:✅|📁|📄|🐍|→)\s*([A-Za-z]:[/\\][\w/\\ .()\-]+)', combined):
                 p = _clean_path(m.group(1))
                 if os.path.exists(p):
                     if os.path.isdir(p):
-                        result["folder"] = p
-                        result["primary_path"] = p
+                        result["folder"] = p; result["primary_path"] = p
                         try:
-                            for fname in os.listdir(p):
-                                full = os.path.join(p, fname).replace("\\", "/")
-                                if os.path.isfile(full):
-                                    result["files"].append(full)
-                        except OSError:
-                            pass
+                            for f in os.listdir(p):
+                                full = os.path.join(p, f).replace("\\", "/")
+                                if os.path.isfile(full): result["files"].append(full)
+                        except: pass
                     else:
-                        result["files"].append(p)
-                        result["primary_path"] = p
+                        result["files"].append(p); result["primary_path"] = p
                     break
 
         self._store[idx] = result
@@ -186,124 +155,91 @@ class ContextManager:
         if result["url"]: _log.append(f"url={result['url']}")
         if result["text"]: _log.append(f"texto={len(result['text'])} chars")
         print(f"  [ContextManager] Sub {idx} ({agent_name}): {', '.join(_log) or 'sem saídas detectadas'}")
-
         return result
 
     def prepare_subtask(self, subtask, subtask_index):
         dep_raw = subtask.get("depends_on")
-
         dep = None
         if dep_raw is not None:
-            try:
-                dep = int(dep_raw)
-            except (ValueError, TypeError):
-                dep = None
+            try: dep = int(dep_raw)
+            except: dep = None
 
         if dep is None or dep not in self._store:
-            # NOVO v2: limpa variáveis não resolvidas mesmo sem depends_on
             return self._clean_unresolved(subtask)
 
         ctx = self._store[dep]
 
-        # Monta tabela de substituições (inclui output_text)
-        replacements = {
-            f"{{output_folder_{dep}}}":    ctx.get("folder") or "",
-            f"{{output_path_{dep}}}":      ctx.get("primary_path") or "",
-            f"{{output_files_{dep}}}":     ctx["files"][0] if ctx["files"] else "",
-            f"{{output_all_files_{dep}}}": ";".join(ctx["files"]),
-            f"{{output_url_{dep}}}":       ctx.get("url") or "",
-            f"{{output_text_{dep}}}":      ctx.get("text") or "",
-        }
+        # Valores sanitizados para JSON
+        safe_text = _sanitize_for_json(ctx.get("summary") or ctx.get("text") or "")
+        safe_full = _sanitize_for_json(ctx.get("text") or "")
+        safe_folder = _sanitize_for_json(ctx.get("folder") or "")
+        safe_path = _sanitize_for_json(ctx.get("primary_path") or "")
+        safe_files = _sanitize_for_json(ctx["files"][0] if ctx["files"] else "")
+        safe_all = _sanitize_for_json(";".join(ctx["files"]))
+        safe_url = _sanitize_for_json(ctx.get("url") or "")
+        safe_summary = _sanitize_for_json(ctx.get("summary") or "")
 
-        # Também tenta variáveis genéricas que o Maestro possa inventar
-        generic_replacements = {
-            f"{{output_search_content}}":  ctx.get("text") or "",
-            f"{{output_content_{dep}}}":   ctx.get("text") or "",
-            f"{{output_result_{dep}}}":    ctx.get("text") or "",
-            f"{{output_search_{dep}}}":    ctx.get("text") or "",
+        replacements = {
+            f"{{output_folder_{dep}}}": safe_folder,
+            f"{{output_path_{dep}}}": safe_path,
+            f"{{output_files_{dep}}}": safe_files,
+            f"{{output_all_files_{dep}}}": safe_all,
+            f"{{output_url_{dep}}}": safe_url,
+            f"{{output_text_{dep}}}": safe_text,  # Usa summary se disponível
+            f"{{output_summary_{dep}}}": safe_summary,
+            # Variáveis genéricas que o Maestro pode inventar
+            f"{{output_search_content}}": safe_text,
+            f"{{output_content_{dep}}}": safe_text,
+            f"{{output_result_{dep}}}": safe_text,
+            f"{{output_search_{dep}}}": safe_text,
         }
-        replacements.update(generic_replacements)
 
         try:
             subtask_str = json.dumps(subtask, ensure_ascii=False)
             for var, val in replacements.items():
-                safe_val = val.replace("\\", "/").replace('"', '\\"') if val else ""
-                # Trunca texto longo para não estourar mensagem
-                if len(safe_val) > 500:
-                    safe_val = safe_val[:500] + "..."
-                subtask_str = subtask_str.replace(var, safe_val)
+                subtask_str = subtask_str.replace(var, val)
             enriched = json.loads(subtask_str)
         except (json.JSONDecodeError, Exception) as e:
             print(f"  [ContextManager] Erro na interpolação: {e}")
-            enriched = dict(subtask)
+            # Fallback: tenta com texto mais agressivamente limpo
+            try:
+                for var, val in replacements.items():
+                    ultra_clean = re.sub(r'[^\w\s.,;:!?áàãâéêíóôõúçÁÀÃÂÉÊÍÓÔÕÚÇ\-()]', '', val)
+                    subtask_str = subtask_str.replace(var, ultra_clean[:200])
+                enriched = json.loads(subtask_str)
+            except:
+                enriched = dict(subtask)
 
         enriched = self._auto_inject(enriched, dep, ctx)
-
-        # NOVO v2: limpa variáveis que ainda não foram resolvidas
         enriched = self._clean_unresolved(enriched)
-
         return enriched
 
     def _auto_inject(self, subtask, dep, ctx):
-        params = subtask.get("params", {})
-        injected = dict(params)
-
-        if ctx.get("files") and "files" not in injected:
-            injected["files"] = ctx["files"]
-        if ctx.get("folder") and "source_folder" not in injected:
-            injected["source_folder"] = ctx["folder"]
-        if ctx.get("primary_path") and "source_path" not in injected:
-            injected["source_path"] = ctx["primary_path"]
-        if ctx.get("url") and "source_url" not in injected:
-            injected["source_url"] = ctx["url"]
-        # NOVO v2: injeta texto se disponível
-        if ctx.get("text") and "source_text" not in injected:
-            text = ctx["text"]
-            if len(text) > 500:
-                text = text[:500] + "..."
-            injected["source_text"] = text
-
-        result = dict(subtask)
-        result["params"] = injected
-
-        task_str = result.get("task", "")
-        for field, val in [
-            ("pasta", ctx.get("folder") or ""),
-            ("arquivo", ctx["files"][0] if ctx["files"] else ""),
-            ("url", ctx.get("url") or ""),
-        ]:
-            if val and f"{{{field}}}" in task_str:
-                task_str = task_str.replace(f"{{{field}}}", val)
-        result["task"] = task_str
-
+        params = dict(subtask.get("params", {}))
+        if ctx.get("files") and "files" not in params: params["files"] = ctx["files"]
+        if ctx.get("folder") and "source_folder" not in params: params["source_folder"] = ctx["folder"]
+        if ctx.get("primary_path") and "source_path" not in params: params["source_path"] = ctx["primary_path"]
+        if ctx.get("url") and "source_url" not in params: params["source_url"] = ctx["url"]
+        if ctx.get("summary") and "source_text" not in params: params["source_text"] = ctx["summary"][:400]
+        result = dict(subtask); result["params"] = params
         return result
 
     def _clean_unresolved(self, subtask):
-        """Remove variáveis {output_X_N} não resolvidas para evitar enviar literal."""
         try:
-            subtask_str = json.dumps(subtask, ensure_ascii=False)
-            unresolved = _UNRESOLVED_VAR.findall(subtask_str)
+            s = json.dumps(subtask, ensure_ascii=False)
+            unresolved = _UNRESOLVED_VAR.findall(s)
             if unresolved:
                 for var in unresolved:
                     print(f"  [ContextManager] Limpando variável não resolvida: {var}")
-                    subtask_str = subtask_str.replace(var, "[conteúdo não disponível]")
-                return json.loads(subtask_str)
-        except Exception:
-            pass
+                    s = s.replace(var, "[conteudo indisponivel]")
+                return json.loads(s)
+        except: pass
         return subtask
 
-    def get(self, idx):
-        return self._store.get(idx, {})
+    def get(self, idx): return self._store.get(idx, {})
 
     def summary(self):
-        return {
-            idx: {
-                "agent": ctx.get("agent"),
-                "files": len(ctx.get("files", [])),
-                "folder": ctx.get("folder"),
-                "url": ctx.get("url"),
-                "text_len": len(ctx.get("text", "")),
-                "primary_path": ctx.get("primary_path"),
-            }
-            for idx, ctx in self._store.items()
-        }
+        return {idx: {"agent": c.get("agent"), "files": len(c.get("files",[])),
+                "folder": c.get("folder"), "url": c.get("url"),
+                "text_len": len(c.get("text","")), "summary_len": len(c.get("summary",""))}
+                for idx, c in self._store.items()}

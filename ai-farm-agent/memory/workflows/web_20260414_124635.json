@@ -1,0 +1,10 @@
+{
+  "task": "abra meu navegador e em uma nova guia pesquise por macacos que vivem na amazonia",
+  "agent": "WEB",
+  "steps": [
+    "🌐 Amazon.com.br | Tudo pra você, de A a Z.",
+    "⏳ 2s"
+  ],
+  "created_at": "2026-04-14T12:46:35.734835",
+  "success_count": 1,
+  "tags": 
