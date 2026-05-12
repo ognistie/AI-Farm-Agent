@@ -1,0 +1,54 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar nova planilha em branco.",
+      "concept": "application_launch",
+      "insight": "Excel 2013 oferece interface intuitiva para gestão de dados estruturados."
+    },
+    {
+      "what": "Definir cabeçalhos: ID, Produto, Quantidade, Mínimo, Status.",
+      "concept": "spreadsheet_structure",
+      "insight": "Estrutura clara facilita leitura e manutenção de dados."
+    },
+    {
+      "what": "Inserir dados de estoque com valores de quantidade e mínimo.",
+      "concept": "data_entry",
+      "insight": "Dados precisos são base para alertas automáticos confiáveis."
+    },
+    {
+      "what": "Criar coluna Status com fórmula IF para comparar Quantidade vs Mínimo.",
+      "concept": "conditional_logic",
+      "insight": "Fórmulas dinâmicas atualizam status automaticamente quando valores mudam."
+    },
+    {
+      "what": "Aplicar formatação condicional: células vermelhas quando Quantidade < Mínimo.",
+      "concept": "conditional_formatting",
+      "insight": "Alertas visuais melhoram identificação rápida de itens críticos."
+    },
+    {
+      "what": "Congelar linha de cabeçalho para navegação facilitada.",
+      "concept": "spreadsheet_usability",
+      "insight": "Congelamento de painéis melhora visualização em planilhas grandes."
+    },
+    {
+      "what": "Salvar arquivo como Controle_Estoque.xlsx com backup.",
+      "concept": "file_management",
+      "insight": "Backup previne perda de dados críticos de controle operacional."
+    }
+  ],
+  "general": {
+    "summary": "Planilha de controle de estoque criada em Excel 2013 com sistema automático de alertas para itens abaixo do mínimo usando formatação condicional e fórmulas IF.",
+    "skills": [
+      "excel_2013",
+      "data_structure",
+      "conditional_formatting",
+      "excel_formulas",
+      "inventory_management",
+      "spreadsheet_design"
+    ],
+    "xp_earned": 150,
+    "next_level": "Implementar tabelas dinâmicas para análise de movimentação de estoque."
+  },
+  "task": "Abra o Excel 2013 e crie uma planilha de controle de estoque com alerta para itens abaixo do mínimo.",
+  "generated_at": "2026-04-17T15:32:21.654886"
+}

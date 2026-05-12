@@ -1,0 +1,48 @@
+{
+  "steps": [
+    {
+      "what": "Abrir Excel 2013 e criar dados base de gastos mensais por categoria.",
+      "concept": "data_preparation",
+      "insight": "Estruturar dados com colunas Mês, Categoria, Valor para suportar tabela dinâmica."
+    },
+    {
+      "what": "Selecionar intervalo de dados e inserir Tabela Dinâmica via menu Inserir > Tabela Dinâmica.",
+      "concept": "pivot_table_creation",
+      "insight": "Tabela dinâmica agrupa dados automaticamente para análise multidimensional de gastos."
+    },
+    {
+      "what": "Configurar Tabela Dinâmica com Mês em Linhas, Categoria em Colunas e Valor em Dados (Soma).",
+      "concept": "pivot_configuration",
+      "insight": "Layout permite visualizar gastos totais por mês e comparar categorias instantaneamente."
+    },
+    {
+      "what": "Adicionar coluna calculada com fórmula para calcular percentual do gasto em relação ao total mensal.",
+      "concept": "percentage_calculation",
+      "insight": "Percentual mostra peso de cada categoria no orçamento total de cada mês."
+    },
+    {
+      "what": "Inserir gráfico de coluna ou linha baseado na Tabela Dinâmica via Inserir > Gráfico.",
+      "concept": "chart_visualization",
+      "insight": "Gráfico evidencia tendências de gastos e variações percentuais entre períodos."
+    },
+    {
+      "what": "Formatar gráfico com título, legenda e rótulos de dados para mostrar percentuais claramente.",
+      "concept": "chart_formatting",
+      "insight": "Formatação profissional facilita interpretação visual do controle de gastos."
+    }
+  ],
+  "general": {
+    "summary": "Criou tabela dinâmica em Excel 2013 com análise de gastos mensais por categoria, incluindo percentuais e gráfico visualizador. Demonstrou domínio de ferramentas de BI básicas e análise de dados financeiros.",
+    "skills": [
+      "tabela_dinamica_excel",
+      "analise_de_dados",
+      "calculo_percentual",
+      "visualizacao_graficos",
+      "controle_financeiro"
+    ],
+    "xp_earned": 180,
+    "next_level": "Implementar filtros interativos na tabela dinâmica e criar dashboard com múltiplos gráficos para análise comparativa."
+  },
+  "task": "Abra o excel 2013 e faça uma tabela dinamica com grafico e porcentagem de controle de gastos por mes",
+  "generated_at": "2026-04-17T15:23:55.517025"
+}

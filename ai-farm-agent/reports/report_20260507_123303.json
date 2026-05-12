@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "what": "Pesquisou e abriu Microsoft Teams na máquina.",
+      "concept": "app_launch",
+      "insight": "Localização correta da aplicação garantiu acesso ao sistema de mensagens."
+    },
+    {
+      "what": "Aguardou carregamento da interface e focou na janela ativa.",
+      "concept": "ui_stabilization",
+      "insight": "Sincronização com delays apropriados evitou cliques em elementos não-renderizados."
+    },
+    {
+      "what": "Utilizou atalho Ctrl+Shift+F para abrir busca de contatos.",
+      "concept": "keyboard_shortcut",
+      "insight": "Uso de hotkeys é 3x mais rápido que navegação por cliques em menus."
+    },
+    {
+      "what": "Digitou 'Carlos Beltran' no campo de busca e localizou contato.",
+      "concept": "search_navigation",
+      "insight": "Tipagem precisa com waits minimizou erros de reconhecimento de texto."
+    },
+    {
+      "what": "Clicou no contato encontrado e abriu conversa privada.",
+      "concept": "contact_selection",
+      "insight": "Coordenadas de clique (431,418) com 95% confiança garantiram seleção correta."
+    },
+    {
+      "what": "Localizou campo de mensagem e digitou 'Ola Mundo'.",
+      "concept": "text_input",
+      "insight": "Clique no campo (960,667) posicionou cursor na zona correta de digitação."
+    },
+    {
+      "what": "Enviou mensagem com Enter e finalizou com Escape.",
+      "concept": "message_submission",
+      "insight": "Sequência enter+escape confirmou envio e fechou possíveis menus auxiliares."
+    }
+  ],
+  "summary": "Automação bem-sucedida de busca e envio de mensagem no Teams para Carlos Beltran. Todos os 18 passos executados com 100% de sucesso.",
+  "skills": [
+    "app_automation",
+    "ui_navigation",
+    "keyboard_shortcuts",
+    "search_functionality",
+    "message_delivery",
+    "timing_synchronization"
+  ],
+  "xp_earned": 150,
+  "next_level": "Avance para automações multi-etapas com Teams: abra reunião + convide participantes + compartilhe tela.",
+  "task": "Abra o teams e va ate a conversa com Carlos Beltran e escreva a seguinte mensagem: Ola Mundo, e clique em enviar",
+  "generated_at": "2026-05-07T12:33:03.934943"
+}

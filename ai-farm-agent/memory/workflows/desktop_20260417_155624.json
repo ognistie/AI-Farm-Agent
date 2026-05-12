@@ -1,0 +1,14 @@
+{
+  "task": "abra o paint e desenhe um quadrado no centro do quadro branco",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Paint",
+    "⏳ 4s",
+    "👁️ (241,277) [95%]",
+    "⏳ 0.5s",
+    "(350,300)",
+    "🐍 Arrastar para formar quadrado\n✅ OK"
+  ],
+  "created_at": "2026-04-17T15:56:24.019105",
+  "success_count": 1,
+  "tags": 

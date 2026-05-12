@@ -1,0 +1,9 @@
+{
+  "task": "Abra o excel 2013 e faça uma tabela dinamica com grafico e porcentagem de controle de gastos por mes",
+  "agent": "DATA",
+  "steps": [
+    "🐍 Criar planilha Excel com dados de gastos por mês e categoria, aplicar Tabela Dinâmica com gráfico e cálculo de porcentagem\n✓ Planilha de Controle de Gastos criada: C:\\Users\\guilherme.franco.ITUNIVERSECORP\\Desktop\\controle_gastos.xlsx\n✓ Abas: Dados | Resumo Dinâmico | Porcentagem | Gráfico\n✓ Total de Gastos: R$ 3095.00"
+  ],
+  "created_at": "2026-04-17T15:23:49.944345",
+  "success_count": 1,
+  "tags": 

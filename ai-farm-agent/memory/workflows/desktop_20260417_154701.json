@@ -1,0 +1,15 @@
+{
+  "task": "abra o paint e desenhe a letra L",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Paint",
+    "⏳ 4s",
+    "👁️ (564,279) [95%]",
+    "⏳ 0.5s",
+    "(300,200)",
+    "🐍 Desenhar linha vertical para baixo\n✅ OK",
+    "🐍 Desenhar linha horizontal para direita\n✅ OK"
+  ],
+  "created_at": "2026-04-17T15:47:01.599172",
+  "success_count": 1,
+  "tags": 

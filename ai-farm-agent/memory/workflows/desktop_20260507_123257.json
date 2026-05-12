@@ -1,0 +1,26 @@
+{
+  "task": "Abra o teams e va ate a conversa com Carlos Beltran e escreva a seguinte mensagem: Ola Mundo, e clique em enviar",
+  "agent": "DESKTOP",
+  "steps": [
+    "✅ Microsoft Teams",
+    "⏳ 5s",
+    "🎯 Atividade | Estaguiado Treinamento: B2B:",
+    "⏳ 1s",
+    "👁️ (248,274) [95%]",
+    "⏳ 2s",
+    "⌨️ ctrl+shift+f",
+    "⏳ 1s",
+    "Digitado: Carlos Beltran",
+    "⏳ 2s",
+    "👁️ (431,418) [95%]",
+    "⏳ 2s",
+    "👁️ (960,667) [95%]",
+    "⏳ 0.5s",
+    "Digitado: Ola Mundo",
+    "⏳ 1s",
+    "⌨️ enter",
+    "⌨️ escape"
+  ],
+  "created_at": "2026-05-07T12:32:57.686652",
+  "success_count": 1,
+  "tags": 

@@ -54,5 +54,13 @@
       "CODE"
     ],
     "timestamp": "2026-04-16T16:31:39.231234"
+  },
+  {
+    "task": "Abra o excel 2013 e faça uma tabela dinamica com grafico e porcentagem de controle de gastos por mes",
+    "hash": "82103854e955",
+    "plan_agents": [
+      "DATA"
+    ],
+    "timestamp": "2026-04-17T15:22:31.406760"
   }
 ]
