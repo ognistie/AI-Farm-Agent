@@ -66,8 +66,11 @@ JSON: {{"safe":true/false,"current_state":"...","correction":"se necessário","c
             if not result.get("safe", True):
                 print(f"  🔍 [PRÉ] {result.get('correction','Correção necessária')}")
             return result
-        except:
-            return {"safe": True}
+        except Exception as e:
+            # Falha do check NUNCA bloqueia a acao (degrada para "safe"),
+            # mas registra a causa para diagnostico futuro.
+            print(f"  [VisionMaestro] check_before falhou: {e}")
+            return {"safe": True, "check_failed": True, "error": str(e)}
 
     def check_after(self, action, description):
         """Verifica se a ação teve sucesso DEPOIS da execução."""
@@ -98,5 +101,6 @@ JSON: {{"valid":true/false,"actual_state":"o que vejo na tela","issue":"se falho
             if not result.get("valid", True):
                 print(f"  🔍 [PÓS] Falhou: {result.get('issue','')}")
             return result
-        except:
-            return {"valid": True}
+        except Exception as e:
+            print(f"  [VisionMaestro] check_after falhou: {e}")
+            return {"valid": True, "check_failed": True, "error": str(e)}

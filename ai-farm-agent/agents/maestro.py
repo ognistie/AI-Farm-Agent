@@ -1,12 +1,20 @@
 """
-Maestro v16 — Roteamento inteligente + contexto seguro.
+Maestro v17 — Roteamento inteligente + ambiguity gate.
+
+MUDANÇAS v17 (vs v16):
+- AMBIGUITY GATE (cenários A e J do briefing): prompts vagos ("deixa o
+  projeto rodando", "atualiza o relatorio do mes passado") NAO disparam
+  3 hipoteses em paralelo. Maestro retorna needs_clarification=True com
+  uma unica pergunta objetiva.
+- Heuristica deterministica detecta padroes obvios antes de chamar LLM.
+- Prompt ensina o LLM a usar needs_clarification quando ambiguo.
+
 MUDANÇAS v16:
 - "abra VS Code e crie arquivo/projeto" → CODE (não DESKTOP)
 - "abra VS Code" (sem criar) → DESKTOP
-- "abra paint e desenhe" → DESKTOP com action_type=draw
-- Variáveis válidas atualizadas: inclui {output_summary_N}
-- Exemplo de pesquisa+envio com summary
 """
+
+import re
 
 from core.ai_client import get_client
 from core.config import get_config
@@ -22,16 +30,21 @@ PROMPT = (
 
     "═══ ROTEAMENTO (ORDEM DE PRIORIDADE) ═══\n"
     "1. Se pede CRIAR codigo/projeto/arquivo de programacao → CODE (mesmo se menciona VS Code)\n"
-    "2. Se pede CRIAR planilha/Excel com dados → DATA\n"
-    "3. Se pede navegar web/pesquisar/abrir site → WEB\n"
-    "4. Se pede APENAS ABRIR um app (sem criar conteudo) → DESKTOP\n"
-    "5. Se pede interagir com app desktop (Teams, WhatsApp, Notepad, Paint) → DESKTOP\n"
-    "6. Se pede organizar/mover/copiar arquivos → FILE\n\n"
+    "2. Se pede EDITAR/MODIFICAR/CORRIGIR arquivo de codigo existente → CODE\n"
+    "3. Se pede ABRIR VS Code APONTANDO PRA UMA PASTA (sem criar nada) → CODE\n"
+    "4. Se pede CRIAR planilha/Excel com dados → DATA\n"
+    "5. Se pede navegar web/pesquisar/abrir site → WEB\n"
+    "6. Se pede APENAS ABRIR um app vazio (sem criar conteudo nem apontar pasta) → DESKTOP\n"
+    "7. Se pede interagir com app desktop (Teams, WhatsApp, Notepad, Paint) → DESKTOP\n"
+    "8. Se pede organizar/mover/copiar arquivos → FILE\n\n"
 
     "EXEMPLOS DE ROTEAMENTO:\n"
     "- 'abra o vs code e crie um arquivo python' → CODE (criar arquivo = CODE)\n"
-    "- 'abra o vs code' → DESKTOP (apenas abrir = DESKTOP)\n"
+    "- 'edite o app.py adicionando uma rota /login' → CODE (edit_existing)\n"
+    "- 'abra o vs code na pasta meu-projeto' → CODE (open_vscode_folder)\n"
+    "- 'abra o vs code' → DESKTOP (apenas abrir vazio = DESKTOP)\n"
     "- 'crie um site html' → CODE\n"
+    "- 'crie um script python que renomeia imagens' → CODE (single_file)\n"
     "- 'abra o paint e desenhe' → DESKTOP com action_type=draw\n"
     "- 'pesquise no google' → WEB\n"
     "- 'crie uma planilha de vendas' → DATA\n\n"
@@ -51,7 +64,11 @@ PROMPT = (
     "1. UM APP = 1 subtask\n"
     "2. 2+ subtasks APENAS quando APPS DIFERENTES cooperam\n"
     "3. text='' se usuario nao pediu para escrever\n"
-    "4. forbidden_assumptions = o que NAO presumir\n\n"
+    "4. forbidden_assumptions = o que NAO presumir\n"
+    "5. PROIBIDO acoplar CODE + DESKTOP notepad/word com o codigo gerado.\n"
+    "   Se voce roteou para CODE, o CODE ja cria os arquivos e abre o\n"
+    "   VS Code. NUNCA crie uma subtask DESKTOP escrevendo o HTML/python\n"
+    "   no notepad/word como 'visualizacao'. Isso confunde o usuario.\n\n"
 
     "═══ EXEMPLOS ═══\n\n"
 
@@ -101,8 +118,90 @@ PROMPT = (
     '"objectives":["Notepad aberto","Numeros escritos"],'
     '"forbidden_assumptions":["NAO escrever Ola"],"depends_on":null}],"skills":["notepad"]}\n\n'
 
+    "═══ AMBIGUITY GATE (cenarios A e J do briefing) ═══\n"
+    "Se a tarefa for AMBIGUA ou faltam dados essenciais para executar com\n"
+    "seguranca (qual app? qual arquivo? qual periodo? qual destinatario?),\n"
+    "NUNCA chute. NUNCA execute 3 hipoteses em paralelo. Retorne:\n"
+    "  {\"needs_clarification\": true, \"question\": \"<UMA pergunta objetiva>\",\n"
+    "   \"why\": \"<o que esta faltando>\"}\n"
+    "Exemplos de pedidos ambiguos:\n"
+    "- 'deixa o projeto rodando'        → qual projeto? rodar = dev/test/prod?\n"
+    "- 'atualiza o relatorio do mes passado' → qual relatorio? que mes (abs)?\n"
+    "- 'envia para ele'                 → ele quem? por qual canal?\n"
+    "Regra: faca NO MAXIMO 1 pergunta por turno (briefing secao 10).\n\n"
+
     "Prefira 1 subtask. Windows PT-BR. JSON PURO."
 )
+
+
+# ───────────────────────────────────────────────────────────────────────
+#  Heuristica determinstica de ambiguidade (cenarios A e J)
+# ───────────────────────────────────────────────────────────────────────
+
+# Frases curtas notoriamente vagas — fazem o usuario pagar uma chamada LLM
+# por nada. Pre-bloqueamos com pergunta direta.
+_VAGUE_PHRASES = {
+    "deixa rodando", "deixa o projeto rodando", "deixa rodar",
+    "faz funcionar", "arruma isso", "conserta", "resolve isso",
+    "atualiza", "atualiza o relatorio", "envia pra ele", "manda pra ela",
+    "termina isso", "continua de onde parou",
+}
+
+# Marcadores temporais relativos (cenario J).
+_RELATIVE_TIME_MARKERS = (
+    "mes passado", "semana passada", "ontem", "outro dia",
+    "ultimo mes", "ultima semana", "anteontem", "esses dias",
+    "no ano passado",
+)
+
+# Marcadores deicticos sem antecedente claro.
+_DEICTIC_PRONOUNS = ("ele", "ela", "isso", "aquilo", "aquele", "aquela")
+
+
+def _detect_ambiguity(task: str) -> dict | None:
+    """
+    Retorna {"question": ..., "why": ...} se a tarefa for ambigua, senao None.
+
+    NAO substitui o LLM — apenas elimina ambiguidades obvias antes do
+    custo de uma chamada de API.
+    """
+    if not task:
+        return {
+            "question": "O que voce gostaria que eu fizesse?",
+            "why": "tarefa vazia",
+        }
+
+    t = task.lower().strip()
+
+    # Curto demais para uma intencao acionavel
+    word_count = len(re.findall(r"\w+", t))
+    if word_count <= 2 and t not in {"oi", "ola", "ajuda", "help"}:
+        return {
+            "question": f"'{task}' — pode detalhar o que voce quer fazer?",
+            "why": "tarefa curta demais para roteamento confiavel",
+        }
+
+    # Frase vaga em catalogo
+    for vague in _VAGUE_PHRASES:
+        if t == vague or t.startswith(vague + " ") or t.endswith(" " + vague):
+            return {
+                "question": "Pode especificar qual projeto/arquivo/aplicacao e o resultado esperado?",
+                "why": f"frase vaga detectada: '{vague}'",
+            }
+
+    # Marcador temporal relativo sem objeto especifico
+    for marker in _RELATIVE_TIME_MARKERS:
+        if marker in t:
+            # Se nao tem nome proprio nem arquivo identificavel, e ambiguo
+            has_filename = bool(re.search(r"\b[\w-]+\.[a-zA-Z]{1,5}\b", task))
+            has_proper_noun = bool(re.search(r"\b[A-Z][a-z]+\b", task))
+            if not has_filename and not has_proper_noun:
+                return {
+                    "question": f"Qual data exatamente ({marker})? E qual arquivo/relatorio especifico?",
+                    "why": f"marcador temporal relativo sem referencia absoluta: '{marker}'",
+                }
+
+    return None
 
 
 class Maestro:
@@ -115,6 +214,18 @@ class Maestro:
     def analyze(self, task):
         print("\n[Maestro] Analisando...")
 
+        # Ambiguity gate (cenarios A e J): bloqueia ANTES do cache,
+        # antes da memoria e antes da API. Pergunta UMA coisa só.
+        ambiguity = _detect_ambiguity(task)
+        if ambiguity:
+            print(f"[Maestro] Ambiguidade detectada: {ambiguity['why']}")
+            return {
+                "needs_clarification": True,
+                "question": ambiguity["question"],
+                "why": ambiguity["why"],
+                "subtasks": [],
+            }
+
         key = task.lower().strip()[:80]
         if key in self._cache:
             cached = self._cache[key]
@@ -124,7 +235,8 @@ class Maestro:
             else:
                 del self._cache[key]
 
-        # Memória
+        # Memória — falha do lookup nunca pode bloquear a tarefa,
+        # mas precisa de log para diagnosticar workflow_store quebrado.
         try:
             from memory.workflow_store import find_similar_workflow
             wf = find_similar_workflow(task)
@@ -140,7 +252,8 @@ class Maestro:
                     }],
                     "skills": list(wf.get("tags", [])),
                 }
-        except: pass
+        except Exception as mem_err:
+            print(f"[Maestro] workflow_store indisponivel: {mem_err}")
 
         # API
         try:
@@ -150,6 +263,17 @@ class Maestro:
                 max_tokens=self._config.get("limits.max_tokens_fast", 1500),
             )
             plan = safe_parse(raw, self.model)
+
+            # Se o LLM detectou ambiguidade que a heuristica nao pegou,
+            # propaga o pedido de clarificacao em vez de "Sem subtasks".
+            if plan.get("needs_clarification"):
+                print(f"[Maestro] LLM pediu clarificacao: {plan.get('why','')}")
+                return {
+                    "needs_clarification": True,
+                    "question": plan.get("question", "Pode dar mais detalhes?"),
+                    "why": plan.get("why", "ambiguidade detectada pelo LLM"),
+                    "subtasks": [],
+                }
 
             if "subtasks" not in plan or not plan.get("subtasks"):
                 return {"error": True, "message": "Sem subtasks"}
@@ -164,6 +288,38 @@ class Maestro:
                             params["text"] = ""
                         if params.get("message", "") in generics and "message" not in task.lower():
                             params["message"] = ""
+
+            # Filtro defensivo: se temos uma subtask CODE, removemos qualquer
+            # subtask DESKTOP que pareça apenas "colar o codigo no notepad/word"
+            # como visualizacao — comportamento ruim que confunde o usuario.
+            subs = plan.get("subtasks", [])
+            has_code = any((s.get("agent") or "").upper() == "CODE" for s in subs)
+            if has_code:
+                filtered = []
+                removed = 0
+                for s in subs:
+                    agent = (s.get("agent") or "").upper()
+                    if agent == "DESKTOP":
+                        p = s.get("params", {}) or {}
+                        app = (p.get("app", "") or "").lower()
+                        action = (p.get("action_type", "") or "").lower()
+                        text = (p.get("text", "") or p.get("message", "") or "")
+                        # Heuristica: notepad/word + texto que parece codigo
+                        looks_like_code = any(
+                            tok in text for tok in (
+                                "<html", "<!DOCTYPE", "<script", "<style",
+                                "def ", "class ", "import ", "from ", "function ",
+                            )
+                        )
+                        if app in ("notepad", "bloco de notas", "word", "microsoft word") and (
+                            action in ("write_text", "type", "paste") or looks_like_code
+                        ):
+                            removed += 1
+                            continue
+                    filtered.append(s)
+                if removed:
+                    print(f"[Maestro] Removido(s) {removed} subtask(s) DESKTOP redundante(s) acoplada(s) ao CODE")
+                    plan["subtasks"] = filtered
 
             self._cache[key] = plan
             print(f"[Maestro] {len(plan['subtasks'])} subtask(s)")
