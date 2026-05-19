@@ -125,6 +125,95 @@ def test_maestro_ambiguity_gate():
     return passed == total
 
 
+def test_tech_filter():
+    """User declara tech, filtro tem que remover arquivos fora da spec."""
+    print("\n=== Tech filter (bug do usuario: pediu HTML+CSS recebeu JS) ===")
+    from agents.code_agent import _detect_tech_spec, _filter_files_by_tech
+
+    cases = [
+        # (task, files_input, expected_remaining_paths)
+        (
+            "crie um site em HTML e CSS sobre buda",
+            {"index.html": "x", "style.css": "y", "script.js": "z", "README.md": "r"},
+            {"index.html", "style.css", "README.md"},  # .js DEVE ser removido
+        ),
+        (
+            "site em HTML, CSS e JavaScript",
+            {"index.html": "x", "style.css": "y", "script.js": "z"},
+            {"index.html", "style.css", "script.js"},
+        ),
+        (
+            "sistema em python para agendamento",
+            {"main.py": "a", "database.py": "b", "index.html": "c"},
+            {"main.py", "database.py"},
+        ),
+        (
+            "crie um site bonito sobre buda",
+            {"index.html": "x", "style.css": "y", "script.js": "z"},
+            {"index.html", "style.css", "script.js"},
+        ),
+    ]
+    passed = 0
+    for task, files, expected in cases:
+        tech = _detect_tech_spec(task)
+        filtered, removed = _filter_files_by_tech(files, tech)
+        got = set(filtered.keys())
+        ok = got == expected
+        status = "OK  " if ok else "FAIL"
+        print(f"{status} | {task[:50]!r:55} | esperado={sorted(expected)} got={sorted(got)}")
+        if ok:
+            passed += 1
+    print(f"\n{passed}/{len(cases)} passou")
+    return passed == len(cases)
+
+
+def test_workflow_quarantine():
+    """Arquivos truncados de workflow vao para .corrupted/ no primeiro turno."""
+    print("\n=== workflow_store quarantine ===")
+    import tempfile
+    import json as _json
+    from pathlib import Path
+    import memory.workflow_store as ws
+
+    with tempfile.TemporaryDirectory() as tmp:
+        old_dir = ws.WORKFLOWS_DIR
+        old_quarantine = ws.QUARANTINE_DIR
+        try:
+            ws.WORKFLOWS_DIR = Path(tmp) / "workflows"
+            ws.QUARANTINE_DIR = ws.WORKFLOWS_DIR / ".corrupted"
+            ws.WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
+
+            bad = ws.WORKFLOWS_DIR / "code_20260402_133441.json"
+            bad.write_text('{"task":"x","tags":', encoding="utf-8")
+
+            good = ws.WORKFLOWS_DIR / "code_20260518_162410.json"
+            _json.dump(
+                {
+                    "task": "abra o vs code e crie um site profissional",
+                    "agent": "CODE",
+                    "steps": [],
+                    "created_at": "2026-05-18T16:24:10",
+                    "tags": ["site", "vscode"],
+                },
+                good.open("w", encoding="utf-8"),
+            )
+
+            ws._quarantine_logged_once = False
+            ws.find_similar_workflow("abra o vs code")
+
+            in_corrupted = (ws.QUARANTINE_DIR / "code_20260402_133441.json").exists()
+            good_stays = good.exists()
+            still_bad = bad.exists()
+
+            print(f"{'OK  ' if in_corrupted else 'FAIL'} | arquivo truncado movido para .corrupted/")
+            print(f"{'OK  ' if good_stays else 'FAIL'} | arquivo valido nao foi tocado")
+            print(f"{'OK  ' if not still_bad else 'FAIL'} | arquivo truncado nao esta mais em workflows/")
+            return in_corrupted and good_stays and not still_bad
+        finally:
+            ws.WORKFLOWS_DIR = old_dir
+            ws.QUARANTINE_DIR = old_quarantine
+
+
 def test_web_circuit_breaker():
     """Cenarios B e L — apos 3 tentativas, escalar."""
     print("\n=== WebAgent circuit-breaker (cenarios B e L) ===")
@@ -139,7 +228,6 @@ def test_web_circuit_breaker():
     })()
 
     task = "pesquise no google sobre palmeiras"
-    # Bumps repetidos devem chegar ao limite
     for i in range(CIRCUIT_BREAKER_MAX_ATTEMPTS):
         n = agent._bump_attempt(task)
     extra = agent._bump_attempt(task)
@@ -153,5 +241,7 @@ if __name__ == "__main__":
     ok1 = test_intent_classifier()
     ok2 = test_writer_scripts_syntax()
     ok3 = test_maestro_ambiguity_gate()
-    ok4 = test_web_circuit_breaker()
-    sys.exit(0 if (ok1 and ok2 and ok3 and ok4) else 1)
+    ok4 = test_tech_filter()
+    ok5 = test_workflow_quarantine()
+    ok6 = test_web_circuit_breaker()
+    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6]) else 1)

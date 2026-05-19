@@ -327,10 +327,30 @@ DESIGN_PLANNER_PROMPT = (
     "REGRAS:\n"
     "- Escolha palette do catalogo da DESIGN BIBLE (use os hex EXATOS)\n"
     "- Para sistemas: project_type='desktop_app', stack inclui 'customtkinter'\n"
-    "- Para sites: project_type='web_site', stack='html+css+js', open_in_browser=true\n"
-    "- file_structure deve ter 5-15 arquivos com paths reais\n"
+    "- Para sites: project_type='web_site', stack depende do que o usuario pediu\n"
+    "- file_structure deve ter 3-15 arquivos com paths reais\n"
     "- Pelo menos 2 visual_trends por projeto\n"
-    "- JSON PURO. Sem ``` sem markdown sem texto antes/depois.\n"
+    "- JSON PURO. Sem ``` sem markdown sem texto antes/depois.\n\n"
+
+    "═══ REGRA DE STACK = LITERAL DO USUARIO (PRIORIDADE MAXIMA) ═══\n"
+    "Leia a tarefa e identifique TECH que o usuario MENCIONOU explicitamente.\n"
+    "Sua file_structure DEVE conter apenas extensoes que ele pediu (+ README/\n"
+    "requirements/gitignore quando aplicavel).\n\n"
+    "EXEMPLOS — siga LITERALMENTE:\n"
+    "- 'site em HTML e CSS sobre X':\n"
+    "    stack='html+css', file_structure=['index.html', 'style.css', 'README.md']\n"
+    "    PROIBIDO incluir script.js ou qualquer .js.\n"
+    "- 'site em HTML, CSS e JS sobre X':\n"
+    "    stack='html+css+js', file_structure=['index.html', 'style.css', 'script.js', 'README.md']\n"
+    "- 'site sobre X' (sem mencionar tech):\n"
+    "    stack='html+css+js', file_structure pode incluir os 3 + README.\n"
+    "- 'sistema em python para X':\n"
+    "    stack='python+sqlite', file_structure=['main.py', 'database.py', ...]\n"
+    "    PROIBIDO incluir .html/.css/.js a menos que o sistema seja web.\n"
+    "- 'sistema flask para X':\n"
+    "    stack='flask+sqlite', file_structure=['app.py', 'templates/*.html', 'static/*.css', ...]\n"
+    "Resumo: SE o usuario LISTOU as tecnologias, o file_structure NAO pode\n"
+    "ter extensao fora dessa lista (exceto docs/config padrao).\n"
 )
 
 
@@ -374,12 +394,21 @@ CODE_BUILDER_PROMPT = (
     "   Faltar arquivo = ModuleNotFoundError em runtime.\n"
     "4. ASSETS NO HTML: todo <link href=\"X.css\"> e <script src=\"X.js\">\n"
     "   precisa apontar pra arquivo presente em files (path RELATIVO certo).\n"
-    "5. RESPEITE A TECH DO USUARIO: se a tarefa diz 'apenas HTML', NAO crie\n"
-    "   .css nem .js separados — coloque estilos INLINE no <style> e JS\n"
-    "   INLINE no <script>. Se diz 'HTML + CSS', NAO crie .js.\n"
+    "   E o INVERSO tambem: se voce listou style.css em files, o HTML PRECISA\n"
+    "   referenciar via <link rel=\"stylesheet\" href=\"style.css\">.\n"
+    "5. RESPEITE A TECH DO USUARIO (CRITICO):\n"
+    "   - 'apenas HTML' / 'so HTML': files = {'index.html': '...'}\n"
+    "     (CSS inline em <style>, JS inline em <script>)\n"
+    "   - 'HTML e CSS' / 'HTML, CSS' / 'HTML+CSS':\n"
+    "     files = {'index.html': '...', 'style.css': '...', 'README.md': '...'}\n"
+    "     PROIBIDO chave terminando em '.js' no files dict.\n"
+    "   - 'HTML, CSS, JS' / 'HTML, CSS e JavaScript':\n"
+    "     files = {'index.html', 'style.css', 'script.js', 'README.md'}\n"
+    "   - 'sistema em python': zero .html/.css/.js (a menos que seja web).\n"
     "6. AUTO-CHECK ANTES DE RESPONDER: pra cada arquivo Python, releia\n"
     "   mentalmente verificando parens/aspas balanceadas. Pra cada import,\n"
-    "   confira que o arquivo correspondente esta no dict.\n\n"
+    "   confira que o arquivo correspondente esta no dict. Pra cada extensao\n"
+    "   no files dict, confira que o usuario MENCIONOU aquela tech.\n\n"
 
     "═══ FORMATO DE RESPOSTA — JSON PURO ═══\n"
     "{\n"
@@ -482,6 +511,103 @@ _OPEN_FOLDER_KEYWORDS = (
     "abra a pasta no vs code", "abra a pasta no vscode",
     "abre meu projeto no vs code", "abre meu projeto no vscode",
 )
+
+
+_EXT_DOCS = {"md", "txt", "gitignore", "env"}      # sempre permitidas
+_EXT_CONFIG = {"yaml", "yml", "json", "cfg", "ini", "toml"}
+
+
+def _detect_tech_spec(task_text: str) -> dict:
+    """
+    Examina o texto do usuario procurando tech declarada EXPLICITAMENTE.
+    Retorna:
+      {
+        "specified": bool,    # True se o usuario listou tech
+        "allowed_exts": set,  # extensoes permitidas no projeto final
+        "summary": str,       # descricao curta da spec detectada
+      }
+
+    Se nada for detectado, o LLM tem liberdade total (specified=False).
+    """
+    t = (task_text or "").lower()
+    if not t:
+        return {"specified": False, "allowed_exts": set(), "summary": ""}
+
+    has_html = bool(re.search(r"\bhtml\b", t))
+    has_css = bool(re.search(r"\bcss\b", t))
+    has_js = bool(re.search(r"\b(js|javascript|jscript)\b", t))
+    has_py = bool(re.search(r"\bpython\b", t))
+    has_react = bool(re.search(r"\breact\b", t))
+    has_vue = bool(re.search(r"\bvue\b", t))
+    has_flask = bool(re.search(r"\bflask\b", t))
+    has_django = bool(re.search(r"\bdjango\b", t))
+    has_fastapi = bool(re.search(r"\bfastapi\b", t))
+
+    allowed = set(_EXT_DOCS) | set(_EXT_CONFIG)
+    parts = []
+
+    if has_html or has_css or has_js or has_react or has_vue:
+        allowed.add("html")
+        parts.append("html")
+        if has_css:
+            allowed.add("css")
+            parts.append("css")
+        if has_js or has_react or has_vue:
+            allowed.add("js")
+            parts.append("js")
+        if has_react or has_vue:
+            allowed.add("jsx")
+            allowed.add("tsx")
+            allowed.add("ts")
+            parts.append(has_react and "react" or "vue")
+
+    if has_py or has_flask or has_django or has_fastapi:
+        allowed.add("py")
+        parts.append("python")
+        if has_flask or has_django or has_fastapi:
+            # web framework Python = pode ter templates html/css
+            allowed.add("html")
+            allowed.add("css")
+            parts.append(has_flask and "flask" or has_django and "django" or "fastapi")
+        allowed.add("sql")
+
+    specified = bool(parts)
+    summary = "+".join(parts) if parts else "(livre)"
+    return {
+        "specified": specified,
+        "allowed_exts": allowed,
+        "summary": summary,
+    }
+
+
+def _filter_files_by_tech(files: dict, tech: dict, logger=None) -> tuple[dict, list]:
+    """
+    Remove do dict 'files' quaisquer chaves com extensao FORA da spec do usuario.
+    Retorna (novo_files, removed_paths).
+    Nao faz nada se tech['specified'] for False.
+    """
+    if not tech.get("specified") or not isinstance(files, dict):
+        return files, []
+    allowed = tech.get("allowed_exts", set())
+    filtered = {}
+    removed = []
+    for path, content in files.items():
+        ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+        # arquivos sem extensao (ex: .gitignore tratado separadamente)
+        name = path.split("/")[-1].lower()
+        if name == ".gitignore" or name == "license" or name == "dockerfile":
+            filtered[path] = content
+            continue
+        if ext in allowed:
+            filtered[path] = content
+        else:
+            removed.append(path)
+    if removed and logger:
+        logger.info(
+            f"Tech filter removeu {len(removed)} arquivo(s) fora da spec "
+            f"({tech['summary']}): {removed}"
+        )
+    return filtered, removed
 
 
 def _classify_intent_heuristic(task_text: str) -> dict | None:
@@ -1223,6 +1349,19 @@ subprocess.Popen(["code", target], shell=True)
     # ── sub-planners por modo ─────────────────────────────────────────
 
     def _plan_project(self, task_text: str, ctx_str: str, intent: dict) -> dict:
+        # Detecta tech declarada pelo usuario ANTES de chamar o LLM
+        tech = _detect_tech_spec(task_text)
+        if tech["specified"]:
+            tech_note = (
+                f"\n\nTECH_REQUERIDA_PELO_USUARIO: {tech['summary']}\n"
+                f"O file_structure DEVE conter SOMENTE arquivos com essas "
+                f"tecnologias (+ README/requirements/gitignore quando aplicavel). "
+                f"NUNCA inclua extensoes fora da lista (.js, .ts, etc) se o "
+                f"usuario nao mencionou."
+            )
+            ctx_str = ctx_str + tech_note
+            self.logger.info(f"Tech detectada: {tech['summary']}")
+
         brief = None
         if self._use_dual_pass:
             self.logger.info("Pass 1/2: gerando DESIGN BRIEF...")
@@ -1239,6 +1378,26 @@ subprocess.Popen(["code", target], shell=True)
             plan = self._generate_single_pass(task_text, ctx_str)
 
         project = self._normalize_project(plan, brief)
+
+        # Filtro deterministico pos-LLM: remove arquivos fora da tech declarada
+        if tech["specified"]:
+            filtered, removed = _filter_files_by_tech(
+                project["files"], tech, self.logger
+            )
+            if removed:
+                project["files"] = filtered
+                # Se o browser_entry foi removido, recalcula
+                if project.get("browser_entry") and project["browser_entry"] not in filtered:
+                    project["browser_entry"] = next(
+                        (p for p in filtered if p.endswith((".html", ".htm"))),
+                        "",
+                    )
+                # Se o run_entry foi removido, recalcula
+                if project.get("run_entry") and project["run_entry"] not in filtered:
+                    project["run_entry"] = next(
+                        (p for p in filtered if p.endswith(".py")),
+                        "",
+                    )
 
         self.logger.info(
             f"Projeto | folder={project['folder']} | "
