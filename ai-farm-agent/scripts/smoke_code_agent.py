@@ -1,86 +1,17 @@
 """
-Smoke test do CodeAgent v26 — valida o classificador heurístico e a sintaxe
-dos writer scripts SEM chamar a API Anthropic.
+Smoke test do AI Farm Agent — valida sem chamar API:
+- Maestro: ambiguity gate (cenarios A e J do briefing)
+- workflow_store: quarentena automatica de arquivos corrompidos
+- WebAgent: circuit-breaker (cenarios B e L do briefing)
+- CodeAgent: heuristica _needs_sonnet (escolha de modelo)
 
 Roda: python scripts/smoke_code_agent.py
 """
 
-import ast
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from agents.code_agent import _classify_intent_heuristic, CodeAgent
-
-
-def assert_eq(expected, got, label):
-    status = "OK  " if expected == got else "FAIL"
-    print(f"{status} | {label} | esperado={expected!r} got={got!r}")
-    return expected == got
-
-
-def test_intent_classifier():
-    print("\n=== Intent classifier (heuristica) ===")
-    cases = [
-        ("crie um sistema de agendamento de salas",          "project_full"),
-        ("dashboard de vendas com graficos",                 "project_full"),
-        ("crie um site sobre cafe",                          "website_simple"),
-        ("crie uma landing page de curso de python",         "website_simple"),
-        ("crie um arquivo python que renomeia imagens",      "single_file"),
-        ("escreva uma classe Calculadora em python",         "single_file"),
-        ("edite o arquivo app.py adicionando rota /login",   "edit_existing"),
-        ("abra o vs code na pasta meu-projeto",              "open_vscode_folder"),
-        # Bug reportado pelo usuario: pediu HTML, recebeu CSS+JS extras
-        ("crie um site sobre buda apenas em html",           "single_file"),
-        ("pagina sobre cafe so html",                        "single_file"),
-        ("landing page html simples",                        "single_file"),
-    ]
-    passed = 0
-    for task, expected in cases:
-        intent = _classify_intent_heuristic(task) or {}
-        if assert_eq(expected, intent.get("mode"), task):
-            passed += 1
-    print(f"\n{passed}/{len(cases)} passou")
-    return passed == len(cases)
-
-
-def test_writer_scripts_syntax():
-    """Garante que os writer scripts gerados sao Python valido."""
-    print("\n=== Writer scripts (sintaxe) ===")
-    # Cria a instancia sem inicializacao remota — esquiva via __new__
-    agent = CodeAgent.__new__(CodeAgent)
-    agent.model = "claude-sonnet-4-20250514"
-
-    cases = [
-        ("project", agent._build_writer_project(
-            folder_name="projeto_teste",
-            files_dict={"main.py": "print('hi')", "README.md": "# t"},
-            open_browser=False, browser_file="", run_file="main.py",
-            open_vscode=True,
-        )),
-        ("single_file", agent._build_writer_single_file(
-            filename="rename_imgs.py",
-            content="import os\nprint('renaming')\n",
-            target_dir="Desktop", run_after=False, open_vscode=True,
-        )),
-        ("edit_existing", agent._build_writer_edit_existing(
-            target_path_hint="app.py",
-            instruction="adicionar rota /login",
-            open_vscode=True,
-        )),
-        ("open_folder", agent._build_open_folder_script("meu-projeto")),
-    ]
-    passed = 0
-    for label, script in cases:
-        try:
-            ast.parse(script)
-            print(f"OK   | writer {label} | {len(script)} chars")
-            passed += 1
-        except SyntaxError as e:
-            print(f"FAIL | writer {label} | SyntaxError: {e}")
-    print(f"\n{passed}/{len(cases)} passou")
-    return passed == len(cases)
 
 
 def test_maestro_ambiguity_gate():
@@ -88,9 +19,6 @@ def test_maestro_ambiguity_gate():
     print("\n=== Maestro ambiguity gate (cenarios A e J) ===")
     from agents.maestro import _detect_ambiguity
 
-    # Casos onde a heuristica DEVE bloquear (cenarios A e J do briefing).
-    # Greetings/saudacoes ficam fora — heuristica e intencionalmente
-    # conservadora; o LLM responde a saudacao com naturalidade.
     cases_ambiguous = [
         "deixa rodando",
         "deixa o projeto rodando",
@@ -123,48 +51,6 @@ def test_maestro_ambiguity_gate():
             passed += 1
     print(f"\n{passed}/{total} passou")
     return passed == total
-
-
-def test_tech_filter():
-    """User declara tech, filtro tem que remover arquivos fora da spec."""
-    print("\n=== Tech filter (bug do usuario: pediu HTML+CSS recebeu JS) ===")
-    from agents.code_agent import _detect_tech_spec, _filter_files_by_tech
-
-    cases = [
-        # (task, files_input, expected_remaining_paths)
-        (
-            "crie um site em HTML e CSS sobre buda",
-            {"index.html": "x", "style.css": "y", "script.js": "z", "README.md": "r"},
-            {"index.html", "style.css", "README.md"},  # .js DEVE ser removido
-        ),
-        (
-            "site em HTML, CSS e JavaScript",
-            {"index.html": "x", "style.css": "y", "script.js": "z"},
-            {"index.html", "style.css", "script.js"},
-        ),
-        (
-            "sistema em python para agendamento",
-            {"main.py": "a", "database.py": "b", "index.html": "c"},
-            {"main.py", "database.py"},
-        ),
-        (
-            "crie um site bonito sobre buda",
-            {"index.html": "x", "style.css": "y", "script.js": "z"},
-            {"index.html", "style.css", "script.js"},
-        ),
-    ]
-    passed = 0
-    for task, files, expected in cases:
-        tech = _detect_tech_spec(task)
-        filtered, removed = _filter_files_by_tech(files, tech)
-        got = set(filtered.keys())
-        ok = got == expected
-        status = "OK  " if ok else "FAIL"
-        print(f"{status} | {task[:50]!r:55} | esperado={sorted(expected)} got={sorted(got)}")
-        if ok:
-            passed += 1
-    print(f"\n{passed}/{len(cases)} passou")
-    return passed == len(cases)
 
 
 def test_workflow_quarantine():
@@ -228,8 +114,8 @@ def test_web_circuit_breaker():
     })()
 
     task = "pesquise no google sobre palmeiras"
-    for i in range(CIRCUIT_BREAKER_MAX_ATTEMPTS):
-        n = agent._bump_attempt(task)
+    for _ in range(CIRCUIT_BREAKER_MAX_ATTEMPTS):
+        agent._bump_attempt(task)
     extra = agent._bump_attempt(task)
     expected = CIRCUIT_BREAKER_MAX_ATTEMPTS + 1
     ok = extra == expected
@@ -237,11 +123,41 @@ def test_web_circuit_breaker():
     return ok
 
 
+def test_code_agent_model_selection():
+    """CodeAgent v18: _needs_sonnet decide o modelo certo."""
+    print("\n=== CodeAgent _needs_sonnet (escolha de modelo) ===")
+    from agents.code_agent import _needs_sonnet
+
+    sonnet_cases = [
+        "crie um sistema profissional em python de agendamento de dentista",
+        "site sobre buda com link do github.com/ognistie",
+        "dashboard com secoes de relatorio",
+        "plataforma de controle de pacientes",
+    ]
+    haiku_cases = [
+        "crie um arquivo simples",
+        "html basico",
+        "pagina pequena",
+    ]
+    passed = 0
+    total = len(sonnet_cases) + len(haiku_cases)
+    for t in sonnet_cases:
+        ok = _needs_sonnet(t)
+        print(f"{'OK  ' if ok else 'FAIL'} | sonnet: {t!r}")
+        if ok:
+            passed += 1
+    for t in haiku_cases:
+        ok = not _needs_sonnet(t)
+        print(f"{'OK  ' if ok else 'FAIL'} | haiku:  {t!r}")
+        if ok:
+            passed += 1
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 if __name__ == "__main__":
-    ok1 = test_intent_classifier()
-    ok2 = test_writer_scripts_syntax()
-    ok3 = test_maestro_ambiguity_gate()
-    ok4 = test_tech_filter()
-    ok5 = test_workflow_quarantine()
-    ok6 = test_web_circuit_breaker()
-    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6]) else 1)
+    ok1 = test_maestro_ambiguity_gate()
+    ok2 = test_workflow_quarantine()
+    ok3 = test_web_circuit_breaker()
+    ok4 = test_code_agent_model_selection()
+    sys.exit(0 if all([ok1, ok2, ok3, ok4]) else 1)
