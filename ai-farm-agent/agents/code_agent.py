@@ -344,6 +344,57 @@ def _count_py_files_in_code(code: str) -> int:
     return len(py_files)
 
 
+# Tasks que envolvem Python (qualquer tipo)
+_PYTHON_TASK_INDICATORS = [
+    "python", "tkinter", "customtkinter", "flask", "django", "fastapi",
+    "pandas", "numpy", "qrcode", "pygame", "kivy",
+]
+
+
+def _is_python_task(task: str) -> bool:
+    """Detecta se a tarefa envolve Python em geral (nao so 'sistema python')."""
+    t = str(task).lower()
+    return any(ind in t for ind in _PYTHON_TASK_INDICATORS)
+
+
+def _looks_like_inline_program(code: str) -> tuple[bool, str]:
+    """
+    Detecta quando o code field e o PROGRAMA em si (nao um creator script).
+    O programa inline tem caracteristicas como mainloop()/app.run() E nao
+    faz file writes — quando exec()ado, vai EXECUTAR a UI inline em vez de
+    criar arquivos no disco.
+
+    Retorna (e_inline, motivo).
+    """
+    # Patterns de "executando um programa GUI/server inline"
+    runs_app_patterns = [
+        (".mainloop()", "Tkinter mainloop"),
+        ("app.run(", "Flask/FastAPI run"),
+        ("uvicorn.run(", "Uvicorn run"),
+        (".serve_forever()", "HTTP server"),
+        ("ctk.CTk()", "CustomTkinter raiz"),
+    ]
+    detected = None
+    for pat, label in runs_app_patterns:
+        if pat in code:
+            detected = label
+            break
+
+    if not detected:
+        return False, ""
+
+    # Tem patterns de programa-rodando + faz file writes? Pode ser ok
+    # (creator script escreve .py + opcionalmente executa pra testar).
+    # Mas se NAO faz file writes, e definitivamente o programa inline.
+    has_file_writes_py = bool(re.search(
+        r"""open\s*\(\s*[^)]*['"][\w/.\-]+\.py['"]""", code
+    ))
+    if has_file_writes_py:
+        return False, ""
+
+    return True, detected
+
+
 def _has_startfile_html(code: str) -> bool:
     """
     Detecta os.startfile() em scripts que tambem mencionam .html — assume
@@ -422,16 +473,19 @@ class CodeAgent(BaseAgent):
         self.logger.info(f"Modelo: {'Sonnet' if use_sonnet else 'Haiku'}")
 
         is_py_system = _is_python_system_task(task_text)
+        is_py_task = _is_python_task(task_text)
 
         # 1a tentativa
-        result = self._call_and_validate(model, task_text, is_py_system, retry_feedback=None)
+        result = self._call_and_validate(
+            model, task_text, is_py_system, is_py_task, retry_feedback=None
+        )
         if result["ok"]:
             return self._build_response(result["steps"], model)
 
         # 2a tentativa com feedback do que quebrou
         self.logger.warning(f"Retry: {result['reason']}")
         result = self._call_and_validate(
-            model, task_text, is_py_system, retry_feedback=result["reason"]
+            model, task_text, is_py_system, is_py_task, retry_feedback=result["reason"]
         )
         if result["ok"]:
             return self._build_response(result["steps"], model)
@@ -448,7 +502,7 @@ class CodeAgent(BaseAgent):
 
     # ──────────────────────────────────────────────────────────────────
 
-    def _call_and_validate(self, model, task_text, is_py_system, retry_feedback):
+    def _call_and_validate(self, model, task_text, is_py_system, is_py_task, retry_feedback):
         feedback_block = ""
         if retry_feedback:
             feedback_block = (
@@ -466,6 +520,11 @@ class CodeAgent(BaseAgent):
             "Se for sistema python profissional, gere 5+ arquivos .py modulares.\n"
             "Toda string triple-quoted DEVE fechar.\n"
             "Use raw strings (r'...') ou escape duplo (\\\\) para paths Windows.\n"
+            "LEMBRE: o campo 'code' e UM CREATOR SCRIPT que ESCREVE arquivos\n"
+            "  ao disco via `open(os.path.join(project_dir, 'X.py'), 'w')`.\n"
+            "  NAO escreva inline o programa (ex: NUNCA coloque mainloop()/\n"
+            "  app.run() no creator script — eles vao DENTRO de um arquivo .py\n"
+            "  que o creator CRIA).\n"
             + feedback_block
             + "\n\nResponda apenas com JSON puro."
         )
@@ -485,15 +544,16 @@ class CodeAgent(BaseAgent):
         except Exception as e:
             return {"ok": False, "reason": f"chamada LLM falhou: {e}"}
 
-        return self._validate_and_normalize(plan, is_py_system)
+        return self._validate_and_normalize(plan, is_py_system, is_py_task)
 
-    def _validate_and_normalize(self, plan, is_py_system):
+    def _validate_and_normalize(self, plan, is_py_system, is_py_task=False):
         """
         Valida cada step:
           - code nao-vazio
           - ast.parse passa (sintaxe Python valida)
           - substitui os.startfile(*.html) por webbrowser.open
-          - se sistema python: pelo menos 4 arquivos .py mencionados no codigo
+          - se sistema python: pelo menos 3 arquivos .py
+          - se tarefa python (Tkinter/Flask/etc): detecta programa inline e rejeita
         Retorna {ok: bool, steps: [...], reason: str}
         """
         raw_steps = plan.get("steps", [])
@@ -533,6 +593,37 @@ class CodeAgent(BaseAgent):
                     f"Substitui {replaced} os.startfile(*.html) por webbrowser.open"
                 )
                 code = new_code
+
+            # Validacao 2.5: programa inline vs creator script (Tkinter/Flask/etc)
+            if is_py_task:
+                inline, motivo = _looks_like_inline_program(code)
+                if inline:
+                    return {
+                        "ok": False,
+                        "reason": (
+                            f"O campo 'code' parece ser o PROGRAMA em si "
+                            f"(detectei {motivo}), nao um CREATOR SCRIPT. "
+                            "Voce deveria escrever um script que CHAMA "
+                            "`open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8')"
+                            ".write(...)` para CRIAR o arquivo main.py em disco. "
+                            "O mainloop()/app.run() vai DENTRO do main.py "
+                            "criado (como conteudo de string), NUNCA no creator script."
+                        ),
+                    }
+
+            # Validacao 2.7: qualquer tarefa Python deve criar pelo menos 1 .py
+            if is_py_task and not is_py_system:
+                n_py = _count_py_files_in_code(code)
+                if n_py < 1:
+                    return {
+                        "ok": False,
+                        "reason": (
+                            "Tarefa pede Python mas o creator script nao "
+                            "escreve nenhum arquivo .py. Use "
+                            "`with open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8') as f: f.write(codigo)`"
+                            " para criar pelo menos main.py."
+                        ),
+                    }
 
             # Validacao 3: sistema python precisa de multi-arquivo (>=3)
             if is_py_system:

@@ -257,6 +257,89 @@ os.startfile('document.pdf')
     return passed == total
 
 
+def test_inline_program_detection():
+    """v20+ detecta quando o code field e o programa em si (mainloop/app.run)
+    sem file writes — caso comum em Tkinter/Flask onde LLM esquece de criar
+    arquivos e responde com o programa direto."""
+    print("\n=== Detector de programa inline (Tkinter/Flask) ===")
+    from agents.code_agent import _looks_like_inline_program, _is_python_task
+
+    # 1. Tkinter inline (sem file writes) — DEVE ser detectado
+    tkinter_inline = """
+import tkinter as tk
+class App:
+    def __init__(self, root):
+        self.root = root
+root = tk.Tk()
+app = App(root)
+root.mainloop()
+"""
+    is_inline, motivo = _looks_like_inline_program(tkinter_inline)
+    passed = 0
+    total = 0
+    total += 1
+    if is_inline and "Tkinter" in motivo:
+        print(f"OK   | Tkinter inline detectado ({motivo})")
+        passed += 1
+    else:
+        print(f"FAIL | Tkinter inline NAO detectado (is_inline={is_inline})")
+
+    # 2. Creator script LEGITIMO (com file writes) — NAO deve disparar
+    creator_legit = """
+import os
+project_dir = os.path.join('/tmp', 'app')
+os.makedirs(project_dir, exist_ok=True)
+with open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8') as f:
+    f.write('''
+import tkinter as tk
+root = tk.Tk()
+root.mainloop()
+''')
+"""
+    is_inline, motivo = _looks_like_inline_program(creator_legit)
+    total += 1
+    if not is_inline:
+        print(f"OK   | Creator script com file writes NAO foi marcado como inline")
+        passed += 1
+    else:
+        print(f"FAIL | Creator legitimo foi marcado como inline ({motivo})")
+
+    # 3. Flask inline — DEVE ser detectado
+    flask_inline = """
+from flask import Flask
+app = Flask(__name__)
+@app.route('/')
+def home():
+    return 'hi'
+app.run(debug=True)
+"""
+    is_inline, motivo = _looks_like_inline_program(flask_inline)
+    total += 1
+    if is_inline and "Flask" in motivo:
+        print(f"OK   | Flask inline detectado ({motivo})")
+        passed += 1
+    else:
+        print(f"FAIL | Flask inline NAO detectado (is_inline={is_inline})")
+
+    # 4. _is_python_task: detecta varias formas
+    total += 1
+    if _is_python_task("crie um sistema desktop em Python com Tkinter"):
+        print("OK   | detecta 'python+tkinter' como py task")
+        passed += 1
+    else:
+        print("FAIL | nao detectou python task")
+
+    total += 1
+    if not _is_python_task("crie um site sobre cafe em HTML e CSS"):
+        print("OK   | NAO detecta site como py task")
+        passed += 1
+    else:
+        print("FAIL | confundiu site com py task")
+
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 def test_code_agent_model_selection():
     """CodeAgent v18: _needs_sonnet decide o modelo certo."""
     print("\n=== CodeAgent _needs_sonnet (escolha de modelo) ===")
@@ -295,5 +378,6 @@ if __name__ == "__main__":
     ok3 = test_web_circuit_breaker()
     ok4 = test_auto_install_detection()
     ok5 = test_code_agent_validation()
-    ok6 = test_code_agent_model_selection()
-    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6]) else 1)
+    ok6 = test_inline_program_detection()
+    ok7 = test_code_agent_model_selection()
+    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6, ok7]) else 1)

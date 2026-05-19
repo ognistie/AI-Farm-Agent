@@ -287,9 +287,26 @@ TASKS = [
 
 
 def _files_of_ext(text, ext_pattern):
-    """Captura nomes de arquivos com a extensao dada (suporta html/htm)."""
+    """
+    Captura nomes de arquivos com a extensao dada.
+
+    Filtra falsos positivos comuns (Node.js / React.js / Vue.js / Next.js
+    aparecem no conteudo HTML como nome de tech, nao como arquivo).
+    Regras: nome de arquivo real geralmente comeca com minuscula ou eh
+    'index'/'main'/'app'/etc. Nomes com maiuscula no inicio sao tipicamente
+    frameworks/bibliotecas mencionados no texto.
+    """
     pattern = r"""['"]([A-Za-z0-9_/.\-]+\.""" + ext_pattern + r""")['"]"""
-    return set(re.findall(pattern, text))
+    captured = set(re.findall(pattern, text))
+    # Filtra: descarta entries que comecam com letra MAIUSCULA (provavelmente
+    # nome de framework no conteudo HTML: 'Node.js', 'React.js', 'Vue.js').
+    real_files = set()
+    for f in captured:
+        basename = f.rsplit("/", 1)[-1]
+        if basename and basename[0].isupper():
+            continue  # provavel framework/biblioteca no texto
+        real_files.add(f)
+    return real_files
 
 
 def run_one(agent, task):
