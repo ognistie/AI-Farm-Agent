@@ -166,6 +166,97 @@ open("main.py", "w").write(main_py)
     return ok_found and ok_skipped
 
 
+def test_code_agent_validation():
+    """v20 — valida que detectamos os 3 bugs reportados pelo usuario."""
+    print("\n=== CodeAgent v20 (validacao + replace os.startfile + multi-file) ===")
+    from agents.code_agent import (
+        _count_py_files_in_code,
+        _has_startfile_html,
+        _replace_startfile_with_webbrowser,
+        _is_python_system_task,
+    )
+
+    passed = 0
+    total = 0
+
+    # 1. Detectar tarefa de sistema python
+    total += 1
+    if _is_python_system_task("crie um sistema profissional em python de agendamento"):
+        print("OK   | detecta tarefa 'sistema python'")
+        passed += 1
+    else:
+        print("FAIL | nao detectou 'sistema python'")
+
+    total += 1
+    if not _is_python_system_task("crie um site sobre buda"):
+        print("OK   | NAO detecta tarefa de site como 'sistema python'")
+        passed += 1
+    else:
+        print("FAIL | confundiu site com sistema python")
+
+    # 2. Contar arquivos .py num creator script
+    creator_multi = '''
+with open(os.path.join(d, 'main.py'), 'w') as f: f.write(x)
+with open(os.path.join(d, 'database.py'), 'w') as f: f.write(y)
+with open(os.path.join(d, 'cli.py'), 'w') as f: f.write(z)
+with open(os.path.join(d, 'models.py'), 'w') as f: f.write(w)
+with open(os.path.join(d, 'utils.py'), 'w') as f: f.write(v)
+'''
+    creator_solo = '''
+with open(os.path.join(d, 'main.py'), 'w') as f: f.write(x)
+'''
+    total += 1
+    if _count_py_files_in_code(creator_multi) == 5:
+        print("OK   | conta 5 arquivos .py num creator multi-file")
+        passed += 1
+    else:
+        print(f"FAIL | contou {_count_py_files_in_code(creator_multi)} (esperado 5)")
+
+    total += 1
+    if _count_py_files_in_code(creator_solo) == 1:
+        print("OK   | conta 1 arquivo .py num creator solo")
+        passed += 1
+    else:
+        print(f"FAIL | contou {_count_py_files_in_code(creator_solo)} (esperado 1)")
+
+    # 3. Detectar e substituir os.startfile(*.html)
+    code_with_startfile = """
+import os
+target = os.path.join(d, 'index.html')
+os.startfile(target)
+"""
+    total += 1
+    if _has_startfile_html(code_with_startfile):
+        print("OK   | detecta os.startfile(*.html) no creator")
+        passed += 1
+    else:
+        print("FAIL | nao detectou os.startfile(*.html)")
+
+    total += 1
+    new_code, count = _replace_startfile_with_webbrowser(code_with_startfile)
+    if count == 1 and "webbrowser.open" in new_code and "os.startfile" not in new_code:
+        print("OK   | substitui os.startfile por webbrowser.open")
+        passed += 1
+    else:
+        print(f"FAIL | substituicao falhou (count={count}, code_has_webbrowser={'webbrowser.open' in new_code})")
+
+    # 4. Nao mexer em os.startfile que NAO aponta para .html
+    code_other = """
+import os
+os.startfile('document.pdf')
+"""
+    total += 1
+    _, c = _replace_startfile_with_webbrowser(code_other)
+    if c == 0:
+        print("OK   | nao substitui os.startfile para .pdf (so .html)")
+        passed += 1
+    else:
+        print(f"FAIL | substituiu indevidamente os.startfile para .pdf")
+
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 def test_code_agent_model_selection():
     """CodeAgent v18: _needs_sonnet decide o modelo certo."""
     print("\n=== CodeAgent _needs_sonnet (escolha de modelo) ===")
@@ -203,5 +294,6 @@ if __name__ == "__main__":
     ok2 = test_workflow_quarantine()
     ok3 = test_web_circuit_breaker()
     ok4 = test_auto_install_detection()
-    ok5 = test_code_agent_model_selection()
-    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5]) else 1)
+    ok5 = test_code_agent_validation()
+    ok6 = test_code_agent_model_selection()
+    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6]) else 1)

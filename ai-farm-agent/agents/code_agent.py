@@ -1,23 +1,33 @@
 """
-CodeAgent v19 — Senior SWE + Senior AI Agent Engineer.
+CodeAgent v20 — Senior SWE com validacao + retry com feedback.
 
-Spec passada pelo usuario (https://github.com/ognistie/AI-Farm-Agent):
-- Obedeca exatamente a tarefa, nao invente tecnologias
-- Nunca arquivos vazios ou com placeholder
-- Restricao do usuario sempre vence
-- Executavel na primeira tentativa
-- Saida JSON puro com script Python completo
-- Validacao interna antes de retornar
-- Metadados de evolucao no relatorio final
+PROBLEMAS REPORTADOS NA RODADA ANTERIOR (v19) E COMO FORAM RESOLVIDOS:
 
-Logica de execucao identica aos outros agentes:
-  o LLM devolve {steps:[{code: <python>}]} → orquestrador roda via run_python.
+1. SyntaxError 'unterminated string literal' nos scripts gerados
+   -> Validamos o creator script com ast.parse ANTES de devolver o plano.
+      Se quebrar, fazemos UMA tentativa de retry passando o erro literal
+      como feedback. Se ainda quebrar, abortamos com erro claro em vez de
+      enviar codigo invalido pro orquestrador.
 
-Bug do "Instalando database/utils" foi resolvido em core/automation.py
-(troca de regex multiline por AST.parse para detectar imports top-level).
+2. Bloco de notas abrindo HTML em vez do navegador
+   -> Detectamos os.startfile(...) apontando para .html no creator script
+      e substituimos automaticamente por webbrowser.open() antes de rodar.
+      (Defensiva: o prompt ja proibe, mas o LLM as vezes teima.)
+
+3. Sistema Python profissional virando apenas main.py
+   -> Heuristica conta quantos .py o creator script cria. Se a tarefa
+      pediu 'sistema profissional/plataforma/dashboard' em Python e o
+      script cria < 4 arquivos .py, retry com feedback explicito pedindo
+      multi-arquivo modular.
+
+Spec do usuario (Senior SWE + Senior AI Agent Engineer) preservada no
+SYSTEM_PROMPT, com um EXEMPLO CONCRETO de creator script multi-arquivo
+pro LLM aprender o padrao certo.
 """
 
+import ast
 import getpass
+import re
 from agents.base_agent import BaseAgent
 from core.config import get_config
 
@@ -27,249 +37,240 @@ BASE = f"C:/Users/{USERNAME}"
 
 SYSTEM_PROMPT = """Voce e o CODE_AGENT do projeto AI-Farm-Agent.
 
-Voce atua como Senior Software Engineer + Senior AI Agent Engineer,
-especialista em automacao de desenvolvimento por agentes. Sua funcao:
-receber uma tarefa em linguagem natural, entender EXATAMENTE o que o
-usuario pediu, gerar codigo completo, criar os arquivos no computador,
-abrir o projeto no VS Code quando solicitado e validar se o resultado
-final esta completo, funcional e fiel a tarefa.
-
-Voce NAO e um assistente de conversa. Voce e um agente EXECUTOR de
-codigo. Sua saida e um plano executavel em JSON puro contendo codigo
-Python completo para criar arquivos, pastas, conteudo e comandos.
+Voce atua como Senior Software Engineer + Senior AI Agent Engineer.
+Receba uma tarefa em linguagem natural, entenda EXATAMENTE o que o
+usuario pediu, gere um script Python completo que cria os arquivos
+do projeto, abre no VS Code e valida que tudo deu certo.
 
 ==========================================================
 PRINCIPIOS ABSOLUTOS
 ==========================================================
 
-1. OBEDECA EXATAMENTE A TAREFA DO USUARIO
-   - Se pediu apenas HTML e CSS: crie SOMENTE HTML e CSS.
-   - Se pediu Python: crie arquivos Python funcionais.
-   - Se NAO pediu JavaScript: NAO crie JavaScript.
-   - Se pediu "dois arquivos HTML e CSS": crie EXATAMENTE 2 arquivos:
-     index.html e style.css.
-   - Nao invente tecnologias, frameworks ou arquivos nao solicitados.
+1. OBEDECA A TAREFA EXATAMENTE
+   - "HTML e CSS" => crie SO HTML e CSS. PROIBIDO criar .js.
+   - "apenas HTML" => 1 arquivo, inline tudo.
+   - "HTML, CSS e JS" => os 3.
+   - "sistema em Python" => sistema funcional multi-arquivo.
+   - Nao invente frameworks, libs, arquivos.
 
-2. NUNCA ENTREGUE ARQUIVOS VAZIOS OU INCOMPLETOS
-   - HTML: estrutura completa, conteudo real, secoes coerentes, textos
-     relevantes, links corretos para CSS.
-   - CSS: estilizacao real, responsiva, profissional.
-   - Python: sistema funcional, fluxo claro, persistencia quando fizer
-     sentido, validacoes basicas.
-   - Proibido placeholder: "Conteudo aqui", "Bem-vindo", "Meu Site",
-     "Lorem ipsum", "TODO".
+2. NUNCA ENTREGUE PLACEHOLDER
+   - Proibido: '/* Styles CSS placeholder */', 'TODO', '...', 'pass',
+     'Bem-vindo', 'Meu Site', 'Lorem ipsum'.
+   - CSS < 80 linhas reais = falha.
+   - main.py < 500 bytes para sistema profissional = falha.
 
-3. ANTES DE GERAR CODIGO, INTERPRETE A TAREFA
-   Classifique mentalmente:
-   - Tipo de projeto (site estatico, sistema Python, app, backend, etc).
-   - Linguagens PERMITIDAS.
-   - Linguagens PROIBIDAS por ausencia de solicitacao.
-   - Arquivos obrigatorios.
-   - Conteudo tematico obrigatorio.
-   - Criterios de sucesso.
+3. RESTRICAO DO USUARIO VENCE SEMPRE
+   - 'dois arquivos HTML e CSS' = exatamente 2 arquivos.
+   - 'site profissional sobre X' = conteudo TEMATICO real, nao 'Bem-vindo'.
 
-4. A RESTRICAO DO USUARIO SEMPRE VENCE
-   - "site so com HTML e CSS" => proibido JS, React, Bootstrap-via-JS, Python.
-   - "crie dois arquivos HTML e CSS" => apenas 2 arquivos.
-   - "sistema profissional em Python" => sistema utilizavel, nao esqueleto.
-   - "abra o VS Code" => ao final, subprocess.Popen(["code", pasta]).
-
-5. EXECUTAVEL NA PRIMEIRA TENTATIVA
-   - Crie pasta no Desktop com os.makedirs(..., exist_ok=True).
-   - Crie arquivos com open(..., "w", encoding="utf-8").
-   - Caminhos compativeis com Windows.
-   - Abra VS Code: subprocess.Popen(["code", pasta], shell=True).
-   - Para sites: subprocess.Popen(f'start "" "{index_path}"', shell=True)
-     OU webbrowser.open('file:///' + index_path.replace('\\\\', '/')).
-   - Para sistemas Python: README.md com instrucoes "python main.py".
+4. EXECUTAVEL NA PRIMEIRA TENTATIVA
+   - Codigo Python com sintaxe valida (ast.parse passa).
+   - Aspas, parenteses, chaves SEMPRE fechadas.
+   - Pasta no Desktop com os.makedirs(exist_ok=True).
+   - Encoding UTF-8 em todos os arquivos.
+   - VS Code: subprocess.Popen(['code', project_dir], shell=True)
+   - HTML: webbrowser.open('file:///' + path.replace('\\\\', '/'))
+     NUNCA use os.startfile() para .html — em maquinas com .html
+     associado ao Notepad, abre o Notepad com o codigo dentro.
 
 ==========================================================
-FORMATO OBRIGATORIO DE SAIDA
+FORMATO DE SAIDA (JSON puro, sem markdown)
 ==========================================================
-
-Responda SOMENTE com JSON puro:
 
 {
   "steps": [
     {
       "step": 1,
-      "description": "<descricao objetiva da acao>",
-      "code": "<codigo Python completo que cria o projeto e abre no VS Code>"
+      "description": "<frase curta da acao>",
+      "code": "<script Python COMPLETO que cria tudo>"
     }
   ]
 }
 
-Regras:
-- Sem markdown, sem ``` no comeco/fim.
-- Sem explicacoes fora do JSON.
-- O campo "code" e um SCRIPT Python COMPLETO que se executa sozinho.
-- O script cria TODOS os arquivos necessarios.
-- O script VALIDA que cada arquivo foi criado e nao esta vazio.
-- O script imprime relatorio final com:
-    PASTA: <caminho>
-    ARQUIVOS_CRIADOS: <lista>
-    TECNOLOGIAS_USADAS: <lista>
-    TECNOLOGIAS_EVITADAS_POR_RESTRICAO: <lista>
-    VALIDACAO: OK / FAIL
-
 ==========================================================
-REGRAS PARA SITES
+PADRAO DE CREATOR SCRIPT — SITES (HTML + CSS)
 ==========================================================
 
-Se a tarefa for criar um site:
+import os, subprocess, webbrowser
+base = os.path.join(os.path.expanduser('~'), 'Desktop')
+project_dir = os.path.join(base, 'site_buda')
+# anti-colisao
+i = 2
+while os.path.isdir(project_dir) and os.listdir(project_dir):
+    project_dir = os.path.join(base, f'site_buda_{i}')
+    i += 1
+os.makedirs(project_dir, exist_ok=True)
 
-A) "apenas HTML e CSS" / "so HTML e CSS" / "HTML e CSS":
-   - Crie SOMENTE index.html e style.css.
-   - PROIBIDO criar script.js.
-   - PROIBIDO <script> no HTML.
-   - PROIBIDO frameworks que dependam de JS.
+# index.html — use aspas triplas SIMPLES (apostrofes) como delimitador
+# externo, pois o HTML por dentro tem aspas duplas
+index_html = '''<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O Caminho de Buda</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- conteudo real e tematico aqui -->
+</body>
+</html>'''
 
-B) HTML obrigatorio:
-   - <!DOCTYPE html>
-   - <html lang="pt-BR">
-   - <head> com charset UTF-8, viewport, title e <link> CSS.
-   - <body> com conteudo real.
-   - Header, main e footer.
-   - Secoes relevantes ao tema.
-   - Textos especificos sobre o tema pedido.
-   - Acessibilidade basica: alt em imagens, aria-label quando fizer
-     sentido, hierarquia de titulos.
+style_css = '''@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900');
+:root {
+  --bg: #fafaf7;
+  --text: #18181b;
+  --accent: #d97706;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; ... }
+/* 100+ linhas REAIS aqui */'''
 
-C) CSS obrigatorio:
-   - Reset basico.
-   - Variaveis CSS no :root.
-   - Layout responsivo.
-   - Tipografia consistente (Google Fonts via @import).
-   - Estilizacao real para header, hero, cards, secoes, botoes, footer.
-   - Media queries para mobile.
-   - NADA de CSS vazio ou simbolico.
+with open(os.path.join(project_dir, 'index.html'), 'w', encoding='utf-8') as f:
+    f.write(index_html)
+with open(os.path.join(project_dir, 'style.css'), 'w', encoding='utf-8') as f:
+    f.write(style_css)
 
-D) Conteudo tematico:
-   - "site sobre budismo": introducao, origem historica, quatro nobres
-     verdades, nobre caminho octuplo, meditacao, etica, escolas/tradicoes,
-     aplicacao moderna.
-   - "site sobre skate 90s": estetica visual 90s, cultura street, shapes,
-     manobras, pistas, musica, moda, atitude.
-   - Conteudo sempre coerente com o tema.
+# Abrir VS Code
+subprocess.Popen(['code', project_dir], shell=True)
+# Abrir no navegador (NAO os.startfile)
+index_path = os.path.join(project_dir, 'index.html')
+webbrowser.open('file:///' + index_path.replace('\\\\', '/'))
+
+# Relatorio
+arquivos = os.listdir(project_dir)
+print(f'PASTA: {project_dir}')
+print(f'ARQUIVOS_CRIADOS: {arquivos}')
+print('TASK_TYPE: site_html_css')
+print('REQUESTED_LANGUAGES: html, css')
+print('FORBIDDEN_FILES_AVOIDED: script.js')
+print('VALIDACAO: OK')
+print('REUSABLE_PATTERN: site-2-arquivos-html-css')
 
 ==========================================================
-REGRAS PARA SISTEMAS PYTHON
+PADRAO DE CREATOR SCRIPT — SISTEMA PYTHON (MULTI-ARQUIVO)
 ==========================================================
 
-Se a tarefa for criar um sistema em Python:
+Para 'sistema profissional em python' VOCE DEVE criar 5+ arquivos:
 
-1. O SISTEMA DEVE FUNCIONAR. Nao entregue:
-   - Apenas classes vazias.
-   - Apenas pseudocodigo.
-   - Apenas interface sem logica.
-   - Apenas logica sem forma de uso.
+import os, subprocess
+base = os.path.join(os.path.expanduser('~'), 'Desktop')
+project_dir = os.path.join(base, 'sistema_dental')
+os.makedirs(project_dir, exist_ok=True)
 
-2. Estrutura minima recomendada:
-   - main.py (entry point)
-   - README.md
-   - Arquivo de dados se houver persistencia: consultas.json,
-     database.json ou banco SQLite.
-   - Outros arquivos Python somente se realmente necessarios.
+# 1. main.py — entry point
+main_py = '''
+from database import DentalDB
+from cli import menu_principal
 
-3. Para "sistema profissional de agendamento de consulta no dentista":
-   - cadastro de paciente
-   - cadastro de consulta
-   - listagem de consultas
-   - busca por data ou paciente
-   - alteracao de status
-   - cancelamento
-   - validacao de data/hora
-   - persistencia em JSON ou SQLite
-   - menu CLI claro OU interface Tkinter simples
-   - tratamento de erros
-   - dados salvos entre execucoes
+def main():
+    db = DentalDB()
+    menu_principal(db)
 
-4. Validacao ao final do script:
-   - main.py existe e tem conteudo substancial (>500 bytes).
-   - README.md existe.
-   - Nenhum arquivo vazio.
-   - Imprimir instrucao final: "Para rodar: python main.py".
+if __name__ == "__main__":
+    main()
+'''
+
+# 2. database.py — persistencia
+database_py = '''
+import json
+from datetime import datetime
+
+class DentalDB:
+    def __init__(self, path="dental_data.json"):
+        self.path = path
+        self.data = self._load()
+
+    def _load(self):
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {"pacientes": [], "consultas": []}
+    # ... metodos completos: add_paciente, add_consulta, listar, buscar, etc
+'''
+
+# 3. cli.py — interface
+cli_py = '''
+def menu_principal(db):
+    while True:
+        print("1. Cadastrar paciente")
+        print("2. Agendar consulta")
+        ...
+'''
+
+# 4. models.py — entidades
+# 5. utils.py — helpers (validacao de data, formatacao, etc)
+# 6. README.md — como rodar
+
+# Escrever todos
+for name, content in [
+    ('main.py', main_py),
+    ('database.py', database_py),
+    ('cli.py', cli_py),
+    ('models.py', models_py),
+    ('utils.py', utils_py),
+    ('README.md', readme_md),
+]:
+    with open(os.path.join(project_dir, name), 'w', encoding='utf-8') as f:
+        f.write(content)
+
+subprocess.Popen(['code', project_dir], shell=True)
+
+# Validacao
+py_files = [f for f in os.listdir(project_dir) if f.endswith('.py')]
+sizes = {f: os.path.getsize(os.path.join(project_dir, f)) for f in py_files}
+print(f'PASTA: {project_dir}')
+print(f'ARQUIVOS_PY: {py_files}')
+print(f'TAMANHOS: {sizes}')
+print('TASK_TYPE: python_system')
+print('VALIDACAO: OK' if all(s > 200 for s in sizes.values()) else 'VALIDACAO: FAIL')
+print('Para rodar: python main.py')
+
+==========================================================
+REGRAS DE ESCAPAMENTO DE STRINGS (BUG RECORRENTE)
+==========================================================
+
+Voce ESTA escrevendo Python que escreve Python. Atencao a aspas:
+
+- Para conteudo Python que tem aspas DUPLAS por dentro, use aspas
+  triplas SIMPLES como delimitador EXTERNO: '''...'''
+- Para conteudo HTML que tem aspas DUPLAS por dentro, use '''...'''
+  EXTERNO.
+- Se o conteudo TIVER ''' no meio (raro), use '' '' '' escapado.
+- Para regex ou paths Windows, use raw string: r"\\d{2}\\.\\d{2}"
+  ou escape duplo "\\\\d{2}\\\\.\\\\d{2}".
+- NUNCA quebre uma string no meio. Toda triple-quoted DEVE fechar.
+- Se for grande, divida em variaveis: parte1 + parte2.
 
 ==========================================================
 ANTI-INVENCAO DE ARQUIVOS
 ==========================================================
 
-| Pedido                                  | Permitido            | Proibido                      |
-| --------------------------------------- | -------------------- | ----------------------------- |
-| "site com HTML e CSS"                   | index.html, style.css| script.js, package.json, React|
-| "dois arquivos HTML e CSS"              | exatamente 2 arquivos| qualquer 3o arquivo           |
-| "site completo" (sem limitar tech)      | HTML+CSS, JS se util | JS sem necessidade            |
-| "sistema em Python"                     | .py + README + data  | .html/.css/.js (sem pedido web)|
+| Pedido                            | Permitido            | PROIBIDO       |
+|-----------------------------------|----------------------|----------------|
+| "HTML e CSS"                      | index.html, style.css| .js, package.json |
+| "dois arquivos HTML e CSS"        | exatamente 2 arquivos| 3o arquivo     |
+| "sistema em python"               | 5+ .py + README + data| .html/.css/.js |
+| "site sobre X"                    | HTML+CSS no minimo   | .py            |
 
 ==========================================================
-CHECKLIST INTERNO (VALIDE ANTES DE RESPONDER)
+CHECKLIST INTERNO (rode antes de responder)
 ==========================================================
 
-1. A tarefa pediu QUAIS linguagens?
-2. Criei SOMENTE essas linguagens?
-3. A tarefa proibiu ou limitou algo? Respeitei?
-4. Adicionei algum arquivo desnecessario?
-5. HTML tem conteudo REAL sobre o tema?
-6. CSS tem estilizacao REAL (nao placeholder)?
-7. Python esta completo e executavel?
-8. Sistema resolve o tema pedido (nao generico)?
-9. O projeto abre no VS Code?
-10. O script valida arquivos vazios?
-11. A saida e JSON puro (sem markdown)?
-12. O campo "code" tem codigo Python COMPLETO?
+1. A tarefa pediu QUAIS linguagens? Criei SOMENTE essas?
+2. Para sistema python: estou criando 5+ arquivos .py modulares?
+3. Para HTML + CSS: estou criando 2 arquivos separados, sem .js?
+4. O CSS tem 80+ linhas REAIS?
+5. O HTML tem conteudo TEMATICO sobre o pedido (nao 'Bem-vindo')?
+6. Estou usando webbrowser.open() para .html (NAO os.startfile)?
+7. Toda string triple-quoted ESTA FECHADA?
+8. Vou imprimir relatorio final com metadados?
 
-Se qualquer resposta falhar, CORRIJA antes de responder.
-
-==========================================================
-RESTRICAO TECNICA: SCRIPT CRIADOR ≠ ARQUIVOS CRIADOS
-==========================================================
-
-O script Python no campo "code" e o CREATOR — ele apenas escreve outros
-arquivos em disco. Por isso:
-
-- O CREATOR SCRIPT so deve importar STDLIB no topo: os, sys, subprocess,
-  webbrowser, pathlib, json, etc.
-- NAO escreva no creator script `import database` ou `from utils import X`
-  porque esses sao modulos LOCAIS que o creator script esta CRIANDO.
-- Imports de modulos locais ficam DENTRO das strings (conteudo de main.py,
-  por exemplo) — nao no creator script em si.
-
-Errado:
-    from database.connection import DatabaseManager  # creator nivel topo
-    ...
-    open('main.py', 'w').write('...')
-
-Certo:
-    import os, subprocess
-    main_py = '''
-    from database.connection import DatabaseManager
-    ...
-    '''
-    open('main.py', 'w').write(main_py)
-
-==========================================================
-RELATORIO FINAL (impresso pelo creator script)
-==========================================================
-
-Apos criar todos os arquivos e abrir VS Code, imprima:
-
-    PASTA: C:/Users/.../Desktop/nome_projeto
-    ARQUIVOS_CRIADOS:
-      - index.html (3.2 KB)
-      - style.css (4.1 KB)
-    TECNOLOGIAS_USADAS: HTML, CSS
-    TECNOLOGIAS_EVITADAS_POR_RESTRICAO: JS (usuario nao pediu)
-    VALIDACAO: OK
-    TASK_TYPE: site_html_css
-    REQUESTED_LANGUAGES: html, css
-    FORBIDDEN_FILES_AVOIDED: script.js, package.json
-    REUSABLE_PATTERN: site-2-arquivos-html-css
-
-Esses metadados ajudam o Memory Agent a salvar templates melhores.
+Se algo falhou, CORRIJA antes de responder.
 """
 
 
-# Modelo: Sonnet para conteudo rico, Haiku para tarefas simples.
 _SONNET_INDICATORS = [
     "titulo", "title", "github.com", "desenvolvido por", "apresentacao",
     "sobre o", "about", "secoes", "sections", "sistema", "dashboard", "app",
@@ -278,19 +279,95 @@ _SONNET_INDICATORS = [
     "plataforma", "gerenciador", "controle", "agendamento",
 ]
 
+_PYTHON_SYSTEM_INDICATORS = [
+    "sistema em python", "sistema python", "sistema profissional em python",
+    "app em python", "aplicativo python", "plataforma em python",
+    "dashboard em python", "gerenciador em python", "controle em python",
+]
+
 
 def _needs_sonnet(task: str) -> bool:
     t = str(task).lower()
     return any(ind in t for ind in _SONNET_INDICATORS)
 
 
+def _is_python_system_task(task: str) -> bool:
+    t = str(task).lower()
+    return any(ind in t for ind in _PYTHON_SYSTEM_INDICATORS)
+
+
+def _count_py_files_in_code(code: str) -> int:
+    """Conta quantos arquivos .py distintos o creator script grava em disco."""
+    # padrao tipico: open(..., 'main.py', 'w') ou 'main.py'
+    py_files = set()
+    for m in re.finditer(r"""['"]([\w/]+\.py)['"]""", code):
+        name = m.group(1)
+        if not name.endswith("__init__.py"):
+            py_files.add(name)
+    return len(py_files)
+
+
+def _has_startfile_html(code: str) -> bool:
+    """
+    Detecta os.startfile() em scripts que tambem mencionam .html — assume
+    que se o script lida com HTML e usa os.startfile, o startfile e pra abrir
+    o HTML (caso comum no LLM, mesmo quando o argumento e uma variavel como
+    'target' em vez do literal 'index.html').
+    """
+    if "os.startfile" not in code:
+        return False
+    code_low = code.lower()
+    if ".html" in code_low or ".htm'" in code_low or '.htm"' in code_low:
+        return True
+    # Tambem aceita argumentos literais .html
+    for m in re.finditer(r"os\.startfile\s*\(([^)]+)\)", code):
+        arg_low = m.group(1).lower()
+        if ".html" in arg_low or ".htm" in arg_low or "index" in arg_low:
+            return True
+    return False
+
+
+def _replace_startfile_with_webbrowser(code: str) -> tuple[str, int]:
+    """
+    Substitui TODAS as chamadas os.startfile(...) por webbrowser.open(...)
+    QUANDO o script lida com HTML (heuristica conservadora: so substitui
+    em scripts que mencionam .html). Para scripts sem HTML, deixa como esta.
+
+    Retorna (codigo_novo, num_substituicoes).
+    """
+    if "os.startfile" not in code:
+        return code, 0
+
+    code_low = code.lower()
+    deals_with_html = (
+        ".html" in code_low
+        or ".htm'" in code_low
+        or '.htm"' in code_low
+    )
+    if not deals_with_html:
+        return code, 0
+
+    count = 0
+
+    def replace(m):
+        nonlocal count
+        count += 1
+        arg = m.group(1).strip()
+        return (
+            "webbrowser.open('file:///' + ("
+            + arg + ").replace('\\\\', '/'))"
+        )
+
+    new_code = re.sub(r"os\.startfile\s*\(([^)]+)\)", replace, code)
+
+    if count and "import webbrowser" not in new_code:
+        new_code = "import webbrowser\n" + new_code
+    return new_code, count
+
+
 class CodeAgent(BaseAgent):
     """
-    Agente especialista em criacao de codigo. v19 = spec do usuario.
-
-    Mesma logica de execucao do DataAgent/FileAgent/WebAgent:
-      LLM responde com {steps:[{code: <script python>}]}.
-      Orquestrador roda o script via run_python.
+    v20 — spec do usuario + validacao AST + retry com feedback.
     """
 
     def __init__(self):
@@ -301,24 +378,59 @@ class CodeAgent(BaseAgent):
         task_text = self._extract_task_text(task)
 
         use_sonnet = _needs_sonnet(task_text)
-        if use_sonnet:
-            model = self._config.get("models.strong")
-            self.logger.info("Usando Sonnet (conteudo rico)")
-        else:
-            model = self._config.get("models.fast")
-            self.logger.info("Usando Haiku (tarefa simples)")
+        model = (
+            self._config.get("models.strong")
+            if use_sonnet else self._config.get("models.fast")
+        )
+        self.logger.info(f"Modelo: {'Sonnet' if use_sonnet else 'Haiku'}")
+
+        is_py_system = _is_python_system_task(task_text)
+
+        # 1a tentativa
+        result = self._call_and_validate(model, task_text, is_py_system, retry_feedback=None)
+        if result["ok"]:
+            return self._build_response(result["steps"], model)
+
+        # 2a tentativa com feedback do que quebrou
+        self.logger.warning(f"Retry: {result['reason']}")
+        result = self._call_and_validate(
+            model, task_text, is_py_system, retry_feedback=result["reason"]
+        )
+        if result["ok"]:
+            return self._build_response(result["steps"], model)
+
+        # Falhou nas 2 tentativas
+        self.logger.error(f"Falhou apos 2 tentativas: {result['reason']}")
+        self._metrics["total_plans"] += 1
+        self._metrics["failed_plans"] += 1
+        return {
+            "steps": [],
+            "agent": "CODE",
+            "error": f"CodeAgent falhou: {result['reason']}",
+        }
+
+    # ──────────────────────────────────────────────────────────────────
+
+    def _call_and_validate(self, model, task_text, is_py_system, retry_feedback):
+        feedback_block = ""
+        if retry_feedback:
+            feedback_block = (
+                "\n\n⚠️ TENTATIVA ANTERIOR FALHOU. MOTIVO:\n"
+                + retry_feedback
+                + "\nCorrija isso AGORA e devolva codigo Python valido."
+            )
 
         message = (
-            "TAREFA DO USUARIO (siga LITERALMENTE, palavra por palavra):\n"
+            "TAREFA DO USUARIO (siga LITERALMENTE):\n"
             + task_text
             + "\n\n"
-            "RODE O CHECKLIST INTERNO de 12 pontos antes de gerar a resposta.\n"
-            "Se a tarefa pediu HTML e CSS, NAO crie .js. "
-            "Se pediu 'sistema em python', crie um sistema FUNCIONAL "
-            "(nao apenas main.py vazio).\n\n"
-            "Gere JSON puro (sem ```, sem markdown) com codigo Python "
-            "COMPLETO que cria todos os arquivos, abre VS Code e imprime "
-            "o relatorio final com metadados."
+            "RODE O CHECKLIST de 8 pontos antes de responder.\n"
+            "PROIBIDO os.startfile para HTML (use webbrowser.open).\n"
+            "Se for sistema python profissional, gere 5+ arquivos .py modulares.\n"
+            "Toda string triple-quoted DEVE fechar.\n"
+            "Use raw strings (r'...') ou escape duplo (\\\\) para paths Windows.\n"
+            + feedback_block
+            + "\n\nResponda apenas com JSON puro."
         )
 
         try:
@@ -330,36 +442,92 @@ class CodeAgent(BaseAgent):
             )
             from core.json_validator import safe_parse
             plan = safe_parse(raw, model)
-
-            steps = []
-            for st in plan.get("steps", []):
-                code = st.get("code", "")
-                code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-                if not code.strip():
-                    self.logger.warning(f"Step {st.get('step',1)}: code vazio")
-                    continue
-                steps.append({
-                    "step": st.get("step", 1),
-                    "description": st.get("description", ""),
-                    "action": "run_python",
-                    "params": {"code": code, "description": st.get("description", "")},
-                    "agent": "CODE",
-                })
-
-            if not steps:
-                raise ValueError("LLM nao devolveu nenhum step com codigo")
-
-            model_tag = model.split("-")[1] if "-" in model else model
-            self.logger.info(
-                f"Plano: {len(steps)} step(s) (model={model_tag}, "
-                f"code_len={sum(len(s['params']['code']) for s in steps)} chars)"
-            )
-            self._metrics["total_plans"] += 1
-            self._metrics["successful_plans"] += 1
-            return {"steps": steps, "agent": "CODE"}
-
         except Exception as e:
-            self.logger.error(f"Erro: {e}")
-            self._metrics["total_plans"] += 1
-            self._metrics["failed_plans"] += 1
-            return {"steps": [], "error": str(e), "agent": "CODE"}
+            return {"ok": False, "reason": f"chamada LLM falhou: {e}"}
+
+        return self._validate_and_normalize(plan, is_py_system)
+
+    def _validate_and_normalize(self, plan, is_py_system):
+        """
+        Valida cada step:
+          - code nao-vazio
+          - ast.parse passa (sintaxe Python valida)
+          - substitui os.startfile(*.html) por webbrowser.open
+          - se sistema python: pelo menos 4 arquivos .py mencionados no codigo
+        Retorna {ok: bool, steps: [...], reason: str}
+        """
+        raw_steps = plan.get("steps", [])
+        if not raw_steps:
+            return {"ok": False, "reason": "LLM nao devolveu nenhum step"}
+
+        steps = []
+        for st in raw_steps:
+            code = st.get("code", "")
+            code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
+            if not code.strip():
+                continue
+
+            # Validacao 1: AST parse
+            try:
+                ast.parse(code)
+            except SyntaxError as e:
+                snippet = ""
+                try:
+                    lines = code.split("\n")
+                    snippet = lines[(e.lineno or 1) - 1][:120]
+                except Exception:
+                    pass
+                return {
+                    "ok": False,
+                    "reason": (
+                        f"SyntaxError no creator script linha {e.lineno}: "
+                        f"{e.msg}. Linha: `{snippet}`. "
+                        "Provavel string triple-quoted nao fechada ou escape errado."
+                    ),
+                }
+
+            # Defesa 2: substituir os.startfile(*.html) por webbrowser.open
+            new_code, replaced = _replace_startfile_with_webbrowser(code)
+            if replaced:
+                self.logger.info(
+                    f"Substitui {replaced} os.startfile(*.html) por webbrowser.open"
+                )
+                code = new_code
+
+            # Validacao 3: sistema python precisa de multi-arquivo
+            if is_py_system:
+                n_py = _count_py_files_in_code(code)
+                if n_py < 4:
+                    return {
+                        "ok": False,
+                        "reason": (
+                            f"Tarefa pede sistema profissional em Python mas "
+                            f"o creator script gera apenas {n_py} arquivo(s) .py. "
+                            "Minimo: 5 arquivos modulares (main.py, database.py, "
+                            "models.py, cli.py/ui.py, utils.py, README.md). "
+                            "Distribua a logica em multiplos arquivos."
+                        ),
+                    }
+
+            steps.append({
+                "step": st.get("step", len(steps) + 1),
+                "description": st.get("description", ""),
+                "action": "run_python",
+                "params": {"code": code, "description": st.get("description", "")},
+                "agent": "CODE",
+            })
+
+        if not steps:
+            return {"ok": False, "reason": "todos os steps tinham code vazio"}
+
+        return {"ok": True, "steps": steps, "reason": ""}
+
+    def _build_response(self, steps, model):
+        model_tag = model.split("-")[1] if "-" in model else model
+        total_code = sum(len(s["params"]["code"]) for s in steps)
+        self.logger.info(
+            f"Plano: {len(steps)} step(s) (model={model_tag}, code={total_code} chars)"
+        )
+        self._metrics["total_plans"] += 1
+        self._metrics["successful_plans"] += 1
+        return {"steps": steps, "agent": "CODE"}
