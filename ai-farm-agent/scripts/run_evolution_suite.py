@@ -2,27 +2,42 @@
 Suite de evolucao do CODE_AGENT — roda 5 tarefas variadas com a API real
 para o agente APRENDER (salvar workflows na memoria) e medir taxa de sucesso.
 
-Pre-requisito: ANTHROPIC_API_KEY no .env
+Pre-requisito: ANTHROPIC_API_KEY no .env (que pode estar na pasta interna
+ou na pasta-raiz do repo — o script procura nos dois lugares).
 
 Uso:
     cd ai-farm-agent
     python scripts/run_evolution_suite.py
-
-A suite mede:
-  - geracao OK / com erro
-  - tempo por tarefa
-  - tamanho do creator script (chars)
-  - presenca de os.startfile suspeito ANTES do replace defensivo
-  - workflow gravado em memory/workflows/
-
-Tarefas vindas da spec do usuario (suite obrigatoria).
 """
 
 import os
 import sys
 import time
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Resolve paths relativo a este script (funciona de qualquer CWD)
+SCRIPT_DIR = Path(__file__).resolve().parent
+INNER_DIR = SCRIPT_DIR.parent           # ai-farm-agent/ai-farm-agent
+OUTER_DIR = INNER_DIR.parent             # ai-farm-agent (raiz do repo)
+
+# Carrega .env — procura primeiro na pasta-interna, depois na raiz
+try:
+    from dotenv import load_dotenv
+    loaded_from = None
+    for env_path in (INNER_DIR / ".env", OUTER_DIR / ".env"):
+        if env_path.exists():
+            # override=True garante que sobrescreve variaveis vazias do shell
+            load_dotenv(str(env_path), override=True)
+            loaded_from = env_path
+            break
+    if loaded_from:
+        print(f"[suite] .env carregado de {loaded_from}")
+    else:
+        print("[suite] WARN: .env nao encontrado em ai-farm-agent/ nem na raiz")
+except ImportError:
+    print("[suite] WARN: python-dotenv nao instalado — usando env do shell")
+
+sys.path.insert(0, str(INNER_DIR))
 
 from agents.code_agent import CodeAgent
 
