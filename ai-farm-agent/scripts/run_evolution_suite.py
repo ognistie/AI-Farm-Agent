@@ -142,37 +142,49 @@ def run_one(agent: CodeAgent, task: dict) -> dict:
         )
         metrics["total_code_chars"] = total_code
 
-        # Analise estatica do creator script (sem rodar)
+        # Analise estatica do creator script — conta arquivos DISTINTOS,
+        # nao referencias (resolve "got 5" quando agente criou 2 e referenciou 5x)
+        import re as _re
         first_code = result["steps"][0].get("params", {}).get("code", "")
-        py_files_in_code = first_code.count(".py'") + first_code.count('.py"')
-        js_files_in_code = first_code.count(".js'") + first_code.count('.js"')
-        css_files_in_code = first_code.count(".css'") + first_code.count('.css"')
-        html_files_in_code = first_code.count(".html'") + first_code.count('.html"')
-        metrics["py_refs"] = py_files_in_code
-        metrics["js_refs"] = js_files_in_code
-        metrics["css_refs"] = css_files_in_code
-        metrics["html_refs"] = html_files_in_code
 
-        # Avalia regras do expect
+        def _files_of_ext(text, ext):
+            # captura "X.ext" ou 'X.ext' como string literal
+            pattern = r"""['"]([A-Za-z0-9_/.\-]+\.""" + ext + r""")['"]"""
+            return set(_re.findall(pattern, text))
+
+        py_set = {f for f in _files_of_ext(first_code, "py") if not f.endswith("__init__.py")}
+        js_set = _files_of_ext(first_code, "js")
+        css_set = _files_of_ext(first_code, "css")
+        html_set = _files_of_ext(first_code, "html?") | _files_of_ext(first_code, "html")
+
+        metrics["py_files"] = sorted(py_set)
+        metrics["js_files"] = sorted(js_set)
+        metrics["css_files"] = sorted(css_set)
+        metrics["html_files"] = sorted(html_set)
+
+        # Avalia regras do expect — contagens com set (distintos)
         exp = task["expect"]
         issues = []
         if "forbidden_exts" in exp:
             for ext in exp["forbidden_exts"]:
-                if ext == ".js" and js_files_in_code > 0:
-                    issues.append(f"gerou .js mesmo proibido (refs={js_files_in_code})")
-                if ext == ".html" and html_files_in_code > 0:
-                    issues.append(f"gerou .html mesmo proibido (refs={html_files_in_code})")
-                if ext == ".css" and css_files_in_code > 0:
-                    issues.append(f"gerou .css mesmo proibido (refs={css_files_in_code})")
+                if ext == ".js" and js_set:
+                    issues.append(f"gerou .js mesmo proibido: {sorted(js_set)}")
+                if ext == ".html" and html_set:
+                    issues.append(f"gerou .html mesmo proibido: {sorted(html_set)}")
+                if ext == ".css" and css_set:
+                    issues.append(f"gerou .css mesmo proibido: {sorted(css_set)}")
         if "min_py_files" in exp:
-            if py_files_in_code < exp["min_py_files"]:
+            if len(py_set) < exp["min_py_files"]:
                 issues.append(
-                    f"poucos arquivos .py (got={py_files_in_code}, min={exp['min_py_files']})"
+                    f"poucos arquivos .py: {sorted(py_set)} (min={exp['min_py_files']})"
                 )
         if "exact_files" in exp:
-            total = py_files_in_code + js_files_in_code + css_files_in_code + html_files_in_code
-            if total != exp["exact_files"]:
-                issues.append(f"esperado {exp['exact_files']} arquivos, got {total}")
+            total_files = py_set | js_set | css_set | html_set
+            if len(total_files) != exp["exact_files"]:
+                issues.append(
+                    f"esperado {exp['exact_files']} arquivos distintos, "
+                    f"got {len(total_files)}: {sorted(total_files)}"
+                )
         metrics["issues"] = issues
         metrics["passed"] = len(issues) == 0
     else:
@@ -182,9 +194,9 @@ def run_one(agent: CodeAgent, task: dict) -> dict:
     status = "PASS" if metrics.get("passed") else "FAIL"
     print(f"\n[{status}] tempo={metrics['elapsed_s']}s | steps={metrics['n_steps']} | "
           f"code_chars={metrics.get('total_code_chars', 0)}")
-    if metrics.get("py_refs") is not None:
-        print(f"       refs: py={metrics['py_refs']} css={metrics['css_refs']} "
-              f"js={metrics['js_refs']} html={metrics['html_refs']}")
+    if "py_files" in metrics:
+        print(f"       py={metrics['py_files']}")
+        print(f"       css={metrics['css_files']} js={metrics['js_files']} html={metrics['html_files']}")
     if metrics.get("issues"):
         for i in metrics["issues"]:
             print(f"       ⚠ {i}")

@@ -74,6 +74,43 @@ PRINCIPIOS ABSOLUTOS
      associado ao Notepad, abre o Notepad com o codigo dentro.
 
 ==========================================================
+ENTENDIMENTO CRITICO: CREATOR SCRIPT vs PROGRAMA
+==========================================================
+
+ATENCAO — DOIS NIVEIS DE CODIGO:
+
+1. CREATOR SCRIPT = o que voce devolve no campo "code".
+   - Linguagem: Python (SEMPRE).
+   - Tarefa: criar pasta + escrever arquivos do projeto + abrir VS Code.
+   - Imports top-level: SO stdlib (os, subprocess, webbrowser, pathlib).
+   - PRECISA conter literais como 'main.py' / 'database.py' / 'index.html'
+     que sao os nomes dos ARQUIVOS QUE VOCE ESTA CRIANDO.
+
+2. ARQUIVOS DO PROJETO = o que o creator script grava em disco.
+   - Linguagens: HTML/CSS/JS/Python/etc, conforme a tarefa.
+   - Conteudo: como strings (multi-line ''') dentro do creator script.
+
+ERRADO (creator script vira o programa):
+    def menu_principal():    # ❌ isso e o sistema dental, nao o creator!
+        while True:
+            print("1. Cadastrar paciente")
+            ...
+
+CERTO (creator script ESCREVE arquivos):
+    import os
+    project_dir = os.path.join(...)
+    os.makedirs(project_dir, exist_ok=True)
+
+    main_content = '''
+    def menu_principal():
+        while True:
+            print("1. Cadastrar paciente")
+            ...
+    '''
+    with open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8') as f:
+        f.write(main_content)
+
+==========================================================
 FORMATO DE SAIDA (JSON puro, sem markdown)
 ==========================================================
 
@@ -82,7 +119,7 @@ FORMATO DE SAIDA (JSON puro, sem markdown)
     {
       "step": 1,
       "description": "<frase curta da acao>",
-      "code": "<script Python COMPLETO que cria tudo>"
+      "code": "<creator script Python que cria os arquivos do projeto>"
     }
   ]
 }
@@ -433,12 +470,15 @@ class CodeAgent(BaseAgent):
             + "\n\nResponda apenas com JSON puro."
         )
 
+        # Sistemas Python multi-arquivo precisam de mais espaco no output
+        max_tokens = 16000 if is_py_system else 10000
+
         try:
             raw = self._client.message(
                 model=model,
                 system=self.system_prompt,
                 user_content=message,
-                max_tokens=10000,
+                max_tokens=max_tokens,
             )
             from core.json_validator import safe_parse
             plan = safe_parse(raw, model)
@@ -494,18 +534,32 @@ class CodeAgent(BaseAgent):
                 )
                 code = new_code
 
-            # Validacao 3: sistema python precisa de multi-arquivo
+            # Validacao 3: sistema python precisa de multi-arquivo (>=3)
             if is_py_system:
                 n_py = _count_py_files_in_code(code)
-                if n_py < 4:
+                if n_py < 3:
+                    code_snippet = code[:300].replace("\n", " | ")
                     return {
                         "ok": False,
                         "reason": (
                             f"Tarefa pede sistema profissional em Python mas "
-                            f"o creator script gera apenas {n_py} arquivo(s) .py. "
-                            "Minimo: 5 arquivos modulares (main.py, database.py, "
-                            "models.py, cli.py/ui.py, utils.py, README.md). "
-                            "Distribua a logica em multiplos arquivos."
+                            f"o creator script criou apenas {n_py} arquivo(s) .py. "
+                            "Minimo aceitavel: 3 .py + README.md. Sugestao para sistema "
+                            "de agendamento/cadastro/controle: main.py (entry point), "
+                            "database.py (persistencia), cli.py (menu CLI), README.md. "
+                            "Use multiplos blocos `with open(os.path.join(project_dir, "
+                            "'arquivo.py'), 'w', encoding='utf-8') as f: f.write(...)`. "
+                            f"Inicio do seu creator script: {code_snippet}"
+                        ),
+                    }
+                # Sistema Python = ZERO arquivos web (.html/.css/.js)
+                if any(ext in code for ext in (".js'", '.js"', ".css'", '.css"', ".html'", '.html"')):
+                    return {
+                        "ok": False,
+                        "reason": (
+                            "Tarefa pede sistema em Python — PROIBIDO criar arquivos "
+                            ".html/.css/.js. Remova qualquer open(...'X.html'...) ou "
+                            "similar do creator script. So .py, .md, .txt, .json, .db."
                         ),
                     }
 
