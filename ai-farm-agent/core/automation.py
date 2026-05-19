@@ -1,9 +1,16 @@
 """
-AutomationEngine v7 — Universal. run_python para código dinâmico.
+AutomationEngine v8 — Universal. run_python para código dinâmico.
 Workspace compartilhado entre passos. Auto-install de libs.
+
+v8: auto-installer usa AST em vez de regex multiline.
+    O regex pegava imports DENTRO de strings (ex: o creator script do
+    CodeAgent que tem `main_py = '''from database...'''` no meio do código),
+    o que fazia o pip tentar instalar `database`, `utils`, etc — modulos
+    locais do projeto que estavam sendo CRIADOS, nao deps externas.
 """
 
 import os, glob, shutil, subprocess, time, getpass, random, json, sys, traceback, re, math, csv, base64
+import ast as _ast
 import collections, pathlib, string
 from datetime import datetime
 import pyautogui, psutil
@@ -264,16 +271,34 @@ class AutomationEngine:
 
         code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
 
-        # Auto-install libs externas
-        found = re.findall(r'^(?:import|from)\s+(\w+)', code, re.MULTILINE)
+        # Auto-install libs externas — usando AST pra pegar SOMENTE imports
+        # de nivel topo do script (ignora imports dentro de strings/funcoes,
+        # que era a causa de "pip install database/utils" sendo disparado
+        # por imports dentro do conteudo de arquivos a serem criados).
         stdlib = {"os","sys","json","time","datetime","pathlib","shutil","glob","re","math",
                   "csv","subprocess","io","base64","random","collections","string","traceback",
                   "getpass","hashlib","copy","tempfile","platform","typing","dataclasses",
                   "sqlite3","zipfile","configparser","itertools","functools","textwrap",
                   "contextlib","logging","calendar","statistics","uuid","pickle","struct",
-                  "ctypes","threading","queue","heapq","operator","decimal","pprint"}
+                  "ctypes","threading","queue","heapq","operator","decimal","pprint",
+                  "ast","webbrowser","html","unicodedata","argparse"}
+        found = []
+        try:
+            tree = _ast.parse(code)
+            for node in tree.body:  # SO o nivel topo, nao dentro de funcoes/strings
+                if isinstance(node, _ast.Import):
+                    for n in node.names:
+                        found.append(n.name.split(".")[0])
+                elif isinstance(node, _ast.ImportFrom):
+                    if node.module and node.level == 0:  # ignora imports relativos
+                        found.append(node.module.split(".")[0])
+        except SyntaxError:
+            # codigo nao compila — pula auto-install, deixa o exec falhar com
+            # mensagem real em vez de poluir com pip install
+            print("  ⚠️ Codigo com erro de sintaxe — pulando auto-install")
+
         for lib in found:
-            if lib not in stdlib and lib not in sys.modules:
+            if lib and lib not in stdlib and lib not in sys.modules:
                 try: __import__(lib)
                 except ImportError:
                     print(f"  📦 Instalando {lib}...")
@@ -289,7 +314,7 @@ class AutomationEngine:
 
         # Importa libs externas usadas no código
         for lib in found:
-            if lib not in g:
+            if lib and lib not in g:
                 try: g[lib] = __import__(lib)
                 except: pass
 

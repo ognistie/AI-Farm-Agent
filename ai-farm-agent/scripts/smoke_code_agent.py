@@ -123,6 +123,49 @@ def test_web_circuit_breaker():
     return ok
 
 
+def test_auto_install_detection():
+    """
+    automation.py v8 deve usar AST: imports DENTRO de strings nao
+    disparam pip install. So imports REAIS no topo do script.
+
+    Caso que quebrou: o creator script do CodeAgent tem
+    `main_py = '''from database.connection import X'''` e o regex antigo
+    pegava 'database' como dep externa, disparando 'pip install database'.
+    """
+    print("\n=== Auto-installer: AST vs regex (bug Instalando database) ===")
+    import ast as _ast
+
+    # Simula creator script do CodeAgent — imports DENTRO de strings, nao no topo
+    creator = '''
+import os, subprocess, webbrowser
+main_py = """
+from database.connection import DatabaseManager
+from utils.helpers import validate
+"""
+open("main.py", "w").write(main_py)
+'''
+    # Replica EXATAMENTE a logica nova do automation.py
+    found = []
+    tree = _ast.parse(creator)
+    for node in tree.body:
+        if isinstance(node, _ast.Import):
+            for n in node.names:
+                found.append(n.name.split(".")[0])
+        elif isinstance(node, _ast.ImportFrom):
+            if node.module and node.level == 0:
+                found.append(node.module.split(".")[0])
+
+    # Esperado: encontra os, subprocess, webbrowser (top-level)
+    # NAO encontra: database, utils (estao DENTRO de string)
+    expected = {"os", "subprocess", "webbrowser"}
+    got = set(found)
+    ok_found = expected.issubset(got)
+    ok_skipped = "database" not in got and "utils" not in got
+    print(f"{'OK  ' if ok_found else 'FAIL'} | top-level capturado: {sorted(got)}")
+    print(f"{'OK  ' if ok_skipped else 'FAIL'} | database/utils dentro de string NAO foram capturados")
+    return ok_found and ok_skipped
+
+
 def test_code_agent_model_selection():
     """CodeAgent v18: _needs_sonnet decide o modelo certo."""
     print("\n=== CodeAgent _needs_sonnet (escolha de modelo) ===")
@@ -159,5 +202,6 @@ if __name__ == "__main__":
     ok1 = test_maestro_ambiguity_gate()
     ok2 = test_workflow_quarantine()
     ok3 = test_web_circuit_breaker()
-    ok4 = test_code_agent_model_selection()
-    sys.exit(0 if all([ok1, ok2, ok3, ok4]) else 1)
+    ok4 = test_auto_install_detection()
+    ok5 = test_code_agent_model_selection()
+    sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5]) else 1)
