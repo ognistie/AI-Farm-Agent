@@ -1,91 +1,64 @@
 """
-AI Farm Agent — Ponto de entrada principal.
-Carrega .env, cria diretórios, inicia servidor Flask e abre o browser.
+AI Farm Agent — Ponto de entrada principal (Desktop).
+
+A interface antiga (Flask + HTML) foi descontinuada. `python main.py`
+agora abre uma janela nativa em PySide6 + QML. Toda a logica de agentes,
+core, memoria e scripts permanece intacta — apenas a camada de
+apresentacao foi substituida.
 """
 
 import os
 import sys
-import time
-import webbrowser
-import threading
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente
 load_dotenv()
 
-# Verifica API key
-api_key = os.getenv("ANTHROPIC_API_KEY", "")
-if not api_key or api_key == "sk-ant-COLE_SUA_CHAVE_AQUI":
-    print("\n" + "=" * 60)
-    print("  ⚠️  ANTHROPIC_API_KEY não configurada!")
-    print("  Edite o arquivo .env e cole sua chave da API.")
-    print("  Obtenha em: https://console.anthropic.com/")
-    print("=" * 60 + "\n")
-    sys.exit(1)
 
-# Verifica SECRET_KEY
-secret_key = os.getenv("SECRET_KEY", "")
-if not secret_key or secret_key == "GERE_UMA_CHAVE_SECRETA_AQUI":
-    print("\n" + "=" * 60)
-    print("  ⚠️  SECRET_KEY não configurada!")
-    print("  Gere uma com: python -c \"import secrets; print(secrets.token_hex(32))\"")
-    print("  Cole no arquivo .env")
-    print("=" * 60 + "\n")
-    sys.exit(1)
+def _require_env(var: str, hint: str) -> None:
+    val = os.getenv(var, "")
+    if not val or val.startswith("GERE_") or val == "sk-ant-COLE_SUA_CHAVE_AQUI":
+        print("\n" + "=" * 60)
+        print(f"  ⚠️  {var} nao configurada!")
+        print(f"  {hint}")
+        print("=" * 60 + "\n")
+        sys.exit(1)
 
-# Verifica AUTH_TOKEN
-auth_token = os.getenv("AUTH_TOKEN", "")
-if not auth_token or auth_token == "GERE_UM_TOKEN_AQUI":
-    print("\n" + "=" * 60)
-    print("  ⚠️  AUTH_TOKEN não configurado!")
-    print("  Gere um com: python -c \"import secrets; print(secrets.token_urlsafe(32))\"")
-    print("  Cole no arquivo .env")
-    print("=" * 60 + "\n")
-    sys.exit(1)
 
-# Diretórios necessários
+_require_env(
+    "ANTHROPIC_API_KEY",
+    "Cole sua chave em .env. Obtenha em https://console.anthropic.com/",
+)
+# SECRET_KEY e AUTH_TOKEN eram exigidos pelo Flask. Mantidos como opcionais
+# para compatibilidade com .env existentes — nao bloqueiam o desktop.
+
+# Diretorios necessarios
 BASE_DIR = Path(__file__).parent
-CAPTURES_DIR = BASE_DIR / "captures"
-REPORTS_DIR = BASE_DIR / "reports"
-CAPTURES_DIR.mkdir(exist_ok=True)
-REPORTS_DIR.mkdir(exist_ok=True)
-
-HOST = "127.0.0.1"
-PORT = 5000
+(BASE_DIR / "captures").mkdir(exist_ok=True)
+(BASE_DIR / "reports").mkdir(exist_ok=True)
+(BASE_DIR / "desktop" / "data").mkdir(parents=True, exist_ok=True)
 
 
-def open_browser():
-    """Abre o browser após um pequeno delay para o servidor iniciar."""
-    time.sleep(1.5)
-    webbrowser.open(f"http://{HOST}:{PORT}")
-
-
-def main():
+def main() -> int:
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
     print("\n" + "=" * 60)
-    print("  🌱 AI Farm Agent — Iniciando...")
-    print(f"  📡 Servidor: http://{HOST}:{PORT}")
-    print("  🔑 API Key: ...{}".format(api_key[-8:]))
-    print("  🔒 SECRET_KEY: configurada")
-    print("  🛡️  AUTH_TOKEN: configurado")
-    print("  🌐 CORS: " + os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5000"))
+    print("  🌱 AI Farm Agent — Iniciando interface Desktop...")
+    print(f"  🔑 API Key: ...{api_key[-8:]}")
+    print("  🖥️  UI: PySide6 + QML (Mac-style)")
     print("=" * 60 + "\n")
 
-    # Importa o servidor só depois do .env estar carregado
-    from ui.server import app, socketio
+    try:
+        from desktop.main import run
+    except ImportError as e:
+        print("\n" + "=" * 60)
+        print("  ❌ PySide6 nao instalado.")
+        print("  Instale com:  pip install PySide6")
+        print(f"  Erro original: {e}")
+        print("=" * 60 + "\n")
+        return 2
 
-    browser_thread = threading.Thread(target=open_browser, daemon=True)
-    browser_thread.start()
-
-    socketio.run(
-        app,
-        host=HOST,
-        port=PORT,
-        debug=False,
-        allow_unsafe_werkzeug=True,
-        log_output=False,
-    )
+    return run()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

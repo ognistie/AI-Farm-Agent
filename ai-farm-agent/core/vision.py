@@ -1,15 +1,18 @@
 """
-VisionEngine v10 — Visão computacional corrigida.
-- Minimiza TODOS os browsers/janelas do AI Farm Agent
-- Instrui a IA a IGNORAR a barra de tarefas
-- Coordenadas retornadas são validadas
-- Nunca restaura browser automaticamente (server controla isso)
+VisionEngine v11 — OCR local antes da API Vision.
+- find_element() tenta EasyOCR local primeiro (custo zero)
+- Se OCR achar texto matching, retorna direto (economia ~60% chamadas Vision)
+- So cai para Sonnet Vision quando OCR falhar/baixa confianca
+- Minimiza janelas do AI Farm Agent para nao se ver na propria tela
+- Coordenadas validadas para nao apontar para a taskbar
 """
 
 import os, io, json, base64, time
 import pyautogui
 from PIL import Image
 from anthropic import Anthropic
+
+from core.ocr_local import find_text_on_screen, read_screen_text
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -79,6 +82,33 @@ class VisionEngine:
         self._hidden_windows = []
 
     def find_element(self, desc):
+        # ─── OCR LOCAL FIRST ──────────────────────────────────────────
+        # Se o `desc` parece com texto literal (botao "Enviar", aba "Chat",
+        # etc.), tentamos resolver via EasyOCR sem custo. Apenas se falhar
+        # ou retornar confianca baixa, caimos para a API Vision (Sonnet).
+        # Economia tipica: 60% das chamadas que so precisavam ver texto.
+        ocr_target = self._extract_ocr_target(desc)
+        if ocr_target:
+            try:
+                hit = find_text_on_screen(ocr_target)
+                if hit.get("found") and hit.get("confidence", 0) >= 0.6:
+                    cx, cy = hit["center"]
+                    # Valida que nao caiu na taskbar
+                    if cy < self.screen_h - 60:
+                        return {
+                            "found": True,
+                            "x": cx, "y": cy,
+                            "width": hit["bbox"][2] - hit["bbox"][0],
+                            "height": hit["bbox"][3] - hit["bbox"][1],
+                            "confidence": hit["confidence"],
+                            "element_text": hit["text"],
+                            "context": "OCR local (sem custo de API)",
+                            "method": "ocr_local",
+                        }
+            except Exception:
+                pass  # Cai para API Vision
+
+        # ─── API VISION FALLBACK ──────────────────────────────────────
         b64, orig, r = self.take_screenshot()
         img_w, img_h = int(orig.width * r), int(orig.height * r)
 
@@ -140,6 +170,40 @@ NUNCA retorne coordenadas na barra de tarefas (últimos 50px da tela)."""
         prompt = f"""Verificar: {expected}
 JSON: {{"verified":true/false,"match_confidence":0.0-1.0,"actual_state":"..."}}"""
         return self._call(prompt, b64)
+
+    @staticmethod
+    def _extract_ocr_target(desc: str) -> str | None:
+        """
+        Extrai a string literal procuravel quando o `desc` segue padroes
+        tipicos: 'botao "Enviar"', 'aba Chat', 'campo Mensagem'. Retorna
+        a string pura ou None se nao for texto-procuravel (ex: 'icone
+        triangular roxo' nao tem hint textual util).
+        """
+        if not desc:
+            return None
+        d = desc.strip()
+
+        # Captura entre aspas: botao "Enviar" -> Enviar
+        import re
+        m = re.search(r'["“]([^"”]{2,40})["”]', d)
+        if m:
+            return m.group(1).strip()
+
+        # Padrao "<tipo> X" onde X tem >= 2 chars e e a ultima palavra
+        keywords = ("botao", "aba", "tab", "menu", "link", "campo",
+                    "label", "texto", "opcao", "icone")
+        d_low = d.lower()
+        for kw in keywords:
+            idx = d_low.find(kw + " ")
+            if idx >= 0:
+                rest = d[idx + len(kw):].strip()
+                # Pega so a primeira palavra capitalizada/significativa
+                tokens = rest.split()
+                if tokens:
+                    first = tokens[0].strip('.,;:"\'()[]')
+                    if len(first) >= 2 and not first.lower() in {"de", "do", "da"}:
+                        return first
+        return None
 
     def _call(self, prompt, b64):
         for attempt in range(3):

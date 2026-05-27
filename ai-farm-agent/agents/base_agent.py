@@ -112,3 +112,13 @@ class BaseAgent:
         if isinstance(task, dict):
             return task.get("task", task.get("description", str(task)))
         return str(task)
+
+    def _extract_original_task(self, task) -> str:
+        """
+        Versao do usuario (sem reformulacao do Maestro), quando disponivel.
+        Fallback para a `task` normal. Usado por agentes que precisam
+        do tema puro (CodeAgent.topic, theme leak validation).
+        """
+        if isinstance(task, dict):
+            return task.get("original_task") or self._extract_task_text(task)
+        return self._extract_task_text(task)

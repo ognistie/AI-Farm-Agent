@@ -1,10 +1,26 @@
-flask==3.0.0
-flask-socketio==5.3.6
-simple-websocket==1.1.0
+# ══════════════════════════════════════════════════════════════
+#  AI Farm Agent — dependencias
+#  Instalar: pip install -r requirements.txt
+# ══════════════════════════════════════════════════════════════
+
+# UI Desktop (PySide6 + QML)
+PySide6>=6.6.0
+
+# Core / LLM
 anthropic==0.39.0
-pyautogui==0.9.54
-Pillow
 python-dotenv==1.0.1
+
+# Automacao Desktop / OS
+pyautogui==0.9.54
 pygetwindow==0.0.9
 psutil==5.9.8
 pyperclip==1.9.0
+Pillow
+
+# OCR local (opcional, mas recomendado — Vision API usa OCR antes)
+# easyocr>=1.7.0
+# numpy
+
+# Web automation (opcional — habilita WebAgent)
+# playwright>=1.40.0
+

@@ -237,17 +237,23 @@ class Maestro:
 
         # Memória — falha do lookup nunca pode bloquear a tarefa,
         # mas precisa de log para diagnosticar workflow_store quebrado.
+        # Anti cross-topic: o workflow e reusado como ATALHO DE ROTEAMENTO
+        # (agent + params), nunca como fonte de conteudo tematico. A `task`
+        # passada adiante e SEMPRE a do usuario atual; objectives genericos
+        # do workflow antigo sao descartados para nao vazar tema anterior.
         try:
             from memory.workflow_store import find_similar_workflow
             wf = find_similar_workflow(task)
             if wf:
-                print("[Maestro] Workflow da memória!")
+                print("[Maestro] Workflow da memória (rota reaproveitada, tema atual)")
                 return {
-                    "analysis": "Template da memória",
+                    "analysis": "Template de roteamento da memoria",
                     "subtasks": [{
-                        "agent": wf["agent"], "task": wf["task"],
+                        "agent": wf["agent"],
+                        "task": task,
+                        "original_task": task,    # preserva (mesmo no atalho)
                         "params": wf.get("params", {}),
-                        "objectives": wf.get("objectives", []),
+                        "objectives": [],
                         "forbidden_assumptions": [], "depends_on": None,
                     }],
                     "skills": list(wf.get("tags", [])),
@@ -277,6 +283,15 @@ class Maestro:
 
             if "subtasks" not in plan or not plan.get("subtasks"):
                 return {"error": True, "message": "Sem subtasks"}
+
+            # ── PRESERVA TASK ORIGINAL ──────────────────────────────────
+            # O Maestro pode REFORMULAR a task ao gerar subtasks (ex.:
+            # "sistema profissional" -> "criar sistema com arquitetura
+            # modular"). Isso polui topic extraction e theme leak downstream.
+            # Carregamos `original_task` ao lado para que os agentes possam
+            # usar a versao do USUARIO quando precisarem (topic, theme leak).
+            for sub in plan.get("subtasks", []):
+                sub.setdefault("original_task", task)
 
             # Validação pós-LLM: bloqueia texto inventado
             generics = {"Ola!", "Ola", "Olá", "Hello", "Hi", "Oi", "Bom dia", ""}

@@ -318,11 +318,24 @@ class AutomationEngine:
                 try: g[lib] = __import__(lib)
                 except: pass
 
+        # ─── FIX CRITICO v9 ─────────────────────────────────────────
+        # Mudamos o CWD para o Desktop do usuario ANTES de executar.
+        # Causa-raiz: o LLM as vezes gera `os.makedirs('pasta_x')` sem
+        # expanduser. Como o CWD do processo Python e a pasta do projeto,
+        # a pasta acabava DENTRO do projeto em vez do Desktop do user.
+        # Agora forcamos o CWD para o Desktop. Caminhos absolutos com
+        # expanduser('~') continuam funcionando normal.
+        desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+        if not os.path.isdir(desktop_dir):
+            desktop_dir = os.path.expanduser("~")   # fallback se Desktop nao existir
+        original_cwd = os.getcwd()
+
         # Executa
         import io as _io
         from contextlib import redirect_stdout, redirect_stderr
         out, err = _io.StringIO(), _io.StringIO()
         try:
+            os.chdir(desktop_dir)
             with redirect_stdout(out), redirect_stderr(err):
                 exec(code, g)
             r = out.getvalue().strip() or "✅ OK"
@@ -330,6 +343,12 @@ class AutomationEngine:
             return f"🐍 {desc}\n{r[:500]}"
         except Exception as e:
             return f"❌ {desc}\n{traceback.format_exc().strip().split(chr(10))[-1]}"
+        finally:
+            # Sempre volta ao CWD original — nao deixa o processo "perdido"
+            try:
+                os.chdir(original_cwd)
+            except OSError:
+                pass
 
     def _pip_install(self, p):
         """Instala biblioteca Python."""

@@ -461,7 +461,7 @@ pip install pywinauto easyocr
 python -m playwright install chromium
 
 # API Key
-copy .env.example .env
+copy .env.example
 # → Edit .env with your ANTHROPIC_API_KEY
 
 # Launch

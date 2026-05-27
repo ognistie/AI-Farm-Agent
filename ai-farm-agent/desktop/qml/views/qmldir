@@ -1,0 +1,4 @@
+module views
+CommandCenterView 1.0 CommandCenterView.qml
+ActivityView 1.0 ActivityView.qml
+AboutView 1.0 AboutView.qml

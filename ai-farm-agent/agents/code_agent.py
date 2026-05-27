@@ -1,673 +1,240 @@
 """
-CodeAgent v20 — Senior SWE com validacao + retry com feedback.
+CodeAgent v21 — Senior SWE modular.
 
-PROBLEMAS REPORTADOS NA RODADA ANTERIOR (v19) E COMO FORAM RESOLVIDOS:
+Arquitetura redesenhada (v21 vs v20):
+- code_skills.py     — detecta project_type, complexity, stack, deps, topic
+- code_prompts.py    — prompts modulares por tipo de projeto
+- code_validators.py — sintaxe + estrutura + qualidade + tema
+- code_agent.py      — orquestrador enxuto (este arquivo, ~150 linhas)
 
-1. SyntaxError 'unterminated string literal' nos scripts gerados
-   -> Validamos o creator script com ast.parse ANTES de devolver o plano.
-      Se quebrar, fazemos UMA tentativa de retry passando o erro literal
-      como feedback. Se ainda quebrar, abortamos com erro claro em vez de
-      enviar codigo invalido pro orquestrador.
+Pipeline:
+    1. analyze(task) -> skills      [puro, custo zero]
+    2. build_system_prompt(ptype)   [puro]
+    3. build_user_message(task, skills, retry?)
+    4. LLM (Sonnet/Haiku conforme skills.needs_sonnet)
+    5. validate_all(code, ptype, topic) — fail-fast com motivo literal
+    6. Se falhar, retry 1x com motivo como feedback
+    7. Retorna steps prontos para run_python
 
-2. Bloco de notas abrindo HTML em vez do navegador
-   -> Detectamos os.startfile(...) apontando para .html no creator script
-      e substituimos automaticamente por webbrowser.open() antes de rodar.
-      (Defensiva: o prompt ja proibe, mas o LLM as vezes teima.)
-
-3. Sistema Python profissional virando apenas main.py
-   -> Heuristica conta quantos .py o creator script cria. Se a tarefa
-      pediu 'sistema profissional/plataforma/dashboard' em Python e o
-      script cria < 4 arquivos .py, retry com feedback explicito pedindo
-      multi-arquivo modular.
-
-Spec do usuario (Senior SWE + Senior AI Agent Engineer) preservada no
-SYSTEM_PROMPT, com um EXEMPLO CONCRETO de creator script multi-arquivo
-pro LLM aprender o padrao certo.
+Custo otimizado:
+- Prompt focado (so o bloco do tipo detectado)
+- Modelo escolhido pela analise: Haiku para prototype + static_site simples,
+  Sonnet para professional / multi-arquivo / conteudo rico
 """
 
-import ast
+from __future__ import annotations
+
 import getpass
-import re
+from typing import Optional
+
 from agents.base_agent import BaseAgent
+from agents.code_skills import analyze
+from agents.code_prompts import build_system_prompt, build_user_message
+from agents.code_validators import validate_all
+from agents.code_planner import make_plan, format_plan_for_generator
 from core.config import get_config
+from core.json_validator import safe_parse
+
+
+# Tipos de projeto que SE BENEFICIAM do planner (multi-arquivo).
+# Para static_site / python_script simples, o planner so adiciona latencia.
+_PLANNER_TARGETS = {
+    "python_cli", "rest_api", "fullstack_web", "python_gui",
+    "python_game", "python_data", "python_bot", "interactive_site",
+}
+
 
 USERNAME = getpass.getuser()
 BASE = f"C:/Users/{USERNAME}"
 
-
-SYSTEM_PROMPT = """Voce e o CODE_AGENT do projeto AI-Farm-Agent.
-
-Voce atua como Senior Software Engineer + Senior AI Agent Engineer.
-Receba uma tarefa em linguagem natural, entenda EXATAMENTE o que o
-usuario pediu, gere um script Python completo que cria os arquivos
-do projeto, abre no VS Code e valida que tudo deu certo.
-
-==========================================================
-PRINCIPIOS ABSOLUTOS
-==========================================================
-
-1. OBEDECA A TAREFA EXATAMENTE
-   - "HTML e CSS" => crie SO HTML e CSS. PROIBIDO criar .js.
-   - "apenas HTML" => 1 arquivo, inline tudo.
-   - "HTML, CSS e JS" => os 3.
-   - "sistema em Python" => sistema funcional multi-arquivo.
-   - Nao invente frameworks, libs, arquivos.
-
-2. NUNCA ENTREGUE PLACEHOLDER
-   - Proibido: '/* Styles CSS placeholder */', 'TODO', '...', 'pass',
-     'Bem-vindo', 'Meu Site', 'Lorem ipsum'.
-   - CSS < 80 linhas reais = falha.
-   - main.py < 500 bytes para sistema profissional = falha.
-
-3. RESTRICAO DO USUARIO VENCE SEMPRE
-   - 'dois arquivos HTML e CSS' = exatamente 2 arquivos.
-   - 'site profissional sobre X' = conteudo TEMATICO real, nao 'Bem-vindo'.
-
-4. EXECUTAVEL NA PRIMEIRA TENTATIVA
-   - Codigo Python com sintaxe valida (ast.parse passa).
-   - Aspas, parenteses, chaves SEMPRE fechadas.
-   - Pasta no Desktop com os.makedirs(exist_ok=True).
-   - Encoding UTF-8 em todos os arquivos.
-   - VS Code: subprocess.Popen(['code', project_dir], shell=True)
-   - HTML: webbrowser.open('file:///' + path.replace('\\\\', '/'))
-     NUNCA use os.startfile() para .html — em maquinas com .html
-     associado ao Notepad, abre o Notepad com o codigo dentro.
-
-==========================================================
-ENTENDIMENTO CRITICO: CREATOR SCRIPT vs PROGRAMA
-==========================================================
-
-ATENCAO — DOIS NIVEIS DE CODIGO:
-
-1. CREATOR SCRIPT = o que voce devolve no campo "code".
-   - Linguagem: Python (SEMPRE).
-   - Tarefa: criar pasta + escrever arquivos do projeto + abrir VS Code.
-   - Imports top-level: SO stdlib (os, subprocess, webbrowser, pathlib).
-   - PRECISA conter literais como 'main.py' / 'database.py' / 'index.html'
-     que sao os nomes dos ARQUIVOS QUE VOCE ESTA CRIANDO.
-
-2. ARQUIVOS DO PROJETO = o que o creator script grava em disco.
-   - Linguagens: HTML/CSS/JS/Python/etc, conforme a tarefa.
-   - Conteudo: como strings (multi-line ''') dentro do creator script.
-
-ERRADO (creator script vira o programa):
-    def menu_principal():    # ❌ isso e o sistema dental, nao o creator!
-        while True:
-            print("1. Cadastrar paciente")
-            ...
-
-CERTO (creator script ESCREVE arquivos):
-    import os
-    project_dir = os.path.join(...)
-    os.makedirs(project_dir, exist_ok=True)
-
-    main_content = '''
-    def menu_principal():
-        while True:
-            print("1. Cadastrar paciente")
-            ...
-    '''
-    with open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8') as f:
-        f.write(main_content)
-
-==========================================================
-FORMATO DE SAIDA (JSON puro, sem markdown)
-==========================================================
-
-{
-  "steps": [
-    {
-      "step": 1,
-      "description": "<frase curta da acao>",
-      "code": "<creator script Python que cria os arquivos do projeto>"
-    }
-  ]
+# Tokens por (complexidade, tipo). Output observado:
+#   - static_site:    3-5k tokens
+#   - python_cli:     8-12k tokens
+#   - python_gui:    12-18k tokens (customtkinter eh volumoso)
+#   - rest_api:       8-12k tokens
+# Truncamento causa string nao-fechada → SyntaxError. Vale dar margem.
+MAX_TOKENS_BY_COMPLEXITY = {
+    "prototype":    5000,
+    "small":        8000,
+    "medium":      12000,
+    "professional": 16000,
 }
 
-==========================================================
-PADRAO DE CREATOR SCRIPT — SITES (HTML + CSS)
-==========================================================
-
-import os, subprocess, webbrowser
-base = os.path.join(os.path.expanduser('~'), 'Desktop')
-project_dir = os.path.join(base, 'site_buda')
-# anti-colisao
-i = 2
-while os.path.isdir(project_dir) and os.listdir(project_dir):
-    project_dir = os.path.join(base, f'site_buda_{i}')
-    i += 1
-os.makedirs(project_dir, exist_ok=True)
-
-# index.html — use aspas triplas SIMPLES (apostrofes) como delimitador
-# externo, pois o HTML por dentro tem aspas duplas
-index_html = '''<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>O Caminho de Buda</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <!-- conteudo real e tematico aqui -->
-</body>
-</html>'''
-
-style_css = '''@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900');
-:root {
-  --bg: #fafaf7;
-  --text: #18181b;
-  --accent: #d97706;
+# Bonus por tipo (somado ao base). GUI multi-arquivo e o caso mais volumoso.
+_TYPE_TOKEN_BONUS = {
+    "python_gui":     4000,    # customtkinter + 5 arquivos pode dar 18-20k
+    "fullstack_web":  3000,
+    "rest_api":       2000,
+    "python_game":    2000,
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; ... }
-/* 100+ linhas REAIS aqui */'''
-
-with open(os.path.join(project_dir, 'index.html'), 'w', encoding='utf-8') as f:
-    f.write(index_html)
-with open(os.path.join(project_dir, 'style.css'), 'w', encoding='utf-8') as f:
-    f.write(style_css)
-
-# Abrir VS Code
-subprocess.Popen(['code', project_dir], shell=True)
-# Abrir no navegador (NAO os.startfile)
-index_path = os.path.join(project_dir, 'index.html')
-webbrowser.open('file:///' + index_path.replace('\\\\', '/'))
-
-# Relatorio
-arquivos = os.listdir(project_dir)
-print(f'PASTA: {project_dir}')
-print(f'ARQUIVOS_CRIADOS: {arquivos}')
-print('TASK_TYPE: site_html_css')
-print('REQUESTED_LANGUAGES: html, css')
-print('FORBIDDEN_FILES_AVOIDED: script.js')
-print('VALIDACAO: OK')
-print('REUSABLE_PATTERN: site-2-arquivos-html-css')
-
-==========================================================
-PADRAO DE CREATOR SCRIPT — SISTEMA PYTHON (MULTI-ARQUIVO)
-==========================================================
-
-Para 'sistema profissional em python' VOCE DEVE criar 5+ arquivos:
-
-import os, subprocess
-base = os.path.join(os.path.expanduser('~'), 'Desktop')
-project_dir = os.path.join(base, 'sistema_dental')
-os.makedirs(project_dir, exist_ok=True)
-
-# 1. main.py — entry point
-main_py = '''
-from database import DentalDB
-from cli import menu_principal
-
-def main():
-    db = DentalDB()
-    menu_principal(db)
-
-if __name__ == "__main__":
-    main()
-'''
-
-# 2. database.py — persistencia
-database_py = '''
-import json
-from datetime import datetime
-
-class DentalDB:
-    def __init__(self, path="dental_data.json"):
-        self.path = path
-        self.data = self._load()
-
-    def _load(self):
-        try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {"pacientes": [], "consultas": []}
-    # ... metodos completos: add_paciente, add_consulta, listar, buscar, etc
-'''
-
-# 3. cli.py — interface
-cli_py = '''
-def menu_principal(db):
-    while True:
-        print("1. Cadastrar paciente")
-        print("2. Agendar consulta")
-        ...
-'''
-
-# 4. models.py — entidades
-# 5. utils.py — helpers (validacao de data, formatacao, etc)
-# 6. README.md — como rodar
-
-# Escrever todos
-for name, content in [
-    ('main.py', main_py),
-    ('database.py', database_py),
-    ('cli.py', cli_py),
-    ('models.py', models_py),
-    ('utils.py', utils_py),
-    ('README.md', readme_md),
-]:
-    with open(os.path.join(project_dir, name), 'w', encoding='utf-8') as f:
-        f.write(content)
-
-subprocess.Popen(['code', project_dir], shell=True)
-
-# Validacao
-py_files = [f for f in os.listdir(project_dir) if f.endswith('.py')]
-sizes = {f: os.path.getsize(os.path.join(project_dir, f)) for f in py_files}
-print(f'PASTA: {project_dir}')
-print(f'ARQUIVOS_PY: {py_files}')
-print(f'TAMANHOS: {sizes}')
-print('TASK_TYPE: python_system')
-print('VALIDACAO: OK' if all(s > 200 for s in sizes.values()) else 'VALIDACAO: FAIL')
-print('Para rodar: python main.py')
-
-==========================================================
-REGRAS DE ESCAPAMENTO DE STRINGS (BUG RECORRENTE)
-==========================================================
-
-Voce ESTA escrevendo Python que escreve Python. Atencao a aspas:
-
-- Para conteudo Python que tem aspas DUPLAS por dentro, use aspas
-  triplas SIMPLES como delimitador EXTERNO: '''...'''
-- Para conteudo HTML que tem aspas DUPLAS por dentro, use '''...'''
-  EXTERNO.
-- Se o conteudo TIVER ''' no meio (raro), use '' '' '' escapado.
-- Para regex ou paths Windows, use raw string: r"\\d{2}\\.\\d{2}"
-  ou escape duplo "\\\\d{2}\\\\.\\\\d{2}".
-- NUNCA quebre uma string no meio. Toda triple-quoted DEVE fechar.
-- Se for grande, divida em variaveis: parte1 + parte2.
-
-==========================================================
-ANTI-INVENCAO DE ARQUIVOS
-==========================================================
-
-| Pedido                            | Permitido            | PROIBIDO       |
-|-----------------------------------|----------------------|----------------|
-| "HTML e CSS"                      | index.html, style.css| .js, package.json |
-| "dois arquivos HTML e CSS"        | exatamente 2 arquivos| 3o arquivo     |
-| "sistema em python"               | 5+ .py + README + data| .html/.css/.js |
-| "site sobre X"                    | HTML+CSS no minimo   | .py            |
-
-==========================================================
-CHECKLIST INTERNO (rode antes de responder)
-==========================================================
-
-1. A tarefa pediu QUAIS linguagens? Criei SOMENTE essas?
-2. Para sistema python: estou criando 5+ arquivos .py modulares?
-3. Para HTML + CSS: estou criando 2 arquivos separados, sem .js?
-4. O CSS tem 80+ linhas REAIS?
-5. O HTML tem conteudo TEMATICO sobre o pedido (nao 'Bem-vindo')?
-6. Estou usando webbrowser.open() para .html (NAO os.startfile)?
-7. Toda string triple-quoted ESTA FECHADA?
-8. Vou imprimir relatorio final com metadados?
-
-Se algo falhou, CORRIJA antes de responder.
-"""
-
-
-_SONNET_INDICATORS = [
-    "titulo", "title", "github.com", "desenvolvido por", "apresentacao",
-    "sobre o", "about", "secoes", "sections", "sistema", "dashboard", "app",
-    "conteudo", "content", "texto", "escreva", "coloque",
-    "nome", "link", "url", "http", "logo", "completo", "profissional",
-    "plataforma", "gerenciador", "controle", "agendamento",
-]
-
-_PYTHON_SYSTEM_INDICATORS = [
-    "sistema em python", "sistema python", "sistema profissional em python",
-    "app em python", "aplicativo python", "plataforma em python",
-    "dashboard em python", "gerenciador em python", "controle em python",
-]
-
-
-def _needs_sonnet(task: str) -> bool:
-    t = str(task).lower()
-    return any(ind in t for ind in _SONNET_INDICATORS)
-
-
-def _is_python_system_task(task: str) -> bool:
-    t = str(task).lower()
-    return any(ind in t for ind in _PYTHON_SYSTEM_INDICATORS)
-
-
-def _count_py_files_in_code(code: str) -> int:
-    """Conta quantos arquivos .py distintos o creator script grava em disco."""
-    # padrao tipico: open(..., 'main.py', 'w') ou 'main.py'
-    py_files = set()
-    for m in re.finditer(r"""['"]([\w/]+\.py)['"]""", code):
-        name = m.group(1)
-        if not name.endswith("__init__.py"):
-            py_files.add(name)
-    return len(py_files)
-
-
-# Tasks que envolvem Python (qualquer tipo)
-_PYTHON_TASK_INDICATORS = [
-    "python", "tkinter", "customtkinter", "flask", "django", "fastapi",
-    "pandas", "numpy", "qrcode", "pygame", "kivy",
-]
-
-
-def _is_python_task(task: str) -> bool:
-    """Detecta se a tarefa envolve Python em geral (nao so 'sistema python')."""
-    t = str(task).lower()
-    return any(ind in t for ind in _PYTHON_TASK_INDICATORS)
-
-
-def _looks_like_inline_program(code: str) -> tuple[bool, str]:
-    """
-    Detecta quando o code field e o PROGRAMA em si (nao um creator script).
-    O programa inline tem caracteristicas como mainloop()/app.run() E nao
-    faz file writes — quando exec()ado, vai EXECUTAR a UI inline em vez de
-    criar arquivos no disco.
-
-    Retorna (e_inline, motivo).
-    """
-    # Patterns de "executando um programa GUI/server inline"
-    runs_app_patterns = [
-        (".mainloop()", "Tkinter mainloop"),
-        ("app.run(", "Flask/FastAPI run"),
-        ("uvicorn.run(", "Uvicorn run"),
-        (".serve_forever()", "HTTP server"),
-        ("ctk.CTk()", "CustomTkinter raiz"),
-    ]
-    detected = None
-    for pat, label in runs_app_patterns:
-        if pat in code:
-            detected = label
-            break
-
-    if not detected:
-        return False, ""
-
-    # Tem patterns de programa-rodando + faz file writes? Pode ser ok
-    # (creator script escreve .py + opcionalmente executa pra testar).
-    # Mas se NAO faz file writes, e definitivamente o programa inline.
-    has_file_writes_py = bool(re.search(
-        r"""open\s*\(\s*[^)]*['"][\w/.\-]+\.py['"]""", code
-    ))
-    if has_file_writes_py:
-        return False, ""
-
-    return True, detected
-
-
-def _has_startfile_html(code: str) -> bool:
-    """
-    Detecta os.startfile() em scripts que tambem mencionam .html — assume
-    que se o script lida com HTML e usa os.startfile, o startfile e pra abrir
-    o HTML (caso comum no LLM, mesmo quando o argumento e uma variavel como
-    'target' em vez do literal 'index.html').
-    """
-    if "os.startfile" not in code:
-        return False
-    code_low = code.lower()
-    if ".html" in code_low or ".htm'" in code_low or '.htm"' in code_low:
-        return True
-    # Tambem aceita argumentos literais .html
-    for m in re.finditer(r"os\.startfile\s*\(([^)]+)\)", code):
-        arg_low = m.group(1).lower()
-        if ".html" in arg_low or ".htm" in arg_low or "index" in arg_low:
-            return True
-    return False
-
-
-def _replace_startfile_with_webbrowser(code: str) -> tuple[str, int]:
-    """
-    Substitui TODAS as chamadas os.startfile(...) por webbrowser.open(...)
-    QUANDO o script lida com HTML (heuristica conservadora: so substitui
-    em scripts que mencionam .html). Para scripts sem HTML, deixa como esta.
-
-    Retorna (codigo_novo, num_substituicoes).
-    """
-    if "os.startfile" not in code:
-        return code, 0
-
-    code_low = code.lower()
-    deals_with_html = (
-        ".html" in code_low
-        or ".htm'" in code_low
-        or '.htm"' in code_low
-    )
-    if not deals_with_html:
-        return code, 0
-
-    count = 0
-
-    def replace(m):
-        nonlocal count
-        count += 1
-        arg = m.group(1).strip()
-        return (
-            "webbrowser.open('file:///' + ("
-            + arg + ").replace('\\\\', '/'))"
-        )
-
-    new_code = re.sub(r"os\.startfile\s*\(([^)]+)\)", replace, code)
-
-    if count and "import webbrowser" not in new_code:
-        new_code = "import webbrowser\n" + new_code
-    return new_code, count
 
 
 class CodeAgent(BaseAgent):
-    """
-    v20 — spec do usuario + validacao AST + retry com feedback.
-    """
+    """v21 — modular, com skills detection + validacao em camadas."""
 
     def __init__(self):
-        super().__init__(name="CODE", system_prompt=SYSTEM_PROMPT)
+        # System prompt e montado dinamicamente em plan() — aqui passamos vazio
+        super().__init__(name="CODE", system_prompt="")
         self._config = get_config()
 
     def plan(self, task, context=None):
         task_text = self._extract_task_text(task)
+        # Prefere a versao ORIGINAL do usuario (sem reformulacao do Maestro)
+        # para topic extraction e theme leak validation. Maestro as vezes
+        # adiciona palavras como "arquitetura modular" que poluem o tema.
+        original_task = self._extract_original_task(task)
+        self._last_task_text = original_task or task_text
 
-        use_sonnet = _needs_sonnet(task_text)
+        # ── 1. Analise (skills detection puro) ──────────────────────
+        # Usamos `original_task` para evitar topic poluido quando o Maestro
+        # reformulou a task com termos genericos ("arquitetura modular").
+        analysis_input = original_task or task_text
+        skills = analyze(analysis_input)
+        self.logger.info(
+            f"Skills: type={skills['project_type']} cx={skills['complexity']} "
+            f"stack={skills['stack']} topic='{skills['topic']}' "
+            f"deps={skills['dependencies']}"
+        )
+
+        # ── 2. Escolha de modelo ────────────────────────────────────
         model = (
             self._config.get("models.strong")
-            if use_sonnet else self._config.get("models.fast")
+            if skills["needs_sonnet"]
+            else self._config.get("models.fast")
         )
-        self.logger.info(f"Modelo: {'Sonnet' if use_sonnet else 'Haiku'}")
-
-        is_py_system = _is_python_system_task(task_text)
-        is_py_task = _is_python_task(task_text)
-
-        # 1a tentativa
-        result = self._call_and_validate(
-            model, task_text, is_py_system, is_py_task, retry_feedback=None
+        base_tokens = MAX_TOKENS_BY_COMPLEXITY.get(skills["complexity"], 10000)
+        bonus = _TYPE_TOKEN_BONUS.get(skills["project_type"], 0)
+        max_tokens = base_tokens + bonus
+        self.logger.info(
+            f"Modelo: {'Sonnet' if skills['needs_sonnet'] else 'Haiku'} "
+            f"(max_tokens={max_tokens}, base={base_tokens}+bonus={bonus})"
         )
-        if result["ok"]:
-            return self._build_response(result["steps"], model)
 
-        # 2a tentativa com feedback do que quebrou
-        self.logger.warning(f"Retry: {result['reason']}")
-        result = self._call_and_validate(
-            model, task_text, is_py_system, is_py_task, retry_feedback=result["reason"]
-        )
-        if result["ok"]:
-            return self._build_response(result["steps"], model)
+        # ── 2.5. PLAN-THEN-GENERATE (CoT em 2 chamadas) ─────────────
+        # Para projetos multi-arquivo, primeiro pedimos um ESQUELETO ao
+        # Haiku. O esqueleto e validado (sem ciclos, exports/imports
+        # coerentes). Se OK, e injetado no prompt do gerador como guia.
+        # Reduz drasticamente "arquivos pela metade" e "imports quebrados".
+        plan_hint = ""
+        if skills["project_type"] in _PLANNER_TARGETS:
+            planner = make_plan(task_text, skills)
+            if planner["ok"]:
+                plan_hint = format_plan_for_generator(planner["plan"])
+                self.logger.info(
+                    f"Planner: {len(planner['plan'].get('files', []))} arquivos planejados"
+                )
+            else:
+                # Plano ruim — apenas log, segue sem hint
+                self.logger.warning(f"Planner falhou (segue sem hint): {planner['reason']}")
 
-        # Falhou nas 2 tentativas
-        self.logger.error(f"Falhou apos 2 tentativas: {result['reason']}")
+        # ── 3-4-5. Ate 3 tentativas (1 + 2 retries) ─────────────────
+        # Antes era so 1 retry (2 tentativas). Validadores em camadas
+        # geram cenarios onde a 2a tentativa corrige um erro mas cria
+        # outro. Com 3 tentativas o LLM converge em casos mais dificeis.
+        last_reason = None
+        for attempt in range(1, 4):
+            feedback = last_reason if attempt > 1 else None
+            if attempt > 1:
+                self.logger.warning(
+                    f"Retry {attempt - 1}/2: {last_reason}"
+                )
+            result = self._call_and_validate(
+                task_text, skills, model, max_tokens,
+                retry_feedback=feedback, plan_hint=plan_hint,
+            )
+            if result["ok"]:
+                # Log warnings (qualidade nao-critica)
+                for w in result.get("warnings", []):
+                    self.logger.warning(f"Soft validation: {w}")
+                return self._build_response(result["steps"], model)
+            last_reason = result["reason"]
+
+        # ── Falha definitiva apos 3 tentativas ───────────────────────
+        self.logger.error(f"Falhou apos 3 tentativas: {last_reason}")
         self._metrics["total_plans"] += 1
         self._metrics["failed_plans"] += 1
         return {
             "steps": [],
             "agent": "CODE",
-            "error": f"CodeAgent falhou: {result['reason']}",
+            "error": f"CodeAgent falhou: {last_reason}",
         }
 
     # ──────────────────────────────────────────────────────────────────
 
-    def _call_and_validate(self, model, task_text, is_py_system, is_py_task, retry_feedback):
-        feedback_block = ""
-        if retry_feedback:
-            feedback_block = (
-                "\n\n⚠️ TENTATIVA ANTERIOR FALHOU. MOTIVO:\n"
-                + retry_feedback
-                + "\nCorrija isso AGORA e devolva codigo Python valido."
-            )
+    def _call_and_validate(self, task_text: str, skills: dict, model: str,
+                           max_tokens: int,
+                           retry_feedback: Optional[str],
+                           plan_hint: str = "") -> dict:
+        """Uma rodada: monta prompt focado, chama LLM, valida em camadas."""
+        system = build_system_prompt(skills["project_type"])
+        user = build_user_message(task_text, skills, retry_feedback)
 
-        message = (
-            "TAREFA DO USUARIO (siga LITERALMENTE):\n"
-            + task_text
-            + "\n\n"
-            "RODE O CHECKLIST de 8 pontos antes de responder.\n"
-            "PROIBIDO os.startfile para HTML (use webbrowser.open).\n"
-            "Se for sistema python profissional, gere 5+ arquivos .py modulares.\n"
-            "Toda string triple-quoted DEVE fechar.\n"
-            "Use raw strings (r'...') ou escape duplo (\\\\) para paths Windows.\n"
-            "LEMBRE: o campo 'code' e UM CREATOR SCRIPT que ESCREVE arquivos\n"
-            "  ao disco via `open(os.path.join(project_dir, 'X.py'), 'w')`.\n"
-            "  NAO escreva inline o programa (ex: NUNCA coloque mainloop()/\n"
-            "  app.run() no creator script — eles vao DENTRO de um arquivo .py\n"
-            "  que o creator CRIA).\n"
-            + feedback_block
-            + "\n\nResponda apenas com JSON puro."
-        )
-
-        # Sistemas Python multi-arquivo precisam de mais espaco no output
-        max_tokens = 16000 if is_py_system else 10000
+        # Anexa esqueleto pre-validado (se houver). Vem ANTES do
+        # checklist final para o LLM ja saber a estrutura esperada.
+        if plan_hint:
+            user = user + "\n\n" + plan_hint
 
         try:
             raw = self._client.message(
                 model=model,
-                system=self.system_prompt,
-                user_content=message,
+                system=system,
+                user_content=user,
                 max_tokens=max_tokens,
             )
-            from core.json_validator import safe_parse
             plan = safe_parse(raw, model)
         except Exception as e:
             return {"ok": False, "reason": f"chamada LLM falhou: {e}"}
 
-        return self._validate_and_normalize(plan, is_py_system, is_py_task)
+        return self._validate_and_normalize(plan, skills)
 
-    def _validate_and_normalize(self, plan, is_py_system, is_py_task=False):
-        """
-        Valida cada step:
-          - code nao-vazio
-          - ast.parse passa (sintaxe Python valida)
-          - substitui os.startfile(*.html) por webbrowser.open
-          - se sistema python: pelo menos 3 arquivos .py
-          - se tarefa python (Tkinter/Flask/etc): detecta programa inline e rejeita
-        Retorna {ok: bool, steps: [...], reason: str}
-        """
+    def _validate_and_normalize(self, plan: dict, skills: dict) -> dict:
+        """Aplica validate_all + normaliza steps para o orquestrador."""
         raw_steps = plan.get("steps", [])
         if not raw_steps:
             return {"ok": False, "reason": "LLM nao devolveu nenhum step"}
 
+        ptype = skills["project_type"]
+        topic = skills.get("topic", "")
         steps = []
+        all_warnings: list[str] = []
+
         for st in raw_steps:
             code = st.get("code", "")
             code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
             if not code.strip():
                 continue
 
-            # Validacao 1: AST parse
-            try:
-                ast.parse(code)
-            except SyntaxError as e:
-                snippet = ""
-                try:
-                    lines = code.split("\n")
-                    snippet = lines[(e.lineno or 1) - 1][:120]
-                except Exception:
-                    pass
-                return {
-                    "ok": False,
-                    "reason": (
-                        f"SyntaxError no creator script linha {e.lineno}: "
-                        f"{e.msg}. Linha: `{snippet}`. "
-                        "Provavel string triple-quoted nao fechada ou escape errado."
-                    ),
-                }
+            # Pipeline completo de validacao (HARD bloqueia, SOFT vira warning)
+            v = validate_all(code, ptype, topic,
+                             task=getattr(self, "_last_task_text", ""))
+            if not v["ok"]:
+                return {"ok": False, "reason": v["reason"]}
 
-            # Defesa 2: substituir os.startfile(*.html) por webbrowser.open
-            new_code, replaced = _replace_startfile_with_webbrowser(code)
-            if replaced:
+            code = v["code"]
+            all_warnings.extend(v.get("warnings", []))
+            fixes = v.get("fixes_applied", {})
+            if fixes.get("startfile_replaced"):
                 self.logger.info(
-                    f"Substitui {replaced} os.startfile(*.html) por webbrowser.open"
+                    f"Defesa: substitui {fixes['startfile_replaced']} "
+                    "os.startfile(*.html) por webbrowser.open"
                 )
-                code = new_code
-
-            # Validacao 2.5: programa inline vs creator script (Tkinter/Flask/etc)
-            if is_py_task:
-                inline, motivo = _looks_like_inline_program(code)
-                if inline:
-                    return {
-                        "ok": False,
-                        "reason": (
-                            f"O campo 'code' parece ser o PROGRAMA em si "
-                            f"(detectei {motivo}), nao um CREATOR SCRIPT. "
-                            "Voce deveria escrever um script que CHAMA "
-                            "`open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8')"
-                            ".write(...)` para CRIAR o arquivo main.py em disco. "
-                            "O mainloop()/app.run() vai DENTRO do main.py "
-                            "criado (como conteudo de string), NUNCA no creator script."
-                        ),
-                    }
-
-            # Validacao 2.7: qualquer tarefa Python deve criar pelo menos 1 .py
-            if is_py_task and not is_py_system:
-                n_py = _count_py_files_in_code(code)
-                if n_py < 1:
-                    return {
-                        "ok": False,
-                        "reason": (
-                            "Tarefa pede Python mas o creator script nao "
-                            "escreve nenhum arquivo .py. Use "
-                            "`with open(os.path.join(project_dir, 'main.py'), 'w', encoding='utf-8') as f: f.write(codigo)`"
-                            " para criar pelo menos main.py."
-                        ),
-                    }
-
-            # Validacao 3: sistema python precisa de multi-arquivo (>=3)
-            if is_py_system:
-                n_py = _count_py_files_in_code(code)
-                if n_py < 3:
-                    code_snippet = code[:300].replace("\n", " | ")
-                    return {
-                        "ok": False,
-                        "reason": (
-                            f"Tarefa pede sistema profissional em Python mas "
-                            f"o creator script criou apenas {n_py} arquivo(s) .py. "
-                            "Minimo aceitavel: 3 .py + README.md. Sugestao para sistema "
-                            "de agendamento/cadastro/controle: main.py (entry point), "
-                            "database.py (persistencia), cli.py (menu CLI), README.md. "
-                            "Use multiplos blocos `with open(os.path.join(project_dir, "
-                            "'arquivo.py'), 'w', encoding='utf-8') as f: f.write(...)`. "
-                            f"Inicio do seu creator script: {code_snippet}"
-                        ),
-                    }
-                # Sistema Python = ZERO arquivos web (.html/.css/.js)
-                if any(ext in code for ext in (".js'", '.js"', ".css'", '.css"', ".html'", '.html"')):
-                    return {
-                        "ok": False,
-                        "reason": (
-                            "Tarefa pede sistema em Python — PROIBIDO criar arquivos "
-                            ".html/.css/.js. Remova qualquer open(...'X.html'...) ou "
-                            "similar do creator script. So .py, .md, .txt, .json, .db."
-                        ),
-                    }
 
             steps.append({
                 "step": st.get("step", len(steps) + 1),
                 "description": st.get("description", ""),
                 "action": "run_python",
-                "params": {"code": code, "description": st.get("description", "")},
+                "params": {"code": code,
+                           "description": st.get("description", "")},
                 "agent": "CODE",
             })
 
         if not steps:
             return {"ok": False, "reason": "todos os steps tinham code vazio"}
 
-        return {"ok": True, "steps": steps, "reason": ""}
+        return {"ok": True, "steps": steps, "reason": "",
+                "warnings": all_warnings}
 
-    def _build_response(self, steps, model):
+    def _build_response(self, steps: list, model: str) -> dict:
         model_tag = model.split("-")[1] if "-" in model else model
         total_code = sum(len(s["params"]["code"]) for s in steps)
         self.logger.info(
@@ -676,3 +243,77 @@ class CodeAgent(BaseAgent):
         self._metrics["total_plans"] += 1
         self._metrics["successful_plans"] += 1
         return {"steps": steps, "agent": "CODE"}
+
+
+# ════════════════════════════════════════════════════════════════════
+#  Backward-compat — helpers privados antigos como wrappers das APIs
+#  novas em code_skills.py / code_validators.py.
+#  Mantemos para nao quebrar smoke tests existentes e clientes externos.
+# ════════════════════════════════════════════════════════════════════
+
+from agents.code_skills import analyze as _analyze_task
+from agents.code_validators import (
+    count_files_by_ext as _count_files_by_ext,
+    replace_startfile_with_webbrowser as _replace_startfile_v,
+    detect_inline_program as _detect_inline_v,
+)
+
+
+def _needs_sonnet(task: str) -> bool:
+    """Compat: retorna True se a tarefa merece Sonnet."""
+    a = _analyze_task(task)
+    return a["needs_sonnet"]
+
+
+def _is_python_system_task(task: str) -> bool:
+    """
+    Compat: tarefa de sistema Python multi-arquivo.
+    v21.4: aceita tanto python_cli (terminal) quanto python_gui (interface
+    grafica). Antes so reconhecia CLI; agora "sistema" default e GUI.
+    """
+    ptype = _analyze_task(task)["project_type"]
+    return ptype in ("python_cli", "python_gui")
+
+
+_PYTHON_PROJECT_TYPES = {
+    "python_cli", "python_script", "python_gui", "python_game",
+    "python_data", "python_automation", "python_bot",
+}
+
+
+def _is_python_task(task: str) -> bool:
+    """Compat: qualquer tarefa que envolve Python."""
+    return _analyze_task(task)["project_type"] in _PYTHON_PROJECT_TYPES
+
+
+def _count_py_files_in_code(code: str) -> int:
+    """Compat: conta .py distintos no creator script."""
+    return _count_files_by_ext(code).get(".py", 0)
+
+
+def _has_startfile_html(code: str) -> bool:
+    """Compat: detecta os.startfile mirando HTML."""
+    if "os.startfile" not in code:
+        return False
+    cl = code.lower()
+    return ".html" in cl or ".htm'" in cl or '.htm"' in cl
+
+
+def _replace_startfile_with_webbrowser(code: str) -> tuple[str, int]:
+    """Compat: alias para code_validators.replace_startfile_with_webbrowser."""
+    return _replace_startfile_v(code)
+
+
+def _looks_like_inline_program(code: str) -> tuple[bool, str]:
+    """Compat: retorna (e_inline, motivo_curto). v5: regex aceita
+    'detectei X' (sem aspas) ou \"detectei 'X'\" (com aspas)."""
+    motivo = _detect_inline_v(code)
+    if motivo is None:
+        return False, ""
+    import re as _re
+    # tenta com aspas primeiro, depois sem aspas
+    m = _re.search(r"detectei '([^']+)'", motivo)
+    if not m:
+        m = _re.search(r"detectei ([A-Z][\w/.]+ ?[\w/.]*)", motivo)
+    label = m.group(1) if m else "inline"
+    return True, label

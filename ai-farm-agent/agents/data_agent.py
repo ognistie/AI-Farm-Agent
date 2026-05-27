@@ -1,107 +1,283 @@
 """
-DataAgent v12 — Migrado para BaseAgent.
-Especialista em Excel/dados. Usa openpyxl para gerar planilhas.
+DataAgent v13 — Especialista Excel com skills + validacao + retry.
+
+Skills (NOVO):
+- _detect_spreadsheet_type(task) — classifica em vendas, gastos, contatos,
+  inventario, calendario, alunos, agendamento, generico
+- _suggest_columns(stype) — colunas tipicas por tipo
+- _needs_chart(task) — detecta se a tarefa pede grafico/visualizacao
+- _needs_formulas(task) — detecta SUM/AVG/COUNTIF mencionados
+
+Validacao (NOVO):
+- AST parse do codigo gerado (rejeita SyntaxError antes de executar)
+- 1 retry com feedback literal do erro
+- Validacao 2: garante que o codigo cria .xlsx (nao .csv, .txt, .json)
+
+Boas praticas (NOVO):
+- Logging via BaseAgent.logger
+- Metricas atualizadas via metodo helper (sem manualmente)
+- Imports top-level claros
 """
 
+import ast
 import json
 import os
 import getpass
+import re
+from typing import Optional
+
 from agents.base_agent import BaseAgent
+from core.json_validator import safe_parse
+
 
 USERNAME = getpass.getuser()
 BASE = f"C:/Users/{USERNAME}"
 
-SYSTEM_PROMPT = (
-    "Voce e o DATA AGENT — especialista senior em Excel com Python.\n"
-    "Seu codigo funciona na PRIMEIRA tentativa.\n\n"
-    "REGRAS:\n"
-    "1. SEMPRE imports: import os, subprocess, openpyxl, etc\n"
-    "2. Caminho: os.path.join(os.path.expanduser('~'), 'Desktop', 'arquivo.xlsx')\n"
-    "3. NOME do arquivo: derive da tarefa (ex: vendas_q1.xlsx, contatos.xlsx).\n"
-    "   NUNCA 'planilha.xlsx' generico se a tarefa indicar um tema.\n"
-    "4. COLISAO (cenario D do briefing): antes de wb.save(filepath),\n"
-    "   se os.path.exists(filepath), salve como nome_2.xlsx, nome_3.xlsx, ...\n"
-    "   Logue 'AVISO_COLISAO' indicando o nome final usado.\n"
-    "5. Formate cabecalhos: negrito, cor branca, fill azul, centralizado, bordas\n"
-    "6. Auto-ajuste largura colunas\n"
-    "7. Abra no final: subprocess.Popen(f'start \"\" \"{filepath_final}\"', shell=True)\n"
-    "8. SEMPRE print() do filepath final salvo\n"
-    "9. UMA step com codigo COMPLETO\n\n"
-    "TEMPLATE:\n"
-    "import os, subprocess\n"
-    "from openpyxl import Workbook\n"
-    "from openpyxl.styles import Font, PatternFill, Alignment, Border, Side\n"
-    "from openpyxl.utils import get_column_letter\n\n"
-    "desktop = os.path.join(os.path.expanduser('~'), 'Desktop')\n"
-    "filepath = os.path.join(desktop, 'planilha.xlsx')\n"
-    "wb = Workbook()\n"
-    "ws = wb.active\n"
-    "ws.title = 'Dados'\n\n"
-    "hdr_font = Font(bold=True, color='FFFFFF', size=11)\n"
-    "hdr_fill = PatternFill('solid', fgColor='1F4E79')\n"
-    "thin = Side(style='thin')\n"
-    "border = Border(left=thin, right=thin, top=thin, bottom=thin)\n\n"
-    "headers = ['Col1', 'Col2']\n"
-    "for col, h in enumerate(headers, 1):\n"
-    "    c = ws.cell(row=1, column=col, value=h)\n"
-    "    c.font = hdr_font; c.fill = hdr_fill\n"
-    "    c.alignment = Alignment(horizontal='center'); c.border = border\n\n"
-    "dados = [['A', 100], ['B', 200]]\n"
-    "for row in dados: ws.append(row)\n"
-    "for i in range(1, len(headers)+1):\n"
-    "    ws.column_dimensions[get_column_letter(i)].width = 18\n"
-    "for row in ws.iter_rows(min_row=2, max_row=ws.max_row, max_col=len(headers)):\n"
-    "    for cell in row: cell.border = border\n\n"
-    "wb.save(filepath)\n"
-    "subprocess.Popen(f'start \"\" \"{filepath}\"', shell=True)\n"
-    "print(f'Criado: {filepath}')\n\n"
-    'FORMATO: {"steps":[{"step":1,"description":"...","code":"codigo completo"}]}'
-)
+
+# ───────────────────────────────────────────────────────────────────
+#  Skills: deteccao de tipo de planilha
+# ───────────────────────────────────────────────────────────────────
+
+SPREADSHEET_TYPES: dict[str, dict] = {
+    "vendas": {
+        "keywords": ["venda", "vendas", "faturamento", "receita", "pedido", "pedidos",
+                     "comercial", "comissao", "comissão"],
+        "columns": ["Data", "Cliente", "Produto", "Quantidade", "Valor Unit.", "Total"],
+        "suggests_chart": True,
+        "suggests_formulas": ["SUM", "AVERAGE"],
+    },
+    "gastos": {
+        "keywords": ["gasto", "gastos", "despesa", "despesas", "orcamento", "orçamento",
+                     "financeiro", "custo", "custos"],
+        "columns": ["Data", "Categoria", "Descricao", "Valor", "Forma de Pagamento"],
+        "suggests_chart": True,
+        "suggests_formulas": ["SUM", "COUNTIF"],
+    },
+    "contatos": {
+        "keywords": ["contato", "contatos", "agenda", "lista de contatos", "cadastro",
+                     "telefone", "clientes", "fornecedores"],
+        "columns": ["Nome", "Email", "Telefone", "Empresa", "Cargo", "Cidade"],
+        "suggests_chart": False,
+        "suggests_formulas": [],
+    },
+    "inventario": {
+        "keywords": ["inventario", "inventário", "estoque", "produtos", "produto",
+                     "almoxarifado", "patrimonio", "patrimônio"],
+        "columns": ["Codigo", "Produto", "Categoria", "Quantidade", "Preco", "Valor Total"],
+        "suggests_chart": True,
+        "suggests_formulas": ["SUM", "COUNTIF"],
+    },
+    "alunos": {
+        "keywords": ["aluno", "alunos", "estudante", "matricula", "escola",
+                     "turma", "boletim", "notas"],
+        "columns": ["Matricula", "Nome", "Turma", "Nota 1", "Nota 2", "Nota 3", "Media", "Situacao"],
+        "suggests_chart": True,
+        "suggests_formulas": ["AVERAGE", "IF"],
+    },
+    "agendamento": {
+        "keywords": ["agendamento", "agenda", "consulta", "consultas", "horario",
+                     "horário", "reserva", "reservas"],
+        "columns": ["Data", "Horario", "Cliente", "Servico", "Profissional", "Status"],
+        "suggests_chart": False,
+        "suggests_formulas": ["COUNTIF"],
+    },
+    "calendario": {
+        "keywords": ["calendario", "calendário", "evento", "eventos", "atividades",
+                     "cronograma"],
+        "columns": ["Data", "Evento", "Local", "Responsavel", "Status"],
+        "suggests_chart": False,
+        "suggests_formulas": [],
+    },
+}
+
+
+def _detect_spreadsheet_type(task: str) -> Optional[str]:
+    """Retorna o tipo detectado ou None (generico)."""
+    t = task.lower()
+    best, best_score = None, 0
+    for stype, meta in SPREADSHEET_TYPES.items():
+        score = sum(1 for kw in meta["keywords"] if kw in t)
+        if score > best_score:
+            best_score = score
+            best = stype
+    return best if best_score > 0 else None
+
+
+def _needs_chart(task: str) -> bool:
+    t = task.lower()
+    return any(w in t for w in ("grafico", "gráfico", "chart", "visualizacao",
+                                 "visualização", "dashboard"))
+
+
+def _needs_formulas(task: str) -> list[str]:
+    t = task.lower()
+    formulas = []
+    if any(w in t for w in ("soma", "total", "somar")): formulas.append("SUM")
+    if any(w in t for w in ("media", "média", "average")): formulas.append("AVERAGE")
+    if any(w in t for w in ("contar", "count", "quantos", "quantas")): formulas.append("COUNT/COUNTIF")
+    if any(w in t for w in ("maximo", "máximo", "max")): formulas.append("MAX")
+    if any(w in t for w in ("minimo", "mínimo", "min")): formulas.append("MIN")
+    return formulas
+
+
+# ───────────────────────────────────────────────────────────────────
+#  Prompt
+# ───────────────────────────────────────────────────────────────────
+
+BASE_PROMPT = """Voce e o DATA AGENT — Senior Data Engineer em Excel com Python.
+Seu codigo funciona na PRIMEIRA tentativa. Sintaxe valida sempre.
+
+REGRAS:
+1. Imports: import os, subprocess; from openpyxl import Workbook
+   Se grafico: from openpyxl.chart import BarChart, LineChart, Reference
+   Se estilos: from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+2. Caminho: os.path.join(os.path.expanduser('~'), 'Desktop', '<nome>.xlsx')
+3. NOME do arquivo: derive da tarefa (ex: vendas_q1.xlsx). NUNCA 'planilha.xlsx' generico.
+4. COLISAO: antes de wb.save(filepath), se os.path.exists, salve como nome_2.xlsx.
+5. Formate cabecalhos: negrito, branco em fill #1F4E79, centralizado, bordas.
+6. Auto-ajuste de largura de colunas.
+7. Abra no final: subprocess.Popen(f'start \"\" \"{filepath}\"', shell=True)
+8. SEMPRE print() do filepath final salvo.
+9. UMA step com codigo COMPLETO. Sintaxe Python valida.
+10. JSON puro, sem markdown.
+
+FORMATO: {"steps":[{"step":1,"description":"...","code":"codigo completo"}]}
+"""
+
+
+def _hint_for_type(stype: Optional[str], wants_chart: bool, formulas: list[str]) -> str:
+    """Gera um bloco extra de hint baseado nos skills detectados."""
+    if not stype and not wants_chart and not formulas:
+        return ""
+    parts = ["\n=== SKILLS DETECTADOS PARA ESTA TAREFA ==="]
+    if stype:
+        meta = SPREADSHEET_TYPES[stype]
+        parts.append(f"Tipo: {stype.upper()}")
+        parts.append(f"Colunas tipicas: {meta['columns']}")
+    if wants_chart:
+        parts.append("Grafico solicitado: adicione BarChart ou LineChart.")
+        parts.append("Use: chart = BarChart(); chart.add_data(Reference(ws, ...))")
+        parts.append("Anexe: ws.add_chart(chart, 'F2')")
+    if formulas:
+        parts.append(f"Formulas sugeridas: {formulas}")
+        parts.append("Use celulas com =SUM(B2:B10), =AVERAGE(C2:C10), etc.")
+    parts.append("=" * 45)
+    return "\n".join(parts)
+
+
+# ───────────────────────────────────────────────────────────────────
+#  Agent
+# ───────────────────────────────────────────────────────────────────
 
 
 class DataAgent(BaseAgent):
-    """Agente especialista em dados e Excel."""
+    """Agente especialista em dados e Excel com skills + validacao."""
 
     def __init__(self):
-        super().__init__(name="DATA", system_prompt=SYSTEM_PROMPT)
+        super().__init__(name="DATA", system_prompt=BASE_PROMPT)
 
     def plan(self, task, context=None):
-        """Gera plano e converte steps de code para run_python."""
         task_text = self._extract_task_text(task)
+
+        # Skills
+        stype = _detect_spreadsheet_type(task_text)
+        wants_chart = _needs_chart(task_text)
+        formulas = _needs_formulas(task_text)
+        if stype or wants_chart or formulas:
+            self.logger.info(
+                f"Skills: tipo={stype} chart={wants_chart} formulas={formulas}"
+            )
 
         ctx = ""
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
+        hint = _hint_for_type(stype, wants_chart, formulas)
+
+        result = self._call_and_validate(task_text + ctx + hint, retry_feedback=None)
+        if result["ok"]:
+            return self._wrap_steps(result["steps"])
+
+        # 1 retry com feedback do erro
+        self.logger.warning(f"Retry com feedback: {result['reason']}")
+        result = self._call_and_validate(task_text + ctx + hint,
+                                         retry_feedback=result["reason"])
+        if result["ok"]:
+            return self._wrap_steps(result["steps"])
+
+        # Falhou
+        self.logger.error(f"Falhou apos 2 tentativas: {result['reason']}")
+        self._metrics["total_plans"] += 1
+        self._metrics["failed_plans"] += 1
+        return {"steps": [], "error": result["reason"], "agent": "DATA"}
+
+    # ── Internos ──────────────────────────────────────────────────
+
+    def _call_and_validate(self, user_input: str,
+                           retry_feedback: Optional[str]) -> dict:
+        message = f"TAREFA: {user_input}\nJSON puro."
+        if retry_feedback:
+            message = (
+                f"TAREFA: {user_input}\n\n"
+                f"⚠️ TENTATIVA ANTERIOR FALHOU. MOTIVO:\n{retry_feedback}\n"
+                "Corrija isso AGORA. JSON puro."
+            )
 
         try:
             raw = self._client.message(
                 model=self.model,
                 system=self.system_prompt,
-                user_content=f"TAREFA: {task_text}{ctx}\nJSON puro.",
+                user_content=message,
                 max_tokens=4000,
             )
-            from core.json_validator import safe_parse
             plan = safe_parse(raw, self.model)
-
-            steps = []
-            for st in plan.get("steps", []):
-                code = st.get("code", "")
-                code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-                steps.append({
-                    "step": st.get("step", 1),
-                    "description": st.get("description", ""),
-                    "action": "run_python",
-                    "params": {"code": code, "description": st.get("description", "")},
-                    "agent": "DATA",
-                })
-
-            self.logger.info(f"Plano: {len(steps)} steps")
-            self._metrics["total_plans"] += 1
-            self._metrics["successful_plans"] += 1
-            return {"steps": steps, "agent": "DATA"}
-
         except Exception as e:
-            self.logger.error(f"Erro: {e}")
-            self._metrics["total_plans"] += 1
-            self._metrics["failed_plans"] += 1
-            return {"steps": [], "error": str(e), "agent": "DATA"}
+            return {"ok": False, "reason": f"chamada LLM falhou: {e}"}
+
+        steps_raw = plan.get("steps", [])
+        if not steps_raw:
+            return {"ok": False, "reason": "LLM nao retornou nenhum step"}
+
+        steps = []
+        for st in steps_raw:
+            code = st.get("code", "")
+            code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
+
+            # Validacao 1: AST parse
+            try:
+                ast.parse(code)
+            except SyntaxError as e:
+                snippet = ""
+                try:
+                    snippet = code.split("\n")[(e.lineno or 1) - 1][:120]
+                except Exception:
+                    pass
+                return {
+                    "ok": False,
+                    "reason": (f"SyntaxError linha {e.lineno}: {e.msg}. "
+                               f"Linha: `{snippet}`"),
+                }
+
+            # Validacao 2: precisa salvar .xlsx
+            if ".xlsx" not in code:
+                return {
+                    "ok": False,
+                    "reason": "codigo nao salva nenhum arquivo .xlsx",
+                }
+
+            steps.append({
+                "step": st.get("step", len(steps) + 1),
+                "description": st.get("description", ""),
+                "action": "run_python",
+                "params": {"code": code,
+                           "description": st.get("description", "")},
+                "agent": "DATA",
+            })
+
+        return {"ok": True, "steps": steps, "reason": ""}
+
+    def _wrap_steps(self, steps: list) -> dict:
+        self._metrics["total_plans"] += 1
+        self._metrics["successful_plans"] += 1
+        total_code = sum(len(s["params"]["code"]) for s in steps)
+        self.logger.info(f"Plano: {len(steps)} step(s), {total_code} chars")
+        return {"steps": steps, "agent": "DATA"}
