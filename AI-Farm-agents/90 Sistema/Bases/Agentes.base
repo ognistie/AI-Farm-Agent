@@ -1,0 +1,19 @@
+filters:
+  or:
+    - 'tipo == "agente"'
+    - 'tipo == "agente-suporte"'
+properties:
+  missao:
+    displayName: Missão
+  playbooks:
+    displayName: Playbooks
+  skills:
+    displayName: Skills
+views:
+  - type: cards
+    name: Time de agentes
+    order:
+      - file.name
+      - missao
+      - playbooks
+      - skills

@@ -1,0 +1,8 @@
+filters:
+  and:
+    - tipo == "skill"
+views:
+  - type: cards
+    name: Skills
+    order:
+      - file.name

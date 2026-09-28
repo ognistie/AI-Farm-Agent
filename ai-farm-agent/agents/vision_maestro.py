@@ -4,9 +4,8 @@ Detecta anomalias, janelas erradas, popups bloqueantes.
 """
 
 import json, os, time
-from anthropic import Anthropic
-
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+from core.ai_client import get_client
+from core.config import get_config
 
 SYS = """Você é o SUPERVISOR VISUAL de um sistema de automação Windows PT-BR.
 Você vê screenshots reais e analisa o estado da tela com precisão cirúrgica.
@@ -30,7 +29,8 @@ JSON puro, sem markdown."""
 class VisionMaestro:
     def __init__(self, vision_engine):
         self.vision = vision_engine
-        self.model = "claude-haiku-4-5-20251001"
+        self.model = get_config().get_model("vision_maestro")
+        self.effort = get_config().get_effort("vision_maestro")
         self.enabled = True
 
     def check_before(self, action, params, description):
@@ -55,11 +55,9 @@ Descrição: {description}
 A tela está pronta?
 JSON: {{"safe":true/false,"current_state":"...","correction":"se necessário","correction_steps":[{{"action":"...","params":{{}}}}]}}"""
 
-            resp = client.messages.create(model=self.model, max_tokens=600, system=SYS,
-                messages=[{"role":"user","content":[
-                    {"type":"image","source":{"type":"base64","media_type":"image/png","data":b64}},
-                    {"type":"text","text":prompt}]}])
-            raw = resp.content[0].text.strip()
+            raw = get_client().message(model=self.model, system=SYS,
+                user_content=prompt, images=[{"base64": b64}], max_tokens=3000,
+                effort=self.effort, agent="VISION_MAESTRO")
             if raw.startswith("```"): raw = raw.split("\n",1)[1] if "\n" in raw else raw[3:]
             if raw.endswith("```"): raw = raw[:-3]
             result = json.loads(raw.strip())
@@ -90,11 +88,9 @@ JSON: {{"safe":true/false,"current_state":"...","correction":"se necessário","c
 Funcionou? A tela confirma o resultado esperado?
 JSON: {{"valid":true/false,"actual_state":"o que vejo na tela","issue":"se falhou, qual o problema"}}"""
 
-            resp = client.messages.create(model=self.model, max_tokens=400, system=SYS,
-                messages=[{"role":"user","content":[
-                    {"type":"image","source":{"type":"base64","media_type":"image/png","data":b64}},
-                    {"type":"text","text":prompt}]}])
-            raw = resp.content[0].text.strip()
+            raw = get_client().message(model=self.model, system=SYS,
+                user_content=prompt, images=[{"base64": b64}], max_tokens=3000,
+                effort=self.effort, agent="VISION_MAESTRO")
             if raw.startswith("```"): raw = raw.split("\n",1)[1]
             if raw.endswith("```"): raw = raw[:-3]
             result = json.loads(raw.strip())

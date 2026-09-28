@@ -1,0 +1,70 @@
+filters:
+  and:
+    - 'tipo == "tarefa-referencia"'
+    - file.inFolder("30 Tarefas de referencia")
+properties:
+  contexto:
+    displayName: Contexto
+  keywords:
+    displayName: Palavras-chave
+  agente:
+    displayName: Agente
+views:
+  - type: table
+    name: Todas
+    groupBy:
+      property: note.agente
+      direction: ASC
+    order:
+      - file.name
+      - agente
+      - contexto
+  - type: table
+    name: Web
+    filters:
+      and:
+        - 'agente == "WEB"'
+    order:
+      - file.name
+      - contexto
+      - keywords
+
+  - type: table
+    name: Desktop
+    filters:
+      and:
+        - 'agente == "DESKTOP"'
+    order:
+      - file.name
+      - contexto
+      - keywords
+
+  - type: table
+    name: Code
+    filters:
+      and:
+        - 'agente == "CODE"'
+    order:
+      - file.name
+      - contexto
+      - keywords
+
+  - type: table
+    name: Data
+    filters:
+      and:
+        - 'agente == "DATA"'
+    order:
+      - file.name
+      - contexto
+      - keywords
+
+  - type: table
+    name: File
+    filters:
+      and:
+        - 'agente == "FILE"'
+    order:
+      - file.name
+      - contexto
+      - keywords

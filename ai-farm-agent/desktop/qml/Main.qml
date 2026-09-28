@@ -1,6 +1,6 @@
-// Janela raiz — moldura nativa do sistema (Windows/Linux/Mac padrao),
-// estetica Claude/Lanes.sh: fundo preto profundo, halos teal/roxo sutis,
-// 3 abas (Command Center / Activity / About).
+// Janela raiz: sidebar (navegacao + recentes) e area de conteudo.
+// As telas ficam num StackLayout para manter o estado ao trocar de aba —
+// uma tarefa em execucao continua visivel ao voltar para ela.
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -11,296 +11,206 @@ import "views" as V
 ApplicationWindow {
     id: win
     visible: true
-    // Tamanho "restored" — usado quando o usuario sai do maximizado.
-    // Adapta a qualquer monitor: notebook 1366x768 ou desktop 4K.
     width: 1280
-    height: 800
-    minimumWidth: 980
+    height: 820
+    minimumWidth: 900
     minimumHeight: 600
     title: "AI Farm Agent"
     color: C.Theme.bgBase
 
-    // Abre MAXIMIZADA por padrao — funciona em qualquer resolucao.
-    // O Windows/Linux respeita a area util (descontando taskbar/dock).
-    visibility: Window.Maximized
+    // 0 = tarefa, 1 = historico, 2 = sobre
+    property int page: 0
+    property var recents: []
+
+    function reloadRecents() {
+        const data = JSON.parse(Bridge.loadHistory())
+        const seen = []
+        const out = []
+        for (const it of (data.items || [])) {
+            const t = (it.task || "").trim()
+            if (!t || seen.indexOf(t) >= 0) continue
+            seen.push(t)
+            out.push(t)
+            if (out.length >= 8) break
+        }
+        recents = out
+    }
+
+    function openTask(text) {
+        page = 0
+        taskView.prefill(text)
+    }
 
     Component.onCompleted: {
-        // Calcula tamanho/posicao "restored" sensatos para o monitor atual:
-        // 80% da tela, centralizado. Sera usado quando o usuario sair do
-        // maximizado (clicando no botao restaurar).
         const s = Screen
-        if (s && s.width > 0 && s.height > 0) {
-            const restoredW = Math.min(1600, Math.round(s.width  * 0.80))
-            const restoredH = Math.min(1000, Math.round(s.height * 0.80))
-            width  = Math.max(minimumWidth,  restoredW)
-            height = Math.max(minimumHeight, restoredH)
-            x = Math.max(0, Math.round((s.width  - width)  / 2))
-            y = Math.max(0, Math.round((s.height - height) / 2) - 20)
+        if (s && s.desktopAvailableWidth > 0) {
+            width = Math.max(minimumWidth, Math.min(1440, Math.round(s.desktopAvailableWidth * 0.85)))
+            height = Math.max(minimumHeight, Math.min(960, Math.round(s.desktopAvailableHeight * 0.88)))
+            x = Math.round((s.desktopAvailableWidth - width) / 2)
+            y = Math.round((s.desktopAvailableHeight - height) / 2)
         }
-        // Garante que ABRE maximizada (mesmo se algum estado quiser normal)
-        if (visibility !== Window.Maximized && visibility !== Window.FullScreen) {
-            showMaximized()
-        }
+        reloadRecents()
     }
 
-    property int stage: 0
-    property string view: "command"
+    Connections {
+        target: Bridge
+        function onHistoryChanged(json) { win.reloadRecents() }
+    }
 
-    // ── Ambient gradient: halos teal e roxo muito sutis ──
-    // Tamanhos PROPORCIONAIS a janela, com clip para nao vazar.
-    Item {
+    Shortcut { sequence: "Ctrl+N"; onActivated: { win.page = 0; taskView.newTask() } }
+    Shortcut { sequence: "Ctrl+H"; onActivated: win.page = 1 }
+    Shortcut { sequence: "Esc"; enabled: taskView.running; onActivated: Bridge.forceStop() }
+
+    RowLayout {
         anchors.fill: parent
-        clip: true
-        z: -1
+        spacing: 0
 
+        // ═══ Sidebar ════════════════════════════════════════════════
         Rectangle {
-            readonly property real diag: Math.min(parent.width, parent.height) * 0.85
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            anchors.leftMargin: -diag * 0.4
-            anchors.bottomMargin: -diag * 0.35
-            width: diag; height: diag
-            radius: diag / 2
-            opacity: 0.07
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#2dd4bf" }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
-        }
-        Rectangle {
-            readonly property real diag: Math.min(parent.width, parent.height) * 0.75
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.rightMargin: -diag * 0.35
-            anchors.topMargin: -diag * 0.32
-            width: diag; height: diag
-            radius: diag / 2
-            opacity: 0.06
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#a78bfa" }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
-        }
-    }
+            Layout.fillHeight: true
+            Layout.preferredWidth: 248
+            color: C.Theme.bgSidebar
 
-    Loader {
-        id: stageLoader
-        anchors.fill: parent
-        sourceComponent: stage === 0 ? splashComp : appComp
-        clip: true
-    }
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                anchors.topMargin: 16
+                spacing: 2
 
-    Component {
-        id: splashComp
-        Splash {
-            anchors.fill: parent
-            onEnterRequested: transitionToApp.start()
-        }
-    }
-
-    NumberAnimation {
-        id: transitionToApp
-        target: stageLoader; property: "opacity"
-        from: 1; to: 0; duration: 280
-        onFinished: { win.stage = 1; stageLoader.opacity = 1 }
-    }
-
-    // ─── APP ────────────────────────────────────────────────────────
-    Component {
-        id: appComp
-        Item {
-            anchors.fill: parent
-
-            // CABECALHO interno (nao e title bar do SO — esse e nativo)
-            Rectangle {
-                id: header
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 52
-                color: "transparent"
-
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    height: 1
-                    color: Qt.rgba(1, 1, 1, 0.05)
-                }
-
-                // Logo + nome a esquerda
+                // Marca
                 RowLayout {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 24
-                    anchors.verticalCenter: parent.verticalCenter
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 8
+                    Layout.bottomMargin: 14
                     spacing: 10
-                    C.HexLogo { sizePx: 18; tone: C.Theme.accent }
+                    Rectangle {
+                        Layout.preferredWidth: 26
+                        Layout.preferredHeight: 26
+                        radius: 7
+                        color: C.Theme.primary
+                        C.HexLogo {
+                            anchors.centerIn: parent
+                            sizePx: 15
+                            tone: C.Theme.textInverse
+                        }
+                    }
                     Text {
                         text: "AI Farm Agent"
                         color: C.Theme.textPrimary
                         font.family: C.Theme.fontSans
-                        font.pixelSize: 14
+                        font.pixelSize: C.Theme.sizeMd + 1
                         font.weight: Font.DemiBold
-                        font.letterSpacing: -0.2
-                    }
-                    Rectangle {
-                        Layout.preferredWidth: 1
-                        Layout.preferredHeight: 16
-                        color: C.Theme.hairline
-                    }
-                    Text {
-                        text: "v2.0"
-                        color: C.Theme.textMuted
-                        font.family: C.Theme.fontMono
-                        font.pixelSize: 11
-                        font.letterSpacing: 0.4
                     }
                 }
 
-                // Status • Online a direita
+                C.NavItem {
+                    Layout.fillWidth: true
+                    label: "Nova tarefa"
+                    icon: ""
+                    active: win.page === 0 && taskView.idle
+                    onClicked: { win.page = 0; taskView.newTask() }
+                }
+                C.NavItem {
+                    Layout.fillWidth: true
+                    visible: !taskView.idle
+                    label: taskView.running ? "Em execução" : "Tarefa atual"
+                    icon: taskView.running ? "" : ""
+                    active: win.page === 0 && !taskView.idle
+                    onClicked: win.page = 0
+                }
+                C.NavItem {
+                    Layout.fillWidth: true
+                    label: "Histórico"
+                    icon: ""
+                    active: win.page === 1
+                    onClicked: win.page = 1
+                }
+                C.NavItem {
+                    Layout.fillWidth: true
+                    label: "Sobre"
+                    icon: ""
+                    active: win.page === 2
+                    onClicked: win.page = 2
+                }
+
+                // Recentes
+                Text {
+                    visible: win.recents.length > 0
+                    Layout.topMargin: 22
+                    Layout.leftMargin: 10
+                    Layout.bottomMargin: 4
+                    text: "Recentes"
+                    color: C.Theme.textTertiary
+                    font.family: C.Theme.fontSans
+                    font.pixelSize: C.Theme.sizeSm
+                    font.weight: Font.Medium
+                }
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    model: win.recents
+                    spacing: 1
+                    boundsBehavior: Flickable.StopAtBounds
+                    delegate: C.NavItem {
+                        width: ListView.view.width
+                        label: modelData
+                        muted: true
+                        onClicked: win.openTask(modelData)
+                        C.ToolTipHint { text: modelData; shown: hovered && modelData.length > 34 }
+                        property bool hovered: false
+                        HoverHandler { onHoveredChanged: parent.hovered = hovered }
+                    }
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded; width: 6 }
+                }
+                Item { visible: win.recents.length === 0; Layout.fillHeight: true }
+
+                // Rodape: modelo em uso
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: C.Theme.hairline
+                    Layout.bottomMargin: 8
+                }
                 RowLayout {
-                    anchors.right: parent.right
-                    anchors.rightMargin: 24
-                    anchors.verticalCenter: parent.verticalCenter
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 10
+                    Layout.bottomMargin: 4
                     spacing: 8
                     Rectangle {
-                        width: 7; height: 7; radius: 3.5
-                        color: C.Theme.accent
-                        SequentialAnimation on opacity {
-                            running: true; loops: Animation.Infinite
-                            NumberAnimation { from: 1.0; to: 0.4; duration: 1600; easing.type: Easing.InOutSine }
-                            NumberAnimation { from: 0.4; to: 1.0; duration: 1600; easing.type: Easing.InOutSine }
-                        }
+                        Layout.preferredWidth: 6
+                        Layout.preferredHeight: 6
+                        radius: 3
+                        color: taskView.running ? C.Theme.warning : C.Theme.success
                     }
                     Text {
-                        text: "Online"
-                        color: C.Theme.accent
-                        font.family: C.Theme.fontMono
-                        font.pixelSize: 11
-                        font.letterSpacing: 0.6
-                        font.weight: Font.Medium
+                        Layout.fillWidth: true
+                        text: taskView.running ? "Executando..." : "Pronto  ·  Claude Sonnet 5"
+                        color: C.Theme.textTertiary
+                        font.family: C.Theme.fontSans
+                        font.pixelSize: C.Theme.sizeSm
+                        elide: Text.ElideRight
                     }
                 }
             }
 
-            // SIDEBAR
-            Item {
-                id: sidebar
-                anchors.top: header.bottom
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                width: 200
-
-                Rectangle {
-                    anchors.right: parent.right
-                    width: 1; height: parent.height
-                    color: Qt.rgba(1, 1, 1, 0.05)
-                }
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    anchors.topMargin: 20
-                    spacing: 4
-
-                    Text {
-                        Layout.leftMargin: 10
-                        text: "Menu"
-                        color: C.Theme.textMuted
-                        font.family: C.Theme.fontMono
-                        font.pixelSize: 9
-                        font.letterSpacing: 1.5
-                    }
-
-                    Item { Layout.preferredHeight: 8 }
-
-                    C.SidebarItem {
-                        Layout.fillWidth: true
-                        label: "Command Center"; glyph: "⌂"
-                        active: win.view === "command"
-                        onClicked: win.view = "command"
-                    }
-                    C.SidebarItem {
-                        Layout.fillWidth: true
-                        label: "Activity"; glyph: "≡"
-                        active: win.view === "activity"
-                        onClicked: win.view = "activity"
-                    }
-                    C.SidebarItem {
-                        Layout.fillWidth: true
-                        label: "About"; glyph: "ⓘ"
-                        active: win.view === "about"
-                        onClicked: win.view = "about"
-                    }
-
-                    Item { Layout.fillHeight: true }
-
-                    // Rodape: avatar + ognistie
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.leftMargin: 10
-                        Layout.bottomMargin: 6
-                        spacing: 8
-
-                        Rectangle {
-                            Layout.preferredWidth: 22
-                            Layout.preferredHeight: 22
-                            radius: 11
-                            color: C.Theme.textPrimary
-                            Text {
-                                anchors.centerIn: parent
-                                text: ""
-                                color: C.Theme.bgBase
-                                font.family: "Segoe Fluent Icons, Segoe MDL2 Assets"
-                                font.pixelSize: 13
-                            }
-                        }
-                        Text {
-                            text: "ognistie"
-                            color: C.Theme.textSecondary
-                            font.family: C.Theme.fontMono
-                            font.pixelSize: 11
-                            Layout.alignment: Qt.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Qt.openUrlExternally("https://github.com/ognistie")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // CONTEUDO
-            Item {
-                anchors.top: header.bottom
-                anchors.bottom: parent.bottom
-                anchors.left: sidebar.right
+            Rectangle {
                 anchors.right: parent.right
-
-                Loader {
-                    id: viewLoader
-                    anchors.fill: parent
-                    sourceComponent: {
-                        switch (win.view) {
-                            case "command":   return commandComp
-                            case "activity":  return activityComp
-                            case "about":     return aboutComp
-                        }
-                        return commandComp
-                    }
-                    onSourceComponentChanged: viewFade.restart()
-                    opacity: 0
-                    NumberAnimation on opacity {
-                        id: viewFade
-                        from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic
-                    }
-                }
+                width: 1
+                height: parent.height
+                color: C.Theme.hairline
             }
         }
-    }
 
-    Component { id: commandComp;   V.CommandCenterView {} }
-    Component { id: activityComp;  V.ActivityView {} }
-    Component { id: aboutComp;     V.AboutView {} }
+        // ═══ Conteudo ═══════════════════════════════════════════════
+        StackLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: win.page
+
+            V.TaskView { id: taskView; objectName: "taskView" }
+            V.HistoryView { onReuseRequested: (t) => win.openTask(t) }
+            V.AboutView {}
+        }
+    }
 }

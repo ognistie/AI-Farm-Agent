@@ -2,19 +2,40 @@
 #  AI Farm Agent — Configuration
 # ══════════════════════════════════════════
 
+# Todos os agentes rodam no Claude Sonnet 5. Os dois "tiers" continuam
+# existindo para permitir trocar um deles no futuro sem mexer no codigo.
 models:
-  fast: "claude-haiku-4-5-20251001"
-  strong: "claude-sonnet-4-20250514"
+  fast: "claude-sonnet-5"
+  strong: "claude-sonnet-5"
 
 agent_models:
-  maestro: strong          # Sonnet — interpreta intenção com precisão
+  maestro: strong
   vision_maestro: fast
+  vision: fast
+  narrator: fast
+  planner: fast
   data: fast
   web: fast
-  code: strong             # Sonnet — gera código de qualidade
-  desktop: strong          # Sonnet — resolve tarefas complexas
+  code: strong
+  desktop: strong
   file: fast
   memory: fast
+
+# Esforco de raciocinio (output_config.effort) por agente. Sonnet 5 usa
+# adaptive thinking por padrao; effort e a principal alavanca de custo.
+# low = roteamento/respostas curtas, medium = planos simples, high = codigo.
+agent_effort:
+  maestro: low
+  vision_maestro: low
+  vision: low
+  narrator: low
+  planner: medium
+  data: medium
+  web: low
+  code: high
+  desktop: medium
+  file: medium
+  json_repair: low
 
 limits:
   max_task_length: 2000
@@ -22,8 +43,10 @@ limits:
   max_subtasks: 5
   task_timeout_seconds: 120
   max_retries: 3
-  max_tokens_fast: 1500
-  max_tokens_strong: 4000
+  # Sonnet 5: max_tokens inclui o raciocinio (thinking). Valores baixos
+  # truncam a resposta no meio do JSON.
+  max_tokens_fast: 8000
+  max_tokens_strong: 16000
 
 server:
   host: "127.0.0.1"
@@ -65,3 +88,9 @@ security:
     - "reg delete"
     - "diskpart"
     - "bcdedit"
+# Segundo cerebro (Obsidian). Caminho relativo a pasta ai-farm-agent/.
+# Os agentes leem playbooks/politicas/tarefas de referencia e o app grava
+# planos, validacoes e execucoes. Se a pasta nao existir, o app segue sem.
+brain:
+  enabled: true
+  vault_path: "../AI-Farm-agents"

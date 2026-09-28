@@ -203,12 +203,20 @@ def detect_project_type(task: str) -> str:
             and best_type in ("python_gui", "python_cli", "python_script")):
         return "static_site"
 
+    # JS pedido explicitamente nunca pode cair em static_site: o validador
+    # de static_site exige "PROIBIDO .js" e removia o JavaScript pedido.
+    wants_js = "js" in extract_languages(task)
+
     if best_type:
+        if best_type == "static_site" and wants_js:
+            return "interactive_site"
         return best_type
 
     # Fallbacks heuristicos
     if "python" in t:
         return "python_script"
+    if wants_js:
+        return "interactive_site"
     if any(w in t for w in ("html", "css", "site", "pagina", "página")):
         return "static_site"
     return "static_site"

@@ -44,7 +44,7 @@ def main() -> int:
     print("\n" + "=" * 60)
     print("  🌱 AI Farm Agent — Iniciando interface Desktop...")
     print(f"  🔑 API Key: ...{api_key[-8:]}")
-    print("  🖥️  UI: PySide6 + QML (Mac-style)")
+    print("  🖥️  UI: PySide6 + QML")
     print("=" * 60 + "\n")
 
     try:

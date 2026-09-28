@@ -1,0 +1,12 @@
+filters:
+  and:
+    - file.inFolder("50 Diario")
+views:
+  - type: table
+    name: Dias
+    order:
+      - file.name
+      - file.mtime
+    sort:
+      - property: file.name
+        direction: DESC

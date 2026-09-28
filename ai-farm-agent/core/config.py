@@ -17,8 +17,8 @@ logger = logging.getLogger("config")
 DEFAULTS = {
     # Modelos por tipo de tarefa
     "models": {
-        "fast": "claude-haiku-4-5-20251001",      # Routing, data, web, files
-        "strong": "claude-sonnet-4-20250514",      # Code, desktop, vision, retry
+        "fast": "claude-sonnet-5",
+        "strong": "claude-sonnet-5",
     },
 
     # Limites
@@ -28,8 +28,8 @@ DEFAULTS = {
         "max_subtasks": 5,
         "task_timeout_seconds": 120,
         "max_retries": 3,
-        "max_tokens_fast": 1500,
-        "max_tokens_strong": 2500,
+        "max_tokens_fast": 8000,
+        "max_tokens_strong": 16000,
     },
 
     # Server
@@ -74,14 +74,32 @@ DEFAULTS = {
 
     # Agentes → modelos
     "agent_models": {
-        "maestro": "fast",
+        "maestro": "strong",
         "vision_maestro": "fast",
+        "vision": "fast",
+        "narrator": "fast",
+        "planner": "fast",
         "data": "fast",
         "web": "fast",
         "code": "strong",
         "desktop": "strong",
         "file": "fast",
         "memory": "fast",
+    },
+
+    # Agentes → esforco de raciocinio (output_config.effort)
+    "agent_effort": {
+        "maestro": "low",
+        "vision_maestro": "low",
+        "vision": "low",
+        "narrator": "low",
+        "planner": "medium",
+        "data": "medium",
+        "web": "low",
+        "code": "high",
+        "desktop": "medium",
+        "file": "medium",
+        "json_repair": "low",
     },
 
     # Segurança
@@ -136,6 +154,12 @@ class Config:
         else:
             logger.info("config.yaml não encontrado, usando defaults")
 
+        # Overrides via .env (documentados em .env.example)
+        for env_var, tier in (("MODEL_FAST", "fast"), ("MODEL_STRONG", "strong")):
+            value = os.getenv(env_var, "").strip()
+            if value:
+                self._data["models"][tier] = value
+
     def _find_config_file(self):
         """Procura config.yaml no projeto."""
         candidates = [
@@ -154,7 +178,7 @@ class Config:
     def get(self, key_path, default=None):
         """
         Acessa valor por caminho pontilhado.
-        Ex: config.get("models.fast") → "claude-haiku-4-5-20251001"
+        Ex: config.get("models.fast") → "claude-sonnet-5"
         """
         keys = key_path.split(".")
         val = self._data
@@ -169,6 +193,10 @@ class Config:
         """Retorna o modelo configurado para um agente."""
         model_type = self.get(f"agent_models.{agent_name.lower()}", "fast")
         return self.get(f"models.{model_type}", DEFAULTS["models"]["fast"])
+
+    def get_effort(self, agent_name):
+        """Retorna o effort configurado para um agente (None = default da API)."""
+        return self.get(f"agent_effort.{agent_name.lower()}")
 
     @property
     def models(self):

@@ -60,6 +60,18 @@ MAX_TOKENS_BY_COMPLEXITY = {
     "professional": 16000,
 }
 
+# Sonnet 5: max_tokens inclui o raciocinio (adaptive thinking). Folga
+# fixa para o pensamento nao comer o espaco do codigo.
+THINKING_HEADROOM = 8000
+
+
+def _effort_for(skills: dict, default: Optional[str]) -> Optional[str]:
+    """prototype/small sem multi-arquivo -> medium; resto -> default (high)."""
+    if skills.get("complexity") in ("prototype", "small") and not skills.get("needs_sonnet"):
+        return "medium"
+    return default
+
+
 # Bonus por tipo (somado ao base). GUI multi-arquivo e o caso mais volumoso.
 _TYPE_TOKEN_BONUS = {
     "python_gui":     4000,    # customtkinter + 5 arquivos pode dar 18-20k
@@ -89,24 +101,28 @@ class CodeAgent(BaseAgent):
         # Usamos `original_task` para evitar topic poluido quando o Maestro
         # reformulou a task com termos genericos ("arquitetura modular").
         analysis_input = original_task or task_text
-        skills = analyze(analysis_input)
+        # Subagente Architect: classifica o projeto e, se multi-arquivo,
+        # desenha o esqueleto (plan-then-generate).
+        from agents.subagents import Architect, Builder
+        architect = Architect().run(analysis_input, task_text)
+        skills = architect.data["skills"]
+        traces = [architect]
         self.logger.info(
             f"Skills: type={skills['project_type']} cx={skills['complexity']} "
             f"stack={skills['stack']} topic='{skills['topic']}' "
             f"deps={skills['dependencies']}"
         )
 
-        # ── 2. Escolha de modelo ────────────────────────────────────
-        model = (
-            self._config.get("models.strong")
-            if skills["needs_sonnet"]
-            else self._config.get("models.fast")
-        )
+        # ── 2. Modelo + esforco ─────────────────────────────────────
+        # Um modelo so (config). A complexidade decide o effort: tarefas
+        # simples nao precisam de raciocinio longo (economia de tokens).
+        model = self.model
+        effort = _effort_for(skills, self.effort)
         base_tokens = MAX_TOKENS_BY_COMPLEXITY.get(skills["complexity"], 10000)
         bonus = _TYPE_TOKEN_BONUS.get(skills["project_type"], 0)
-        max_tokens = base_tokens + bonus
+        max_tokens = base_tokens + bonus + THINKING_HEADROOM
         self.logger.info(
-            f"Modelo: {'Sonnet' if skills['needs_sonnet'] else 'Haiku'} "
+            f"Modelo: {model} effort={effort} "
             f"(max_tokens={max_tokens}, base={base_tokens}+bonus={bonus})"
         )
 
@@ -115,17 +131,8 @@ class CodeAgent(BaseAgent):
         # Haiku. O esqueleto e validado (sem ciclos, exports/imports
         # coerentes). Se OK, e injetado no prompt do gerador como guia.
         # Reduz drasticamente "arquivos pela metade" e "imports quebrados".
-        plan_hint = ""
-        if skills["project_type"] in _PLANNER_TARGETS:
-            planner = make_plan(task_text, skills)
-            if planner["ok"]:
-                plan_hint = format_plan_for_generator(planner["plan"])
-                self.logger.info(
-                    f"Planner: {len(planner['plan'].get('files', []))} arquivos planejados"
-                )
-            else:
-                # Plano ruim — apenas log, segue sem hint
-                self.logger.warning(f"Planner falhou (segue sem hint): {planner['reason']}")
+        plan_hint = architect.data["plan_hint"]
+        self.logger.info(f"Architect: {architect.summary}")
 
         # ── 3-4-5. Ate 3 tentativas (1 + 2 retries) ─────────────────
         # Antes era so 1 retry (2 tentativas). Validadores em camadas
@@ -140,23 +147,28 @@ class CodeAgent(BaseAgent):
                 )
             result = self._call_and_validate(
                 task_text, skills, model, max_tokens,
-                retry_feedback=feedback, plan_hint=plan_hint,
+                retry_feedback=feedback, plan_hint=plan_hint, effort=effort,
             )
+            builder = Builder().record(attempt, result["ok"], result.get("reason", ""))
             if result["ok"]:
                 # Log warnings (qualidade nao-critica)
                 for w in result.get("warnings", []):
                     self.logger.warning(f"Soft validation: {w}")
-                return self._build_response(result["steps"], model)
+                response = self._build_response(result["steps"], model)
+                response["subagents"] = traces + [builder, result["review"]]
+                return response
             last_reason = result["reason"]
 
         # ── Falha definitiva apos 3 tentativas ───────────────────────
         self.logger.error(f"Falhou apos 3 tentativas: {last_reason}")
         self._metrics["total_plans"] += 1
         self._metrics["failed_plans"] += 1
+        from agents.subagents import Reviewer
         return {
             "steps": [],
             "agent": "CODE",
             "error": f"CodeAgent falhou: {last_reason}",
+            "subagents": traces + [builder, Reviewer().trace(False, last_reason[:120])],
         }
 
     # ──────────────────────────────────────────────────────────────────
@@ -164,7 +176,8 @@ class CodeAgent(BaseAgent):
     def _call_and_validate(self, task_text: str, skills: dict, model: str,
                            max_tokens: int,
                            retry_feedback: Optional[str],
-                           plan_hint: str = "") -> dict:
+                           plan_hint: str = "",
+                           effort: Optional[str] = None) -> dict:
         """Uma rodada: monta prompt focado, chama LLM, valida em camadas."""
         system = build_system_prompt(skills["project_type"])
         user = build_user_message(task_text, skills, retry_feedback)
@@ -173,6 +186,8 @@ class CodeAgent(BaseAgent):
         # checklist final para o LLM ja saber a estrutura esperada.
         if plan_hint:
             user = user + "\n\n" + plan_hint
+        from agents.base_agent import brain_guide
+        user += brain_guide("CODE")
 
         try:
             raw = self._client.message(
@@ -180,6 +195,8 @@ class CodeAgent(BaseAgent):
                 system=system,
                 user_content=user,
                 max_tokens=max_tokens,
+                effort=effort,
+                agent=self.name,
             )
             plan = safe_parse(raw, model)
         except Exception as e:
@@ -204,9 +221,10 @@ class CodeAgent(BaseAgent):
             if not code.strip():
                 continue
 
-            # Pipeline completo de validacao (HARD bloqueia, SOFT vira warning)
-            v = validate_all(code, ptype, topic,
-                             task=getattr(self, "_last_task_text", ""))
+            # Subagente Reviewer: validacao em camadas (HARD bloqueia, SOFT vira warning)
+            from agents.subagents import Reviewer
+            review = Reviewer().run(code, ptype, topic, getattr(self, "_last_task_text", ""))
+            v = review.data["result"]
             if not v["ok"]:
                 return {"ok": False, "reason": v["reason"]}
 
@@ -231,8 +249,11 @@ class CodeAgent(BaseAgent):
         if not steps:
             return {"ok": False, "reason": "todos os steps tinham code vazio"}
 
+        from agents.subagents import Reviewer
+        review = Reviewer().trace(True, f"{len(steps)} passo(s) aprovados"
+                                  + (f", {len(all_warnings)} aviso(s)" if all_warnings else ""))
         return {"ok": True, "steps": steps, "reason": "",
-                "warnings": all_warnings}
+                "warnings": all_warnings, "review": review}
 
     def _build_response(self, steps: list, model: str) -> dict:
         model_tag = model.split("-")[1] if "-" in model else model

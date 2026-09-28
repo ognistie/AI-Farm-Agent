@@ -3,13 +3,12 @@ JSON Validator — Auto-repara JSON mal-formado dos agentes.
 Fix: lida com "Extra data" (dois JSONs na resposta).
 """
 
-import json, re, os
-from anthropic import Anthropic
+import json, re
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+REPAIR_MAX_CHARS = 6000
 
 
-def safe_parse(raw, model="claude-haiku-4-5-20251001"):
+def safe_parse(raw, model=None):
     """Parseia JSON com multiplas tentativas de reparo."""
 
     # 1. Limpa markdown
@@ -50,12 +49,19 @@ def safe_parse(raw, model="claude-haiku-4-5-20251001"):
         except:
             pass
 
-    # 6. Pede correcao ao modelo
+    # 6. Pede correcao ao modelo — so para respostas curtas. Uma resposta
+    # longa (codigo gerado) cortada ao meio nao tem conserto: e mais barato
+    # o agente refazer a chamada do que pagar um reparo que devolve lixo.
     try:
-        resp = client.messages.create(model=model, max_tokens=2000,
-            messages=[{"role": "user", "content":
-                "Corrija este JSON invalido. Retorne APENAS o JSON corrigido:\n\n" + clean[:2000]}])
-        corrected = resp.content[0].text.strip()
+        if len(clean) > REPAIR_MAX_CHARS:
+            raise ValueError("resposta longa demais para reparo via LLM")
+        from core.ai_client import get_client
+        from core.config import get_config
+        cfg = get_config()
+        corrected = get_client().message(
+            model=model or cfg.get("models.fast"), system="",
+            user_content="Corrija este JSON invalido. Retorne APENAS o JSON corrigido:\n\n" + clean,
+            max_tokens=8000, effort=cfg.get_effort("json_repair"), agent="JSON_REPAIR")
         corrected = re.sub(r'```json|```', '', corrected).strip()
         first = _extract_first_json(corrected)
         if first:

@@ -1,0 +1,31 @@
+filters:
+  or:
+    - 'tipo == "playbook"'
+    - 'tipo == "tarefa-referencia"'
+properties:
+  agente:
+    displayName: Agente
+  keywords:
+    displayName: Palavras-chave
+views:
+  - type: cards
+    name: Playbooks
+    filters:
+      and:
+        - 'tipo == "playbook"'
+    groupBy:
+      property: note.agente
+      direction: ASC
+    order:
+      - file.name
+      - agente
+      - keywords
+  - type: table
+    name: Tarefas de referência
+    filters:
+      and:
+        - 'tipo == "tarefa-referencia"'
+    order:
+      - file.name
+      - agente
+      - keywords

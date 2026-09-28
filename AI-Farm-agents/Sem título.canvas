@@ -1,0 +1,810 @@
+{
+  "nodes": [
+    {
+      "id": "hero",
+      "type": "text",
+      "x": -520,
+      "y": -1180,
+      "width": 1040,
+      "height": 190,
+      "color": "#F97316",
+      "text": "# 🎼 AI Farm Agent — Segundo Cérebro\nO **Maestro** orquestra no centro · cada agente tem regras, playbooks e skills · as **políticas** validam todo plano · as **execuções** ensinam o cérebro."
+    },
+    {
+      "id": "maestro",
+      "type": "file",
+      "file": "00 Maestro/Maestro.md",
+      "x": -260,
+      "y": -190,
+      "width": 520,
+      "height": 380,
+      "color": "#F97316"
+    },
+    {
+      "id": "g-Web",
+      "type": "group",
+      "label": "Web Agent",
+      "x": -219,
+      "y": -1057,
+      "width": 440,
+      "height": 594,
+      "color": "#38BDF8"
+    },
+    {
+      "id": "a-Web",
+      "type": "file",
+      "file": "10 Agentes/Web/Web Agent.md",
+      "x": -199,
+      "y": -1017,
+      "width": 400,
+      "height": 140,
+      "color": "#38BDF8"
+    },
+    {
+      "id": "s-Web-0",
+      "type": "file",
+      "file": "10 Agentes/Web/Subagentes/QueryBuilder.md",
+      "x": -199,
+      "y": -861,
+      "width": 126,
+      "height": 80,
+      "color": "#38BDF8"
+    },
+    {
+      "id": "s-Web-1",
+      "type": "file",
+      "file": "10 Agentes/Web/Subagentes/Navigator.md",
+      "x": -63,
+      "y": -861,
+      "width": 126,
+      "height": 80,
+      "color": "#38BDF8"
+    },
+    {
+      "id": "s-Web-2",
+      "type": "file",
+      "file": "10 Agentes/Web/Subagentes/ContentGuard.md",
+      "x": 73,
+      "y": -861,
+      "width": 126,
+      "height": 80,
+      "color": "#38BDF8"
+    },
+    {
+      "id": "p-Web-0",
+      "type": "file",
+      "file": "10 Agentes/Web/Playbook - Pesquisa no Google.md",
+      "x": -199,
+      "y": -757,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Web-1",
+      "type": "file",
+      "file": "10 Agentes/Web/Playbook - Pesquisa no YouTube.md",
+      "x": -199,
+      "y": -691,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Web-2",
+      "type": "file",
+      "file": "10 Agentes/Web/Playbook - Abrir site ou URL.md",
+      "x": -199,
+      "y": -625,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Web-3",
+      "type": "file",
+      "file": "10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "x": -199,
+      "y": -559,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "g-Desktop",
+      "type": "group",
+      "label": "Desktop Agent",
+      "x": 873,
+      "y": -564,
+      "width": 440,
+      "height": 660,
+      "color": "#FBBF24"
+    },
+    {
+      "id": "a-Desktop",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Desktop Agent.md",
+      "x": 893,
+      "y": -524,
+      "width": 400,
+      "height": 140,
+      "color": "#FBBF24"
+    },
+    {
+      "id": "s-Desktop-0",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Subagentes/AppResolver.md",
+      "x": 893,
+      "y": -368,
+      "width": 126,
+      "height": 80,
+      "color": "#FBBF24"
+    },
+    {
+      "id": "s-Desktop-1",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Subagentes/ContentComposer.md",
+      "x": 1029,
+      "y": -368,
+      "width": 126,
+      "height": 80,
+      "color": "#FBBF24"
+    },
+    {
+      "id": "s-Desktop-2",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Subagentes/ScreenGuard.md",
+      "x": 1165,
+      "y": -368,
+      "width": 126,
+      "height": 80,
+      "color": "#FBBF24"
+    },
+    {
+      "id": "p-Desktop-0",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Playbook - Bloco de Notas.md",
+      "x": 893,
+      "y": -264,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Desktop-1",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Playbook - Teams.md",
+      "x": 893,
+      "y": -198,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Desktop-2",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Playbook - WhatsApp.md",
+      "x": 893,
+      "y": -132,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Desktop-3",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Playbook - Word e Excel.md",
+      "x": 893,
+      "y": -66,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Desktop-4",
+      "type": "file",
+      "file": "10 Agentes/Desktop/Playbook - Utilitarios do Windows.md",
+      "x": 893,
+      "y": 0,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "g-Code",
+      "type": "group",
+      "label": "Code Agent",
+      "x": 455,
+      "y": 317,
+      "width": 440,
+      "height": 594,
+      "color": "#34D399"
+    },
+    {
+      "id": "a-Code",
+      "type": "file",
+      "file": "10 Agentes/Code/Code Agent.md",
+      "x": 475,
+      "y": 357,
+      "width": 400,
+      "height": 140,
+      "color": "#34D399"
+    },
+    {
+      "id": "s-Code-0",
+      "type": "file",
+      "file": "10 Agentes/Code/Subagentes/Architect.md",
+      "x": 475,
+      "y": 513,
+      "width": 126,
+      "height": 80,
+      "color": "#34D399"
+    },
+    {
+      "id": "s-Code-1",
+      "type": "file",
+      "file": "10 Agentes/Code/Subagentes/Builder.md",
+      "x": 611,
+      "y": 513,
+      "width": 126,
+      "height": 80,
+      "color": "#34D399"
+    },
+    {
+      "id": "s-Code-2",
+      "type": "file",
+      "file": "10 Agentes/Code/Subagentes/Reviewer.md",
+      "x": 747,
+      "y": 513,
+      "width": 126,
+      "height": 80,
+      "color": "#34D399"
+    },
+    {
+      "id": "p-Code-0",
+      "type": "file",
+      "file": "10 Agentes/Code/Playbook - Site estatico.md",
+      "x": 475,
+      "y": 617,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Code-1",
+      "type": "file",
+      "file": "10 Agentes/Code/Playbook - Script Python.md",
+      "x": 475,
+      "y": 683,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Code-2",
+      "type": "file",
+      "file": "10 Agentes/Code/Playbook - API REST.md",
+      "x": 475,
+      "y": 749,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Code-3",
+      "type": "file",
+      "file": "10 Agentes/Code/Playbook - App desktop Python.md",
+      "x": 475,
+      "y": 815,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "g-Data",
+      "type": "group",
+      "label": "Data Agent",
+      "x": -895,
+      "y": 350,
+      "width": 440,
+      "height": 528,
+      "color": "#A78BFA"
+    },
+    {
+      "id": "a-Data",
+      "type": "file",
+      "file": "10 Agentes/Data/Data Agent.md",
+      "x": -875,
+      "y": 390,
+      "width": 400,
+      "height": 140,
+      "color": "#A78BFA"
+    },
+    {
+      "id": "s-Data-0",
+      "type": "file",
+      "file": "10 Agentes/Data/Subagentes/SchemaDesigner.md",
+      "x": -875,
+      "y": 546,
+      "width": 126,
+      "height": 80,
+      "color": "#A78BFA"
+    },
+    {
+      "id": "s-Data-1",
+      "type": "file",
+      "file": "10 Agentes/Data/Subagentes/FormulaChartDesigner.md",
+      "x": -739,
+      "y": 546,
+      "width": 126,
+      "height": 80,
+      "color": "#A78BFA"
+    },
+    {
+      "id": "s-Data-2",
+      "type": "file",
+      "file": "10 Agentes/Data/Subagentes/SheetReviewer.md",
+      "x": -603,
+      "y": 546,
+      "width": 126,
+      "height": 80,
+      "color": "#A78BFA"
+    },
+    {
+      "id": "p-Data-0",
+      "type": "file",
+      "file": "10 Agentes/Data/Playbook - Planilha com grafico.md",
+      "x": -875,
+      "y": 650,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Data-1",
+      "type": "file",
+      "file": "10 Agentes/Data/Playbook - Fluxo de caixa.md",
+      "x": -875,
+      "y": 716,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-Data-2",
+      "type": "file",
+      "file": "10 Agentes/Data/Playbook - Lista e cadastro.md",
+      "x": -875,
+      "y": 782,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "g-File",
+      "type": "group",
+      "label": "File Agent",
+      "x": -1313,
+      "y": -498,
+      "width": 440,
+      "height": 528,
+      "color": "#FB923C"
+    },
+    {
+      "id": "a-File",
+      "type": "file",
+      "file": "10 Agentes/File/File Agent.md",
+      "x": -1293,
+      "y": -458,
+      "width": 400,
+      "height": 140,
+      "color": "#FB923C"
+    },
+    {
+      "id": "s-File-0",
+      "type": "file",
+      "file": "10 Agentes/File/Subagentes/PathResolver.md",
+      "x": -1293,
+      "y": -302,
+      "width": 126,
+      "height": 80,
+      "color": "#FB923C"
+    },
+    {
+      "id": "s-File-1",
+      "type": "file",
+      "file": "10 Agentes/File/Subagentes/OperationPlanner.md",
+      "x": -1157,
+      "y": -302,
+      "width": 126,
+      "height": 80,
+      "color": "#FB923C"
+    },
+    {
+      "id": "s-File-2",
+      "type": "file",
+      "file": "10 Agentes/File/Subagentes/SafetyAuditor.md",
+      "x": -1021,
+      "y": -302,
+      "width": 126,
+      "height": 80,
+      "color": "#FB923C"
+    },
+    {
+      "id": "p-File-0",
+      "type": "file",
+      "file": "10 Agentes/File/Playbook - Organizar pasta por tipo.md",
+      "x": -1293,
+      "y": -198,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-File-1",
+      "type": "file",
+      "file": "10 Agentes/File/Playbook - Encontrar duplicados.md",
+      "x": -1293,
+      "y": -132,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "p-File-2",
+      "type": "file",
+      "file": "10 Agentes/File/Playbook - Backup e compactacao.md",
+      "x": -1293,
+      "y": -66,
+      "width": 400,
+      "height": 54
+    },
+    {
+      "id": "g-pol",
+      "type": "group",
+      "label": "🛡️ Políticas de aceite",
+      "x": -2350,
+      "y": -420,
+      "width": 480,
+      "height": 760,
+      "color": "#EF4444"
+    },
+    {
+      "id": "pol",
+      "type": "file",
+      "file": "20 Politicas/Politicas de aceite.md",
+      "x": -2330,
+      "y": -380,
+      "width": 440,
+      "height": 150,
+      "color": "#EF4444"
+    },
+    {
+      "id": "pol-POL-001",
+      "type": "file",
+      "file": "20 Politicas/POL-001.md",
+      "x": -2330,
+      "y": -210,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-POL-002",
+      "type": "file",
+      "file": "20 Politicas/POL-002.md",
+      "x": -2330,
+      "y": -136,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-POL-003",
+      "type": "file",
+      "file": "20 Politicas/POL-003.md",
+      "x": -2330,
+      "y": -62,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-POL-004",
+      "type": "file",
+      "file": "20 Politicas/POL-004.md",
+      "x": -2330,
+      "y": 12,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-AGT-001",
+      "type": "file",
+      "file": "20 Politicas/AGT-001.md",
+      "x": -2330,
+      "y": 86,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-AGT-002",
+      "type": "file",
+      "file": "20 Politicas/AGT-002.md",
+      "x": -2330,
+      "y": 160,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "pol-AUD-001",
+      "type": "file",
+      "file": "20 Politicas/AUD-001.md",
+      "x": -2330,
+      "y": 234,
+      "width": 440,
+      "height": 62
+    },
+    {
+      "id": "g-op",
+      "type": "group",
+      "label": "📈 Operação",
+      "x": 1880,
+      "y": -560,
+      "width": 620,
+      "height": 1120,
+      "color": "#22C55E"
+    },
+    {
+      "id": "exec",
+      "type": "file",
+      "file": "90 Sistema/Bases/Execucoes.base",
+      "x": 1900,
+      "y": -520,
+      "width": 580,
+      "height": 520
+    },
+    {
+      "id": "diario",
+      "type": "file",
+      "file": "50 Diario/Diario de operacoes.md",
+      "x": 1900,
+      "y": 20,
+      "width": 580,
+      "height": 160
+    },
+    {
+      "id": "licoes",
+      "type": "file",
+      "file": "60 Aprendizados/Licoes aprendidas.md",
+      "x": 1900,
+      "y": 200,
+      "width": 580,
+      "height": 340,
+      "color": "#2DD4BF"
+    },
+    {
+      "id": "g-kn",
+      "type": "group",
+      "label": "🧭 Conhecimento",
+      "x": -1500,
+      "y": 1300,
+      "width": 3000,
+      "height": 560,
+      "color": "#FDE68A"
+    },
+    {
+      "id": "refs",
+      "type": "file",
+      "file": "30 Tarefas de referencia/Tarefas de referencia.md",
+      "x": -1480,
+      "y": 1340,
+      "width": 700,
+      "height": 500,
+      "color": "#FDE68A"
+    },
+    {
+      "id": "skills",
+      "type": "file",
+      "file": "90 Sistema/Bases/Skills.base",
+      "x": -760,
+      "y": 1340,
+      "width": 1500,
+      "height": 500,
+      "color": "#E879F9"
+    },
+    {
+      "id": "inbox",
+      "type": "file",
+      "file": "05 Inbox/Inbox.md",
+      "x": 760,
+      "y": 1340,
+      "width": 720,
+      "height": 500
+    },
+    {
+      "id": "legend",
+      "type": "text",
+      "x": -2350,
+      "y": 520,
+      "width": 480,
+      "height": 420,
+      "text": "### Legenda\n- <span style='color:#F97316'>●</span> **Maestro** — orquestra e valida\n- <span style='color:#38BDF8'>●</span> **Web** — Pesquisar, navegar e ler a web\n- <span style='color:#FBBF24'>●</span> **Desktop** — Operar aplicativos do Windows: Bloco de Notas, Word, Excel, Teams, WhatsApp, Outlook, Paint, Calculadora, Spotify\n- <span style='color:#34D399'>●</span> **Code** — Criar projetos de software completos (sites, scripts, APIs, apps desktop, jogos) e abrir no VS Code\n- <span style='color:#A78BFA'>●</span> **Data** — Criar planilhas Excel profissionais com openpyxl: dados, fórmulas, formatação e gráficos\n- <span style='color:#FB923C'>●</span> **File** — Organizar, mover, copiar, encontrar e compactar arquivos com segurança\n- <span style='color:#EF4444'>●</span> **Políticas** · <span style='color:#22C55E'>●</span> **Operação**"
+    },
+    {
+      "id": "how",
+      "type": "text",
+      "x": -520,
+      "y": -900,
+      "width": 1040,
+      "height": 150,
+      "text": "**Fluxo:** pedido → Maestro consulta o cérebro → propõe plano → políticas validam → agentes propõem passos → validação → execução → sucesso/falha volta para o cérebro"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0-s-Web-0-s-Web-1",
+      "fromNode": "s-Web-0",
+      "toNode": "s-Web-1",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#38BDF8"
+    },
+    {
+      "id": "e1-s-Web-1-s-Web-2",
+      "fromNode": "s-Web-1",
+      "toNode": "s-Web-2",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#38BDF8"
+    },
+    {
+      "id": "e2-maestro-a-Web",
+      "fromNode": "maestro",
+      "toNode": "a-Web",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "color": "#38BDF8",
+      "label": "WEB"
+    },
+    {
+      "id": "e3-s-Desktop-0-s-Desktop-1",
+      "fromNode": "s-Desktop-0",
+      "toNode": "s-Desktop-1",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#FBBF24"
+    },
+    {
+      "id": "e4-s-Desktop-1-s-Desktop-2",
+      "fromNode": "s-Desktop-1",
+      "toNode": "s-Desktop-2",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#FBBF24"
+    },
+    {
+      "id": "e5-maestro-a-Desktop",
+      "fromNode": "maestro",
+      "toNode": "a-Desktop",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#FBBF24",
+      "label": "DESKTOP"
+    },
+    {
+      "id": "e6-s-Code-0-s-Code-1",
+      "fromNode": "s-Code-0",
+      "toNode": "s-Code-1",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#34D399"
+    },
+    {
+      "id": "e7-s-Code-1-s-Code-2",
+      "fromNode": "s-Code-1",
+      "toNode": "s-Code-2",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#34D399"
+    },
+    {
+      "id": "e8-maestro-a-Code",
+      "fromNode": "maestro",
+      "toNode": "a-Code",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#34D399",
+      "label": "CODE"
+    },
+    {
+      "id": "e9-s-Data-0-s-Data-1",
+      "fromNode": "s-Data-0",
+      "toNode": "s-Data-1",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#A78BFA"
+    },
+    {
+      "id": "e10-s-Data-1-s-Data-2",
+      "fromNode": "s-Data-1",
+      "toNode": "s-Data-2",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#A78BFA"
+    },
+    {
+      "id": "e11-maestro-a-Data",
+      "fromNode": "maestro",
+      "toNode": "a-Data",
+      "fromSide": "left",
+      "toSide": "right",
+      "color": "#A78BFA",
+      "label": "DATA"
+    },
+    {
+      "id": "e12-s-File-0-s-File-1",
+      "fromNode": "s-File-0",
+      "toNode": "s-File-1",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#FB923C"
+    },
+    {
+      "id": "e13-s-File-1-s-File-2",
+      "fromNode": "s-File-1",
+      "toNode": "s-File-2",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#FB923C"
+    },
+    {
+      "id": "e14-maestro-a-File",
+      "fromNode": "maestro",
+      "toNode": "a-File",
+      "fromSide": "left",
+      "toSide": "right",
+      "color": "#FB923C",
+      "label": "FILE"
+    },
+    {
+      "id": "e15-a-Web-a-Desktop",
+      "fromNode": "a-Web",
+      "toNode": "a-Desktop",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#38BDF8",
+      "label": "{output_summary}"
+    },
+    {
+      "id": "e16-pol-maestro",
+      "fromNode": "pol",
+      "toNode": "maestro",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#EF4444",
+      "label": "valida todo plano"
+    },
+    {
+      "id": "e17-maestro-exec",
+      "fromNode": "maestro",
+      "toNode": "exec",
+      "fromSide": "right",
+      "toSide": "left",
+      "color": "#22C55E",
+      "label": "registra"
+    },
+    {
+      "id": "e18-exec-licoes",
+      "fromNode": "exec",
+      "toNode": "licoes",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "color": "#2DD4BF",
+      "label": "aprende"
+    },
+    {
+      "id": "e19-refs-maestro",
+      "fromNode": "refs",
+      "toNode": "maestro",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "color": "#FDE68A",
+      "label": "referências"
+    },
+    {
+      "id": "e20-hero-how",
+      "fromNode": "hero",
+      "toNode": "how",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e21-how-maestro",
+      "fromNode": "how",
+      "toNode": "maestro",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "color": "#F97316"
+    }
+  ]
+}

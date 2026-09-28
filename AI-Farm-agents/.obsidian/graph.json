@@ -1,0 +1,149 @@
+{
+  "collapse-filter": true,
+  "search": "-path:\"90 Sistema\"",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": false,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "file:Início",
+      "color": {
+        "a": 1,
+        "rgb": 16777215
+      }
+    },
+    {
+      "query": "path:\"00 Maestro\"",
+      "color": {
+        "a": 1,
+        "rgb": 16347926
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Web\"",
+      "color": {
+        "a": 1,
+        "rgb": 3718648
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Desktop\"",
+      "color": {
+        "a": 1,
+        "rgb": 16498468
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Code\"",
+      "color": {
+        "a": 1,
+        "rgb": 3462041
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Data\"",
+      "color": {
+        "a": 1,
+        "rgb": 10980346
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/File\"",
+      "color": {
+        "a": 1,
+        "rgb": 16486972
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Memoria\"",
+      "color": {
+        "a": 1,
+        "rgb": 9741240
+      }
+    },
+    {
+      "query": "path:\"10 Agentes/Visao\"",
+      "color": {
+        "a": 1,
+        "rgb": 16281969
+      }
+    },
+    {
+      "query": "path:\"20 Politicas\"",
+      "color": {
+        "a": 1,
+        "rgb": 15680580
+      }
+    },
+    {
+      "query": "path:\"30 Skills\"",
+      "color": {
+        "a": 1,
+        "rgb": 15235577
+      }
+    },
+    {
+      "query": "path:\"30 Tarefas de referencia\"",
+      "color": {
+        "a": 1,
+        "rgb": 16639626
+      }
+    },
+    {
+      "query": "path:\"40 Execucoes/Sucesso\"",
+      "color": {
+        "a": 1,
+        "rgb": 2278750
+      }
+    },
+    {
+      "query": "path:\"40 Execucoes/Falhas\"",
+      "color": {
+        "a": 1,
+        "rgb": 14427686
+      }
+    },
+    {
+      "query": "path:\"40 Execucoes\"",
+      "color": {
+        "a": 1,
+        "rgb": 6583435
+      }
+    },
+    {
+      "query": "path:\"50 Diario\"",
+      "color": {
+        "a": 1,
+        "rgb": 959977
+      }
+    },
+    {
+      "query": "path:\"60 Aprendizados\"",
+      "color": {
+        "a": 1,
+        "rgb": 3003583
+      }
+    },
+    {
+      "query": "path:\"05 Inbox\"",
+      "color": {
+        "a": 1,
+        "rgb": 13358561
+      }
+    }
+  ],
+  "collapse-display": true,
+  "showArrow": true,
+  "textFadeMultiplier": -1.2,
+  "nodeSizeMultiplier": 1.4,
+  "lineSizeMultiplier": 0.8,
+  "collapse-forces": false,
+  "centerStrength": 0.45,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 180,
+  "scale": 0.13873223932666057,
+  "close": true
+}

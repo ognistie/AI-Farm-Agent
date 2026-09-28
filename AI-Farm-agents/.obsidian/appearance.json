@@ -1,0 +1,8 @@
+{
+  "cssTheme": "Minimal",
+  "theme": "obsidian",
+  "enabledCssSnippets": [
+    "ai-farm-brain"
+  ],
+  "accentColor": "#F97316"
+}

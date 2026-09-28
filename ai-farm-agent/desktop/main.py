@@ -15,9 +15,10 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QUrl, QCoreApplication, Qt
+from PySide6.QtCore import QUrl, Qt
 from PySide6.QtGui import QGuiApplication, QFont, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuickControls2 import QQuickStyle
 
 from desktop.bridge import Bridge
 
@@ -28,17 +29,25 @@ QML_ROOT = QML_DIR / "Main.qml"
 
 
 def _setup_fonts(app: QGuiApplication) -> None:
-    """Aplica fonte default. Se Inter/JetBrains nao estiver instalada o Qt
-    cai automaticamente para a melhor proxima (Segoe UI no Windows)."""
-    default = QFont("Inter", 10)
+    """Fonte do sistema (Segoe UI Variable no Windows 11). Se nao existir,
+    o Qt escolhe a sans-serif padrao."""
+    # Windows 10 nao tem Segoe UI Variable; Cascadia vem com o Terminal.
+    QFont.insertSubstitutions("Segoe UI Variable Text", ["Segoe UI Variable", "Segoe UI"])
+    QFont.insertSubstitutions("Segoe UI Variable Display", ["Segoe UI Variable", "Segoe UI"])
+    QFont.insertSubstitutions("Cascadia Mono", ["Consolas", "Courier New"])
+    default = QFont("Segoe UI Variable Text", 10)
     default.setStyleStrategy(QFont.PreferAntialias)
     app.setFont(default)
 
 
 def run() -> int:
-    # High-DPI ja eh default no Qt6, mas garantimos round policy fina.
-    QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    # Estilo "Basic": o estilo nativo do Windows ignora parte da
+    # customizacao (fundo de TextArea, ScrollBar) e gera avisos no console.
+    QQuickStyle.setStyle("Basic")
+    # Escala fracionaria (125%, 150%) sem arredondar — evita textos e
+    # bordas borrados/desproporcionais em notebooks.
+    QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
     app = QGuiApplication.instance() or QGuiApplication(sys.argv)
     app.setApplicationName("AI Farm Agent")
@@ -52,7 +61,6 @@ def run() -> int:
     engine = QQmlApplicationEngine()
     engine.addImportPath(str(QML_DIR))
     engine.rootContext().setContextProperty("Bridge", bridge)
-    engine.rootContext().setContextProperty("QML_DIR", str(QML_DIR).replace("\\", "/"))
 
     engine.load(QUrl.fromLocalFile(str(QML_ROOT)))
     if not engine.rootObjects():

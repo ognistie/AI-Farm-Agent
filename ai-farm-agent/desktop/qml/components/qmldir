@@ -1,18 +1,11 @@
 module components
 singleton Theme 1.0 Theme.qml
-Card 1.0 Card.qml
-Pill 1.0 Pill.qml
-Chip 1.0 Chip.qml
-SidebarItem 1.0 SidebarItem.qml
-SectionTitle 1.0 SectionTitle.qml
-ActionButton 1.0 ActionButton.qml
-PrimaryButton 1.0 PrimaryButton.qml
-GhostButton 1.0 GhostButton.qml
-StatusDot 1.0 StatusDot.qml
-StatusBadge 1.0 StatusBadge.qml
-AgentBadge 1.0 AgentBadge.qml
+Icon 1.0 Icon.qml
+Button 1.0 Button.qml
+NavItem 1.0 NavItem.qml
+Spinner 1.0 Spinner.qml
+TogglePill 1.0 TogglePill.qml
+ToolTipHint 1.0 ToolTipHint.qml
+ScrollPage 1.0 ScrollPage.qml
+Composer 1.0 Composer.qml
 HexLogo 1.0 HexLogo.qml
-ProgressBar 1.0 ProgressBar.qml
-MetricCard 1.0 MetricCard.qml
-AgentCard 1.0 AgentCard.qml
-ExecutionTimeline 1.0 ExecutionTimeline.qml

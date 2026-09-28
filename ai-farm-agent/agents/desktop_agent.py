@@ -9,6 +9,7 @@ import json, os
 from core.ai_client import get_client
 from core.config import get_config
 from core.json_validator import safe_parse
+from agents.base_agent import brain_guide
 
 
 def _build_steps(app, params):
@@ -221,9 +222,44 @@ class DesktopAgent:
         self._config = get_config()
         self._client = get_client()
         self.model = self._config.get_model("desktop")
+        self.effort = self._config.get_effort("desktop")
         self.name = "DESKTOP"
 
     def plan(self, task, context=None):
+        """
+        Subagentes: AppResolver (qual app) e ContentComposer (texto pronto)
+        preparam a entrada; ScreenGuard revisa os passos antes de executar.
+        """
+        from agents.subagents import AppResolver, ContentComposer, ScreenGuard
+        params = dict(task.get("params") or {}) if isinstance(task, dict) else {}
+        if isinstance(context, dict) and "app" in context:
+            params = dict(context)
+        task_text = task.get("task", "") if isinstance(task, dict) else str(task)
+
+        app_t = AppResolver().run(task_text, params)
+        text_t = ContentComposer().run(params)
+        params = text_t.data["params"]
+        if params.get("app"):
+            params["app"] = app_t.data["app"]
+
+        if isinstance(task, dict):
+            task = {**task, "params": params}
+        if isinstance(context, dict) and "app" in context:
+            context = params
+        result = self._plan_steps(task, context)
+
+        traces = [app_t, text_t]
+        if result.get("steps"):
+            guard = ScreenGuard().run(result["steps"])
+            traces.append(guard)
+            result["steps"] = guard.data["steps"]
+            if not guard.ok:
+                result = {"steps": [], "agent": "DESKTOP",
+                          "error": f"ScreenGuard reprovou os passos: {guard.summary}"}
+        result["subagents"] = traces
+        return result
+
+    def _plan_steps(self, task, context=None):
         params = {}
         task_text = task
         if isinstance(task, dict):
@@ -234,6 +270,16 @@ class DesktopAgent:
 
         app = (params.get("app", "") or "").lower().strip()
         task_lower = str(task_text).lower()
+
+        # "abra a pasta downloads" / "abra C:\projetos": abre direto, sem
+        # digitar no menu Iniciar (fragil) nem navegar pelo Explorer.
+        from core.paths import is_open_folder_request, extract_path
+        if is_open_folder_request(str(task_text)):
+            path = extract_path(str(task_text))
+            print(f"  [DESKTOP] Abrir caminho direto: {path}")
+            return {"steps": [{"step": 1, "action": "open_path", "params": {"path": path},
+                               "description": f"Abrir {path}", "agent": "DESKTOP"}],
+                    "agent": "DESKTOP"}
 
         if app:
             steps = _build_steps(app, params)
@@ -267,7 +313,8 @@ class DesktopAgent:
         try:
             raw = self._client.message(
                 model=self.model, system=PROMPT_FALLBACK,
-                user_content=f"TAREFA: {task_text}\nJSON puro.", max_tokens=3000,
+                user_content=f"TAREFA: {task_text}{brain_guide('DESKTOP')}\nJSON puro.", max_tokens=8000,
+                effort=self.effort, agent="DESKTOP",
             )
             plan = safe_parse(raw, self.model)
             for st in plan.get("steps", []): st["agent"] = "DESKTOP"

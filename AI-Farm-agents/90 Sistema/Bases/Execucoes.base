@@ -1,0 +1,67 @@
+filters:
+  or:
+    - file.inFolder("40 Execucoes/Sucesso")
+    - file.inFolder("40 Execucoes/Falhas")
+formulas:
+  resultado: 'if(status == "sucesso", "✅ sucesso", "❌ falha")'
+  duracao: '(duracao_ms / 1000).toFixed(1) + " s"'
+properties:
+  formula.resultado:
+    displayName: Resultado
+  tarefa:
+    displayName: Tarefa
+  agente:
+    displayName: Agentes
+  formula.duracao:
+    displayName: Duração
+  custo_usd:
+    displayName: Custo (US$)
+  data:
+    displayName: Quando
+views:
+  - type: table
+    name: Recentes
+    order:
+      - formula.resultado
+      - tarefa
+      - agente
+      - formula.duracao
+      - custo_usd
+      - data
+    sort:
+      - property: data
+        direction: DESC
+    limit: 12
+  - type: table
+    name: Falhas
+    filters:
+      and:
+        - 'status == "falha"'
+    order:
+      - tarefa
+      - agente
+      - data
+    sort:
+      - property: data
+        direction: DESC
+  - type: cards
+    name: Sucessos
+    filters:
+      and:
+        - 'status == "sucesso"'
+    order:
+      - tarefa
+      - agente
+      - formula.duracao
+    sort:
+      - property: data
+        direction: DESC
+  - type: table
+    name: Por agente
+    groupBy:
+      property: note.agente
+      direction: ASC
+    order:
+      - formula.resultado
+      - tarefa
+      - custo_usd

@@ -1,0 +1,18 @@
+filters:
+  and:
+    - 'tipo == "politica"'
+properties:
+  id:
+    displayName: ID
+  enforcement:
+    displayName: Aplicação
+views:
+  - type: table
+    name: Políticas
+    order:
+      - id
+      - file.name
+      - enforcement
+    sort:
+      - property: id
+        direction: ASC

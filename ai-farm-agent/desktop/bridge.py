@@ -20,7 +20,6 @@ from PySide6.QtCore import QObject, Signal, Slot, QTimer
 from desktop.event_bus import bus
 from desktop.controller import Controller
 from desktop import history_store
-from desktop.theme import as_qml_dict, agent_color
 
 
 def _to_json(payload: Any) -> str:
@@ -118,20 +117,3 @@ class Bridge(QObject):
             "items": history_store.list_all(limit=200),
             "stats": history_store.stats(),
         })
-
-    @Slot(str, result=str)
-    def replayFromHistory(self, entry_id: str) -> str:
-        """Localiza task pelo id e devolve para o QML preencher o input."""
-        for it in history_store.list_all(limit=None):
-            if it.get("id") == entry_id:
-                return it.get("task", "")
-        return ""
-
-    @Slot(str, result=str)
-    def agentColor(self, agent_name: str) -> str:
-        return agent_color(agent_name)
-
-    @Slot(result=str)
-    def theme(self) -> str:
-        """Tokens de tema serializados para QML usar diretamente."""
-        return _to_json(as_qml_dict())

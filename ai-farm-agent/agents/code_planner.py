@@ -159,8 +159,8 @@ def make_plan(task: str, skills: dict) -> dict:
     """
     config = get_config()
     client = get_client()
-    # Sempre Haiku — esta etapa e leve e a qualidade nao depende de Sonnet
-    model = config.get("models.fast")
+    # Etapa leve: modelo/effort vem de agent_models.planner / agent_effort.planner
+    model = config.get_model("planner")
     user = _build_planner_user_message(task, skills)
 
     try:
@@ -168,7 +168,9 @@ def make_plan(task: str, skills: dict) -> dict:
             model=model,
             system=PLANNER_SYSTEM_PROMPT,
             user_content=user,
-            max_tokens=2000,
+            max_tokens=8000,
+            effort=config.get_effort("planner"),
+            agent="CODE_PLANNER",
         )
     except Exception as e:
         return {"ok": False, "reason": f"planner LLM call falhou: {e}"}

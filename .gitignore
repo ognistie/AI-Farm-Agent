@@ -86,3 +86,9 @@ logs/
 
 # Memory pasta na raiz do repo (estrutura legada — fica fora)
 memory/
+
+# ─── Segundo cerebro (Obsidian) — dados de execucao locais ───────
+AI-Farm-agents/40 Execucoes/Planos/
+AI-Farm-agents/40 Execucoes/Sucesso/
+AI-Farm-agents/40 Execucoes/Falhas/
+AI-Farm-agents/.obsidian/workspace*.json

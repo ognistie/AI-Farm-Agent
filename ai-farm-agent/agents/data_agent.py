@@ -134,7 +134,8 @@ REGRAS:
 2. Caminho: os.path.join(os.path.expanduser('~'), 'Desktop', '<nome>.xlsx')
 3. NOME do arquivo: derive da tarefa (ex: vendas_q1.xlsx). NUNCA 'planilha.xlsx' generico.
 4. COLISAO: antes de wb.save(filepath), se os.path.exists, salve como nome_2.xlsx.
-5. Formate cabecalhos: negrito, branco em fill #1F4E79, centralizado, bordas.
+5. Formate cabecalhos: negrito, centralizado, bordas, cor de fundo coerente com o tema
+   da planilha (nao use sempre a mesma cor). Dados de exemplo variados e realistas.
 6. Auto-ajuste de largura de colunas.
 7. Abra no final: subprocess.Popen(f'start \"\" \"{filepath}\"', shell=True)
 8. SEMPRE print() do filepath final salvo.
@@ -153,7 +154,8 @@ def _hint_for_type(stype: Optional[str], wants_chart: bool, formulas: list[str])
     if stype:
         meta = SPREADSHEET_TYPES[stype]
         parts.append(f"Tipo: {stype.upper()}")
-        parts.append(f"Colunas tipicas: {meta['columns']}")
+        parts.append(f"Colunas sugeridas (ponto de partida — adapte, troque ou "
+                     f"acrescente conforme o pedido): {meta['columns']}")
     if wants_chart:
         parts.append("Grafico solicitado: adicione BarChart ou LineChart.")
         parts.append("Use: chart = BarChart(); chart.add_data(Reference(ws, ...))")
@@ -179,19 +181,23 @@ class DataAgent(BaseAgent):
     def plan(self, task, context=None):
         task_text = self._extract_task_text(task)
 
-        # Skills
-        stype = _detect_spreadsheet_type(task_text)
-        wants_chart = _needs_chart(task_text)
-        formulas = _needs_formulas(task_text)
-        if stype or wants_chart or formulas:
-            self.logger.info(
-                f"Skills: tipo={stype} chart={wants_chart} formulas={formulas}"
-            )
+        # Subagentes: SchemaDesigner (tipo + colunas) e FormulaChartDesigner
+        # (formulas + grafico) montam as dicas; SheetReviewer confere o codigo.
+        from agents.subagents import SchemaDesigner, FormulaChartDesigner
+        schema = SchemaDesigner().run(task_text)
+        design = FormulaChartDesigner().run(task_text, schema.data["stype"])
+        self._traces = [schema, design]
+        stype = schema.data["stype"]
+        wants_chart = design.data["chart"]
+        formulas = design.data["formulas"]
+        self.logger.info(f"Subagentes: {schema.summary} | {design.summary}")
 
         ctx = ""
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
         hint = _hint_for_type(stype, wants_chart, formulas)
+        from agents.base_agent import brain_guide
+        hint += brain_guide("DATA")
 
         result = self._call_and_validate(task_text + ctx + hint, retry_feedback=None)
         if result["ok"]:
@@ -208,7 +214,9 @@ class DataAgent(BaseAgent):
         self.logger.error(f"Falhou apos 2 tentativas: {result['reason']}")
         self._metrics["total_plans"] += 1
         self._metrics["failed_plans"] += 1
-        return {"steps": [], "error": result["reason"], "agent": "DATA"}
+        from agents.subagents import SheetReviewer
+        return {"steps": [], "error": result["reason"], "agent": "DATA",
+                "subagents": self._traces + [SheetReviewer().trace(False, result["reason"][:120])]}
 
     # ── Internos ──────────────────────────────────────────────────
 
@@ -227,7 +235,9 @@ class DataAgent(BaseAgent):
                 model=self.model,
                 system=self.system_prompt,
                 user_content=message,
-                max_tokens=4000,
+                max_tokens=12000,
+                effort=self.effort,
+                agent=self.name,
             )
             plan = safe_parse(raw, self.model)
         except Exception as e:
@@ -242,27 +252,12 @@ class DataAgent(BaseAgent):
             code = st.get("code", "")
             code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
 
-            # Validacao 1: AST parse
-            try:
-                ast.parse(code)
-            except SyntaxError as e:
-                snippet = ""
-                try:
-                    snippet = code.split("\n")[(e.lineno or 1) - 1][:120]
-                except Exception:
-                    pass
-                return {
-                    "ok": False,
-                    "reason": (f"SyntaxError linha {e.lineno}: {e.msg}. "
-                               f"Linha: `{snippet}`"),
-                }
-
-            # Validacao 2: precisa salvar .xlsx
-            if ".xlsx" not in code:
-                return {
-                    "ok": False,
-                    "reason": "codigo nao salva nenhum arquivo .xlsx",
-                }
+            # Subagente SheetReviewer: sintaxe, salva .xlsx, chama save()
+            from agents.subagents import SheetReviewer
+            review = SheetReviewer().run(code)
+            self._last_review = review
+            if not review.ok:
+                return {"ok": False, "reason": review.summary}
 
             steps.append({
                 "step": st.get("step", len(steps) + 1),
@@ -280,4 +275,7 @@ class DataAgent(BaseAgent):
         self._metrics["successful_plans"] += 1
         total_code = sum(len(s["params"]["code"]) for s in steps)
         self.logger.info(f"Plano: {len(steps)} step(s), {total_code} chars")
-        return {"steps": steps, "agent": "DATA"}
+        traces = list(getattr(self, "_traces", []))
+        if getattr(self, "_last_review", None):
+            traces.append(self._last_review)
+        return {"steps": steps, "agent": "DATA", "subagents": traces}

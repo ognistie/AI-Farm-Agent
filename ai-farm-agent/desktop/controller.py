@@ -32,9 +32,9 @@ NO_SCREENSHOT = {
     "vision_click", "vision_type", "uia_click", "uia_type", "run_python",
     "run_command", "write_file", "create_folder", "read_file", "list_files",
     "move_file", "copy_file", "delete_file", "find_files", "pip_install",
-    "excel_write", "wait_for_window", "wait_for_element",
+    "excel_write", "wait_for_window", "wait_for_element", "browser_read", "open_path", "browser_task",
 }
-RETRY_ACTIONS = {"vision_click", "vision_type", "uia_click", "uia_type"}
+RETRY_ACTIONS = {"vision_click", "vision_type", "uia_click", "uia_type", "browser_click"}
 
 MAX_TASK_LENGTH = 2000
 TASK_TIMEOUT_S = 120
@@ -55,10 +55,14 @@ class Controller:
         from core.narrator import ReportNarrator
         from core.context_manager import ContextManager
         from core.ai_client import get_client
+        from agents.memory_agent import MemoryAgent
 
         self._ContextManager = ContextManager
         self._ai_client = get_client()
-        self.maestro = Maestro()
+        self.memory = MemoryAgent()
+        from core.brain import get_brain
+        self._brain = get_brain()
+        self.maestro = Maestro(memory=self.memory)
         self.agents = {
             "DATA": DataAgent(),
             "WEB": WebAgent(),
@@ -80,8 +84,21 @@ class Controller:
         except Exception as e:
             print(f"  [cleanup] falhou (nao critico): {e}")
 
+        # Memoria: tira do caminho workflows de formatos antigos (v5-)
+        try:
+            moved = self.memory.purge_legacy()["moved"]
+            if moved:
+                print(f"  [memoria] {moved} workflow(s) de formato antigo movidos para .legacy/")
+        except Exception as e:
+            print(f"  [memoria] limpeza falhou (nao critico): {e}")
+
         self.state = {"running": False}
         self._lock = threading.Lock()
+        # Cada execucao recebe um id. Uma thread cancelada que ainda esteja
+        # presa (ex.: aguardando a API) nao pode emitir eventos na tela da
+        # tarefa seguinte nem desligar o estado "running" dela.
+        self._run_id = 0
+        self._tls = threading.local()
 
     # ──────────────────────────────────────────────────────────────────
     #  API publica (consumida pela bridge QML)
@@ -103,9 +120,11 @@ class Controller:
                 bus.emit("error", {"msg": "Ja existe uma execucao em andamento."})
                 return
             self.state["running"] = True
+            self._run_id += 1
+            run_id = self._run_id
 
         threading.Thread(
-            target=self._run, args=(task, dry_run, generate_report),
+            target=self._run, args=(task, dry_run, generate_report, run_id),
             daemon=True,
         ).start()
 
@@ -119,6 +138,19 @@ class Controller:
     #  Loop interno (porta de ui/server.py:_run)
     # ──────────────────────────────────────────────────────────────────
 
+    def _is_current(self) -> bool:
+        """True na thread da execucao ativa (ou fora de qualquer execucao)."""
+        rid = getattr(self._tls, "run_id", None)
+        return rid is None or rid == self._run_id
+
+    def _alive(self) -> bool:
+        """A execucao desta thread deve continuar?"""
+        return self.state["running"] and self._is_current()
+
+    def _emit(self, event: str, payload: Any = None) -> None:
+        if self._is_current():
+            bus.emit(event, payload)
+
     def _log(self, level: str, agent: str, msg: str,
              extra: Optional[Dict[str, Any]] = None) -> None:
         """Helper para emitir logs estruturados."""
@@ -130,39 +162,76 @@ class Controller:
         }
         if extra:
             payload["extra"] = extra
-        bus.emit("log", payload)
+        self._emit("log", payload)
 
     def _emit_usage(self) -> None:
         """Emite uso REAL agregado do AIClient (custo por modelo + tokens)."""
         m = self._ai_client.metrics
         payload = {
             "calls": m["total_calls"],
-            "tokens_est": m["total_input_tokens"] + m["total_output_tokens"],
+            "tokens_est": (m["total_input_tokens"] + m["total_output_tokens"]
+                           + m.get("total_cache_read_tokens", 0)
+                           + m.get("total_cache_write_tokens", 0)),
             "input_tokens": m["total_input_tokens"],
             "output_tokens": m["total_output_tokens"],
+            "cache_read_tokens": m.get("total_cache_read_tokens", 0),
             "cost_usd": round(m["total_cost_usd"], 5),
             "by_model": m.get("calls_by_model", {}),
-            "fallbacks": m.get("fallbacks", 0),
         }
-        bus.emit("api_usage", payload)
+        self._emit("api_usage", payload)
 
-    def _run(self, task: str, dry_run: bool, gen_report: bool) -> None:
+    @staticmethod
+    def _metrics_delta(before: Dict[str, Any], after: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uso de UMA execucao. O AIClient acumula desde a abertura do app;
+        gravar o acumulado no historico fazia o total somar custos repetidos.
+        """
+        def d(key):
+            return after.get(key, 0) - before.get(key, 0)
+
+        by_agent = {}
+        for agent, cur in after.get("calls_by_agent", {}).items():
+            prev = before.get("calls_by_agent", {}).get(agent, {})
+            calls = cur["calls"] - prev.get("calls", 0)
+            if calls:
+                by_agent[agent] = {
+                    "calls": calls,
+                    "cost_usd": round(cur["cost_usd"] - prev.get("cost_usd", 0.0), 6),
+                }
+        return {
+            "api_calls": d("total_calls"),
+            "tokens_est": (d("total_input_tokens") + d("total_output_tokens")
+                           + d("total_cache_read_tokens") + d("total_cache_write_tokens")),
+            "input_tokens": d("total_input_tokens"),
+            "output_tokens": d("total_output_tokens"),
+            "cache_read_tokens": d("total_cache_read_tokens"),
+            "cache_write_tokens": d("total_cache_write_tokens"),
+            "cost_usd": round(d("total_cost_usd"), 6),
+            "by_agent": by_agent,
+            "truncated": d("truncated"),
+        }
+
+    def _run(self, task: str, dry_run: bool, gen_report: bool,
+             run_id: int = 0) -> None:
+        self._tls.run_id = run_id or self._run_id
         all_success = True
         task_start = time.time()
+        metrics_before = self._ai_client.metrics
         entry = history_store.new_execution(task, dry_run=dry_run)
+        brain_plan = None
+        all_records: list = []
 
         try:
-            bus.emit("phase", {"phase": "maestro", "msg": "Analisando intencao..."})
+            self._emit("phase", {"phase": "maestro", "msg": "Analisando intencao..."})
             self._log("INFO", "MAESTRO", f"Recebida tarefa: {task[:80]}")
 
-            # Memoria: workflow_store v4 ja gerencia reaproveitamento via Maestro.
-            # O Maestro consulta find_similar_workflow internamente e devolve plano
-            # se houver match com mesmo tema. Aqui apenas analisamos normalmente.
+            # Memoria: o Maestro consulta rotas parecidas e as usa como
+            # referencia no prompt (nunca como atalho).
             plan = self.maestro.analyze(task)
             self._emit_usage()
 
             if plan.get("needs_clarification"):
-                bus.emit("error", {
+                self._emit("error", {
                     "msg": plan.get("question",
                                     "Tarefa ambigua — pode dar mais detalhes?"),
                     "kind": "clarification",
@@ -170,10 +239,23 @@ class Controller:
                 entry["error"] = "clarification_required"
                 return
 
+            if plan.get("limitation"):
+                # Pedido que o sistema nao cumpre como foi feito (ex.: letra
+                # de musica protegida). Aviso honesto em vez de substituto.
+                self._emit("error", {"msg": plan.get("message", ""), "kind": "limitation"})
+                entry["error"] = "limitation: " + plan.get("message", "")
+                return
+
             if plan.get("error"):
-                bus.emit("error", {"msg": plan.get("message", "Erro do Maestro.")})
+                if plan.get("rejected_plan"):
+                    brain_plan = self._brain.write_plan(task, plan["rejected_plan"])
+                self._emit("error", {"msg": plan.get("message", "Erro do Maestro.")})
                 entry["error"] = plan.get("message", "maestro_error")
                 return
+
+            # Plano proposto e validado vai para o segundo cerebro antes de
+            # executar; cada agente anexa seus passos e a validacao.
+            brain_plan = self._brain.write_plan(task, plan)
 
             subtasks = plan.get("subtasks", [])
             entry["subtasks"] = [
@@ -182,7 +264,7 @@ class Controller:
             ]
             entry["skills"] = plan.get("skills", [])
 
-            bus.emit("plan_ready", {"plan": {
+            self._emit("plan_ready", {"plan": {
                 "task_summary": plan.get("analysis", ""),
                 "steps": [
                     {
@@ -201,8 +283,8 @@ class Controller:
             ctx_mgr = self._ContextManager()
 
             for si, subtask in enumerate(subtasks):
-                if not self.state["running"]:
-                    bus.emit("cancelled", {"msg": "Cancelado."})
+                if not self._alive():
+                    self._emit("cancelled", {"msg": "Cancelado."})
                     return
 
                 subtask = ctx_mgr.prepare_subtask(subtask, si)
@@ -210,6 +292,7 @@ class Controller:
                 agent_name = subtask.get("agent", "").upper()
                 agent = self.agents.get(agent_name)
                 if not agent:
+                    all_success = False
                     self._log("WARN", "MAESTRO",
                               f"Agente desconhecido: {agent_name}")
                     continue
@@ -222,7 +305,7 @@ class Controller:
                 original_task = subtask.get("original_task", agent_task)
                 dep = subtask.get("depends_on")
 
-                bus.emit("phase", {"phase": "agent", "msg": f"{agent_name} Agent..."})
+                self._emit("phase", {"phase": "agent", "msg": f"{agent_name} Agent..."})
                 self._log("INFO", agent_name, f"Iniciando: {agent_task[:80]}")
 
                 legacy_ctx = None
@@ -252,23 +335,54 @@ class Controller:
                     # Propaga `original_task` no payload do agente. Agentes
                     # que ignoram esse campo continuam funcionando normal
                     # (backward-compat).
-                    payload = {"task": agent_task, "original_task": original_task}
+                    payload = {"task": agent_task, "original_task": original_task,
+                               "params": subtask_params}
                     agent_plan = agent.plan(payload, context=legacy_ctx)
                 self._emit_usage()
 
-                if agent_plan.get("error"):
+                # Rastro dos 3 subagentes do agente (entender/montar/conferir)
+                sub_traces = agent_plan.get("subagents") or []
+                if sub_traces:
+                    from agents.subagents import summarize
+                    self._log("INFO", agent_name, "Subagentes: " + summarize(sub_traces))
+
+                if agent_plan.get("error") or not agent_plan.get("steps"):
+                    # Plano vazio/falho = subtask nao executada. Antes isso
+                    # nao marcava falha e a tarefa ia para a memoria como
+                    # "sucesso".
+                    all_success = False
                     self._log("ERROR", agent_name,
-                              f"Plano falhou: {agent_plan.get('error')}")
+                              f"Plano falhou: {agent_plan.get('error') or agent_plan.get('reason') or 'sem steps'}")
                     continue
 
                 agent_steps = agent_plan.get("steps", [])
+
+                # O agente propoe; o Maestro valida os passos contra as
+                # politicas antes de qualquer acao no computador.
+                from core.plan_validator import validate_steps
+                step_check = validate_steps(agent_name, subtask, agent_steps, task)
+                self._brain.append_agent_plan(brain_plan, agent_name, subtask,
+                                              agent_steps, step_check, sub_traces)
+                if not step_check.approved:
+                    all_success = False
+                    self._log("WARN", "MAESTRO",
+                              f"Passos do agente {agent_name} reprovados: {step_check.summary()}")
+                    if hasattr(agent, "report_result") and not dry_run:
+                        agent.report_result({"task": agent_task}, False)
+                    continue
+
                 sub_results = []
+                sub_ok = True
                 is_desktop = agent_name == "DESKTOP"
                 ws_snapshot = dict(self.engine.workspace)
+                # Acoes longas (piloto do navegador) param no Esc e narram cada turno
+                self.engine.should_stop = lambda: not self._alive()
+                self.engine.on_progress = (
+                    lambda msg, _a=agent_name: self._log("INFO", _a, msg))
 
                 for j, step in enumerate(agent_steps):
-                    if not self.state["running"]:
-                        bus.emit("cancelled", {"msg": "Cancelado."})
+                    if not self._alive():
+                        self._emit("cancelled", {"msg": "Cancelado."})
                         return
                     step_n += 1
                     action = step.get("action", "")
@@ -276,7 +390,7 @@ class Controller:
                     desc = step.get("description", "")
                     start_time = time.time()
 
-                    bus.emit("step_start", {
+                    self._emit("step_start", {
                         "step": step_n,
                         "total": step_n + len(agent_steps) - j - 1,
                         "desc": f"[{agent_name}] {desc}",
@@ -288,12 +402,19 @@ class Controller:
 
                     # Retry para acoes visuais
                     if (not result.get("success", True)
-                            and action in RETRY_ACTIONS and not dry_run):
+                            and action in RETRY_ACTIONS and not dry_run
+                            and not str(result.get("result", "")).startswith("⛔")):
                         time.sleep(2)
                         result = self.engine.execute(action, params, dry_run=dry_run)
 
+                    # Subagente de conferencia pos-passo (ex.: ContentGuard do
+                    # WebAgent marca prompt injection no conteudo lido).
+                    if hasattr(agent, "review_step"):
+                        result = agent.review_step(step, result)
+
                     if not result.get("success", True):
                         all_success = False
+                        sub_ok = False
                         self._log("WARN", agent_name,
                                   f"Step falhou: {action}",
                                   {"error": result.get("error", "")})
@@ -321,7 +442,7 @@ class Controller:
                         except Exception:
                             pass
 
-                    bus.emit("step_done", {
+                    self._emit("step_done", {
                         "step": step_n,
                         "total": step_n + len(agent_steps) - j - 1,
                         "ok": result.get("success", False),
@@ -334,6 +455,9 @@ class Controller:
                     })
                     time.sleep(0.05)
 
+                if not dry_run and hasattr(agent, "report_result"):
+                    agent.report_result({"task": agent_task}, sub_ok)
+
                 if not dry_run:
                     extracted = ctx_mgr.extract(
                         subtask_index=si,
@@ -344,7 +468,7 @@ class Controller:
                     )
                     if (extracted.get("files") or extracted.get("folder")
                             or extracted.get("url")):
-                        bus.emit("context_extracted", {
+                        self._emit("context_extracted", {
                             "subtask": si + 1,
                             "agent": agent_name,
                             "folder": extracted.get("folder"),
@@ -367,23 +491,23 @@ class Controller:
                 except Exception:
                     pass
 
-            if all_success and not dry_run:
+            if not dry_run:
+                # Registra a ROTA (agentes + tipo de acao, sem conteudo) com
+                # o resultado. Falhas tambem contam: rota que falha mais do
+                # que funciona deixa de ser sugerida ao Maestro.
                 try:
-                    from memory.workflow_store import save_workflow
-                    save_workflow(
-                        task,
-                        [r.get("result", "") for r in all_records],
-                        subtasks[0].get("agent", "") if subtasks else "",
-                        True,
-                    )
-                except Exception:
-                    pass
+                    mem = self.memory.record(task, subtasks, all_success)
+                    if mem.get("saved"):
+                        self._log("INFO", "MEMORY",
+                                  f"Rota registrada ({'sucesso' if all_success else 'falha'})")
+                except Exception as mem_err:
+                    self._log("WARN", "MEMORY", f"Falha ao registrar rota: {mem_err}")
 
             # NB: o registro de execucoes vive em desktop/history_store.py
-            # (gravado no finally desta funcao). Removido o EvolutionEngine
-            # duplicado — todo aprendizado agora vive em memory/workflow_store v4.
+            # (gravado no finally desta funcao). Aprendizado de rotas vive
+            # em memory/workflow_store v6.
 
-            bus.emit("task_done", {
+            self._emit("task_done", {
                 "msg": "Concluido.",
                 "steps": step_n,
                 "dry_run": dry_run,
@@ -394,38 +518,38 @@ class Controller:
                       f"Execucao concluida em {step_n} step(s).")
 
             if gen_report and not dry_run:
-                bus.emit("phase", {"phase": "reporting",
+                self._emit("phase", {"phase": "reporting",
                                    "msg": "Gerando relatorio..."})
                 report = self.narrator.generate_report(
                     task, all_records, self.capture.get_captures_as_base64(3)
                 )
-                bus.emit("report_ready", {"report": report})
+                self._emit("report_ready", {"report": report})
 
             entry["success"] = all_success
 
         except Exception as e:
             tb = traceback.format_exc()
-            bus.emit("error", {"msg": str(e), "trace": tb})
+            self._emit("error", {"msg": str(e), "trace": tb})
             self._log("ERROR", "SYSTEM", f"Excecao: {e}", {"trace": tb})
             entry["error"] = str(e)
         finally:
             with self._lock:
-                self.state["running"] = False
+                if self._is_current():
+                    self.state["running"] = False
             entry["ended_at"] = datetime.now().isoformat(timespec="seconds")
             entry["duration_ms"] = int((time.time() - task_start) * 1000)
-            # Metricas REAIS por modelo + custo exato (vindo do AIClient)
-            m = self._ai_client.metrics
-            entry["metrics"] = {
-                "api_calls": m["total_calls"],
-                "tokens_est": m["total_input_tokens"] + m["total_output_tokens"],
-                "input_tokens": m["total_input_tokens"],
-                "output_tokens": m["total_output_tokens"],
-                "cost_usd": round(m["total_cost_usd"], 6),
-                "by_model": dict(m.get("calls_by_model", {})),
-                "fallbacks": m.get("fallbacks", 0),
-            }
+            # Metricas REAIS desta execucao (delta do AIClient)
+            entry["metrics"] = self._metrics_delta(
+                metrics_before, self._ai_client.metrics)
             try:
                 history_store.append(entry)
-                bus.emit("history_changed", {"entry": entry})
+                self._emit("history_changed", {"entry": entry})
             except Exception as hist_err:
                 print(f"  [History] Falhou ao gravar: {hist_err}")
+            # Segundo cerebro: plano vira "executado"/"falhou" e a execucao
+            # entra em 40 Execucoes/Sucesso ou Falhas (consulta futura).
+            if not str(entry.get("error") or "").startswith(("clarification", "limitation")):
+                try:
+                    self._brain.finish(brain_plan, entry, all_records)
+                except Exception as brain_err:
+                    print(f"  [Brain] Falhou ao registrar: {brain_err}")

@@ -1,0 +1,213 @@
+/* ═══════════════════════════════════════════════════════════════════
+   AI Farm Agent — Segundo Cérebro
+   Snippet de design (Configurações → Aparência → Snippets CSS).
+   Funciona sobre o tema Minimal (escuro) e no tema padrão.
+   ═══════════════════════════════════════════════════════════════════ */
+
+body {
+  --brain-maestro: #F97316;
+  --brain-web: #38BDF8;
+  --brain-desktop: #FBBF24;
+  --brain-code: #34D399;
+  --brain-data: #A78BFA;
+  --brain-file: #FB923C;
+  --brain-memory: #94A3B8;
+  --brain-vision: #F87171;
+  --brain-policy: #EF4444;
+  --brain-skill: #E879F9;
+  --brain-ref: #FDE68A;
+  --brain-ok: #22C55E;
+  --brain-fail: #EF4444;
+  --brain-radius: 14px;
+  --brain-card-bg: rgba(255, 255, 255, 0.03);
+  --brain-card-border: rgba(255, 255, 255, 0.08);
+}
+.theme-light {
+  --brain-card-bg: rgba(0, 0, 0, 0.025);
+  --brain-card-border: rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Cor por agente (cssclasses no frontmatter) ─────────────────── */
+.agent-maestro { --accent-note: var(--brain-maestro); }
+.agent-web     { --accent-note: var(--brain-web); }
+.agent-desktop { --accent-note: var(--brain-desktop); }
+.agent-code    { --accent-note: var(--brain-code); }
+.agent-data    { --accent-note: var(--brain-data); }
+.agent-file    { --accent-note: var(--brain-file); }
+.agent-memory  { --accent-note: var(--brain-memory); }
+.agent-vision  { --accent-note: var(--brain-vision); }
+.policy-note   { --accent-note: var(--brain-policy); }
+.skill-note    { --accent-note: var(--brain-skill); }
+.ref-note      { --accent-note: var(--brain-ref); }
+.exec-ok       { --accent-note: var(--brain-ok); }
+.exec-fail     { --accent-note: var(--brain-fail); }
+
+/* Faixa de cor no topo + título com a cor do dono da nota */
+[class*="agent-"] .inline-title,
+.policy-note .inline-title, .skill-note .inline-title, .ref-note .inline-title,
+.exec-ok .inline-title, .exec-fail .inline-title {
+  color: var(--accent-note);
+  letter-spacing: -0.02em;
+}
+[class*="agent-"].markdown-preview-view .markdown-preview-sizer::before,
+[class*="agent-"] .cm-sizer::before,
+.policy-note .cm-sizer::before, .skill-note .cm-sizer::before, .ref-note .cm-sizer::before,
+.exec-ok .cm-sizer::before, .exec-fail .cm-sizer::before,
+.policy-note.markdown-preview-view .markdown-preview-sizer::before,
+.skill-note.markdown-preview-view .markdown-preview-sizer::before,
+.ref-note.markdown-preview-view .markdown-preview-sizer::before,
+.exec-ok.markdown-preview-view .markdown-preview-sizer::before,
+.exec-fail.markdown-preview-view .markdown-preview-sizer::before {
+  content: "";
+  display: block;
+  height: 4px;
+  margin: 0 0 18px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-note), transparent 85%);
+}
+
+/* ─── Dashboard (cssclasses: dashboard) ──────────────────────────── */
+.dashboard {
+  --file-line-width: 1200px;
+}
+.dashboard .inline-title { display: none; }
+.dashboard h1 {
+  font-size: 2.3em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.1em;
+  background: linear-gradient(90deg, var(--text-normal) 30%, var(--brain-maestro));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dashboard h2 {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  border: none;
+  margin-top: 2.2em;
+}
+.dashboard .metadata-container { display: none; }
+
+/* ─── Grade de cartões: > [!grid] com callouts dentro ─────────────── */
+.callout[data-callout="grid"] {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+.callout[data-callout="grid"] > .callout-title { display: none; }
+.callout[data-callout="grid"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 0;
+}
+.callout[data-callout="grid"] > .callout-content > p { display: none; }
+.callout[data-callout="grid"] > .callout-content > .callout {
+  margin: 0;
+  border-radius: var(--brain-radius);
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+.callout[data-callout="grid"] > .callout-content > .callout:hover {
+  transform: translateY(-2px);
+}
+
+/* ─── Callouts do cérebro ────────────────────────────────────────── */
+.callout {
+  border-radius: var(--brain-radius);
+}
+.callout[data-callout="maestro"] { --callout-color: 249, 115, 22;  --callout-icon: lucide-music-4; }
+.callout[data-callout="web"]     { --callout-color: 56, 189, 248;  --callout-icon: lucide-globe; }
+.callout[data-callout="desktop"] { --callout-color: 251, 191, 36;  --callout-icon: lucide-monitor; }
+.callout[data-callout="code"]    { --callout-color: 52, 211, 153;  --callout-icon: lucide-code-2; }
+.callout[data-callout="data"]    { --callout-color: 167, 139, 250; --callout-icon: lucide-bar-chart-3; }
+.callout[data-callout="file"]    { --callout-color: 251, 146, 60;  --callout-icon: lucide-folder-tree; }
+.callout[data-callout="memory"]  { --callout-color: 148, 163, 184; --callout-icon: lucide-brain; }
+.callout[data-callout="vision"]  { --callout-color: 248, 113, 113; --callout-icon: lucide-eye; }
+.callout[data-callout="policy"]  { --callout-color: 239, 68, 68;   --callout-icon: lucide-shield-check; }
+.callout[data-callout="route"]   { --callout-color: 253, 230, 138; --callout-icon: lucide-route; }
+.callout[data-callout="skill"]   { --callout-color: 232, 121, 249; --callout-icon: lucide-sparkles; }
+.callout[data-callout="lesson"]  { --callout-color: 45, 212, 191;  --callout-icon: lucide-lightbulb; }
+.callout[data-callout="metric"]  { --callout-color: 148, 163, 184; --callout-icon: lucide-activity; }
+.callout[data-callout="ok"]      { --callout-color: 34, 197, 94;   --callout-icon: lucide-check-circle-2; }
+.callout[data-callout="fail"]    { --callout-color: 239, 68, 68;   --callout-icon: lucide-x-circle; }
+.callout[data-callout="inbox"]   { --callout-color: 148, 163, 184; --callout-icon: lucide-inbox; }
+
+/* Cartão: callout "vidro" com borda colorida à esquerda */
+.callout[data-callout="maestro"], .callout[data-callout="web"], .callout[data-callout="desktop"],
+.callout[data-callout="code"], .callout[data-callout="data"], .callout[data-callout="file"],
+.callout[data-callout="memory"], .callout[data-callout="vision"], .callout[data-callout="policy"],
+.callout[data-callout="route"], .callout[data-callout="skill"], .callout[data-callout="lesson"],
+.callout[data-callout="metric"], .callout[data-callout="inbox"] {
+  background: var(--brain-card-bg);
+  border: 1px solid var(--brain-card-border);
+  border-left: 3px solid rgb(var(--callout-color));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+}
+.callout .callout-title-inner { font-weight: 600; letter-spacing: -0.01em; }
+
+/* Número grande dentro de [!metric] */
+.callout[data-callout="metric"] .callout-content strong {
+  display: block;
+  font-size: 1.9em;
+  line-height: 1.1;
+  color: var(--text-normal);
+}
+
+/* ─── Tags como pílulas ──────────────────────────────────────────── */
+a.tag, .cm-hashtag {
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 0.8em;
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--brain-maestro);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+}
+
+/* ─── Explorador de arquivos: pastas com a cor de cada área ──────── */
+.nav-folder-title[data-path^="00 Maestro"]                { color: var(--brain-maestro); }
+.nav-folder-title[data-path="10 Agentes/Web"]              { color: var(--brain-web); }
+.nav-folder-title[data-path="10 Agentes/Desktop"]          { color: var(--brain-desktop); }
+.nav-folder-title[data-path="10 Agentes/Code"]             { color: var(--brain-code); }
+.nav-folder-title[data-path="10 Agentes/Data"]             { color: var(--brain-data); }
+.nav-folder-title[data-path="10 Agentes/File"]             { color: var(--brain-file); }
+.nav-folder-title[data-path="10 Agentes/Memoria"]          { color: var(--brain-memory); }
+.nav-folder-title[data-path="10 Agentes/Visao"]            { color: var(--brain-vision); }
+.nav-folder-title[data-path^="20 Politicas"]              { color: var(--brain-policy); }
+.nav-folder-title[data-path="30 Skills"]                   { color: var(--brain-skill); }
+.nav-folder-title[data-path^="30 Tarefas"]                { color: var(--brain-ref); }
+.nav-folder-title[data-path="40 Execucoes/Sucesso"]        { color: var(--brain-ok); }
+.nav-folder-title[data-path="40 Execucoes/Falhas"]         { color: var(--brain-fail); }
+.nav-folder-title[data-path^="00 Maestro"],
+.nav-folder-title[data-path^="10 Agentes"],
+.nav-folder-title[data-path^="20 Politicas"],
+.nav-folder-title[data-path^="30 "],
+.nav-folder-title[data-path^="40 Execucoes"],
+.nav-folder-title[data-path^="50 Diario"],
+.nav-folder-title[data-path^="60 Aprendizados"],
+.nav-folder-title[data-path^="05 Inbox"] { font-weight: 600; }
+
+/* ─── Tabelas mais leves ─────────────────────────────────────────── */
+.markdown-rendered table { border-radius: 10px; overflow: hidden; }
+.markdown-rendered th {
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* ─── Bases: cartões arredondados ────────────────────────────────── */
+.bases-cards-item {
+  border-radius: var(--brain-radius) !important;
+  border: 1px solid var(--brain-card-border) !important;
+}
+
+/* ─── Canvas: rótulos de grupo maiores ───────────────────────────── */
+.canvas-group-label {
+  font-size: 1.15em !important;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}

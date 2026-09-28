@@ -21,6 +21,13 @@ pyautogui.FAILSAFE = True
 pyautogui.PAUSE = 0.1
 
 BLOCKED_CMDS = ["rm -rf","rmdir /s","format c","del /f /s","shutdown","reg delete","diskpart","bcdedit"]
+# Prefixos que os handlers usam para sinalizar falha. Antes so "❌" contava:
+# "⚠️ Confiança muito baixa", "⛔ Bloqueado" e "Timeout" viravam sucesso e
+# a tarefa ia para a memoria como rota que funcionou.
+FAILURE_PREFIXES = ("❌", "⛔", "⚠️", "Timeout", "Erro")
+# Abaixo disso o palpite de coordenada da visao e chute: melhor falhar e cair no retry.
+MIN_VISION_CONFIDENCE = 0.5
+
 USERNAME = getpass.getuser()
 BASE = f"C:/Users/{USERNAME}"
 
@@ -181,13 +188,14 @@ class AutomationEngine:
             # Novas acoes v2
             "uia_click":self._uia_click,"uia_type":self._uia_type,
             "wait_for_window":self._wait_for_window,"wait_for_element":self._wait_for_element,
+            "browser_click":self._browser_click,"browser_read":self._browser_read,"browser_task":self._browser_task,"open_path":self._open_path,
         }
         handler = MAP.get(action)
         if not handler:
             return {"success":False,"action":action,"result":f"Acao desconhecida: {action}","timestamp":ts}
         try:
             result = handler(params)
-            ok = not (isinstance(result,str) and result.startswith("❌"))
+            ok = not (isinstance(result,str) and result.lstrip().startswith(FAILURE_PREFIXES))
             rec = {"success":ok,"action":action,"params":params,"result":result,"timestamp":ts,"dry_run":dry_run}
         except pyautogui.FailSafeException:
             sw,sh = pyautogui.size(); pyautogui.moveTo(sw//2,sh//2,duration=0.1)
@@ -471,7 +479,7 @@ class AutomationEngine:
                     time.sleep(1); continue
                 return f"⚠️ Coordenada na taskbar ({x},{y}) — elemento errado"
 
-            if c < 0.15:
+            if c < MIN_VISION_CONFIDENCE:
                 if attempt == 0: time.sleep(1); continue
                 return f"⚠️ Confiança muito baixa: {c:.0%}"
 
@@ -483,6 +491,88 @@ class AutomationEngine:
             return f"👁️ ({x},{y}) [{c:.0%}]"
 
         return f"❌ Falhou após 2 tentativas: {desc}"
+
+    # === NAVEGADOR DO USUARIO (UIA) ===
+    def _browser_click(self, p):
+        """Clica num link da pagina aberta: UIA (texto/URL reais) -> visao conferida."""
+        desc = p.get("description", "") or p.get("target", "")
+        if self.dry_run: return f"[SIM] Clicar no navegador: {desc}"
+        if not desc: return "❌ Descrição do link vazia"
+        try:
+            from core import browser_uia
+        except Exception as e:
+            return self._vision_click({"description": desc}) + f" (UIA indisponível: {e})"
+        try:
+            r = browser_uia.click(desc)
+        except Exception as e:
+            r = {"ok": False, "error": str(e)}
+        if r.get("ok"):
+            return f"✅ Link '{r.get('name','')[:60]}' → {r.get('url','')[:90]} [UIA {r.get('method','')}]"
+        if r.get("blocked"):
+            return r["error"]
+        # Visao como ultimo recurso, mas CONFERIDA: sem mudanca de pagina = falha
+        win = browser_uia.browser_window()
+        before = browser_uia._signature(win) if win else None
+        vdesc = desc if "navegador" in desc else desc + " (dentro da pagina do navegador)"
+        res = self._vision_click({"description": vdesc})
+        if res.startswith("👁️") and win is not None:
+            if browser_uia.wait_change(win, before):
+                return f"{res} → página mudou (visão; UIA: {r.get('error','')[:60]})"
+            return f"⚠️ Clique por visão sem efeito na página: {desc[:60]}"
+        return res
+
+    def _browser_task(self, p):
+        """Objetivo livre em qualquer site: o piloto le a pagina, age e confere, turno a turno."""
+        goal = p.get("goal") or p.get("task", "")
+        if self.dry_run: return f"[SIM] Piloto do navegador: {goal}"
+        if not goal: return "❌ Objetivo vazio"
+        try:
+            from core.browser_pilot import BrowserPilot, format_result
+        except Exception as e:
+            return f"⚠️ Piloto do navegador indisponível: {e}"
+        hints = ""
+        try:
+            from core.brain import get_brain
+            refs = get_brain().find_references(goal, k=2)
+            hints = "\n".join(f"- {r['title']}: {r['path'][:300]}" for r in refs if r.get("path"))
+        except Exception:
+            pass
+        pilot = BrowserPilot(vision_click=self._vision_click,
+                             should_stop=getattr(self, "should_stop", None),
+                             on_progress=getattr(self, "on_progress", None))
+        return format_result(pilot.run(goal, p.get("start_url", ""), hints))
+
+    def _browser_read(self, p):
+        """Le titulo, URL, texto e links da pagina aberta no navegador do usuario."""
+        if self.dry_run: return "[SIM] Ler página do navegador"
+        try:
+            from core import browser_uia
+            r = browser_uia.read(max_chars=int(p.get("max_chars", 1500)))
+        except Exception as e:
+            return f"⚠️ Leitura do navegador indisponível: {e}"
+        if not r.get("ok"):
+            return f"⚠️ {r.get('error','')}"
+        if r.get("blocked"):
+            return r["blocked"]
+        links = "\n".join(f"- {l['name']}: {l['url']}" for l in r["links"][:10])
+        return f"🌐 {r['title']}\n{r['url']}\n{r['text']}" + (f"\nLinks:\n{links}" if links else "")
+
+    def _open_path(self, p):
+        """Abre pasta/arquivo direto (sem digitar no menu Iniciar). Nunca executa programas."""
+        from core.paths import resolve_path, EXECUTABLE_EXT
+        raw = p.get("path", "")
+        if re.match(r"^https?://", raw.strip()):
+            if self.dry_run: return f"[SIM] Abrir {raw}"
+            import webbrowser; webbrowser.open(raw.strip()); return f"🌐 {raw.strip()}"
+        path = resolve_path(raw)
+        if not path: return "❌ Caminho vazio"
+        if not os.path.exists(path): return f"❌ Caminho não existe: {path}"
+        if os.path.isfile(path) and os.path.splitext(path)[1].lower() in EXECUTABLE_EXT:
+            return f"⛔ Não abro executáveis/scripts por aqui: {os.path.basename(path)}"
+        if self.dry_run: return f"[SIM] Abrir {path}"
+        os.startfile(path)
+        time.sleep(1)
+        return f"📂 {path}"
 
     def _vision_type(self, p):
         desc, text = p.get("description",""), p.get("text","")
@@ -506,7 +596,7 @@ class AutomationEngine:
                 if attempt == 0: time.sleep(1); continue
                 return f"⚠️ Campo na taskbar ({x},{y})"
 
-            if c < 0.15:
+            if c < MIN_VISION_CONFIDENCE:
                 if attempt == 0: time.sleep(1); continue
                 return f"⚠️ Confiança: {c:.0%}"
 

@@ -73,8 +73,11 @@ OPERATIONS: dict[str, dict] = {
         "destructive": False,
     },
     "delete": {
-        "keywords": ["delete", "deletar", "remover ", "remove ", "apagar",
-                     "apaga ", "excluir", "exclui", "limpar", "limpa "],
+        # Imperativos tambem ("apague", "exclua", "remova", "limpe"): antes so
+        # o infinitivo era reconhecido e "apague os arquivos" nao era destrutivo.
+        "keywords": ["delete", "deletar", "remover ", "remove ", "remova", "apagar",
+                     "apaga ", "apague", "excluir", "exclui", "exclua", "limpar",
+                     "limpa ", "limpe", "jogue fora", "lixeira"],
         "destructive": True,
     },
     "search": {
@@ -231,21 +234,23 @@ class FileAgent(BaseAgent):
     def plan(self, task, context=None):
         task_text = self._extract_task_text(task)
 
-        # Skills
-        op = _detect_operation(task_text)
-        destructive = _is_destructive(op)
-        has_confirm = _has_explicit_confirmation(task_text)
-        sensitive = _mentions_sensitive_path(task_text)
-
-        if op or destructive or sensitive:
-            self.logger.info(
-                f"Skills: op={op} destructive={destructive} "
-                f"confirm={has_confirm} sensitive={sensitive}"
-            )
+        # Subagentes: PathResolver (pastas reais / sensiveis) e
+        # OperationPlanner (operacao + modo executar/simular). O
+        # SafetyAuditor confere o codigo gerado em _call_and_validate.
+        from agents.subagents import PathResolver, OperationPlanner
+        paths = PathResolver().run(task_text)
+        sensitive = paths.data["sensitive"]
+        opplan = OperationPlanner().run(task_text, sensitive)
+        self._traces = [paths, opplan]
+        op = opplan.data["op"]
+        destructive = opplan.data["destructive"]
+        has_confirm = opplan.data.get("confirmed", False)
+        self._mode = opplan.data["mode"]
+        self.logger.info(f"Subagentes: {paths.summary} | {opplan.summary}")
 
         # Gate de path sensivel: rejeita imediatamente sem chamar LLM
-        if sensitive and destructive:
-            self.logger.error(f"Operacao destrutiva em path sensivel ({sensitive}) bloqueada")
+        if not opplan.ok:
+            self.logger.error(opplan.summary)
             self._metrics["total_plans"] += 1
             self._metrics["failed_plans"] += 1
             return {
@@ -253,7 +258,19 @@ class FileAgent(BaseAgent):
                 "error": (f"Operacao destrutiva em path sensivel ({sensitive}) "
                           "foi bloqueada por seguranca. Especifique uma subpasta."),
                 "agent": "FILE",
+                "subagents": self._traces,
             }
+
+        # So abrir uma pasta/arquivo nao precisa de LLM nem de script
+        from core.paths import is_open_folder_request, extract_path
+        if is_open_folder_request(task_text):
+            path = extract_path(task_text)
+            self.logger.info(f"Abrir caminho direto: {path}")
+            self._metrics["total_plans"] += 1
+            self._metrics["successful_plans"] += 1
+            return {"steps": [{"step": 1, "action": "open_path", "params": {"path": path},
+                               "description": f"Abrir {path}"}],
+                    "agent": "FILE", "subagents": self._traces}
 
         ctx = ""
         if context:
@@ -261,6 +278,8 @@ class FileAgent(BaseAgent):
 
         hints = _safety_hint(op, destructive, has_confirm, sensitive) \
               + _category_hint(task_text)
+        if paths.data["folders"]:
+            hints += "\nPASTAS RESOLVIDAS (use estes caminhos): " + ", ".join(paths.data["folders"])
 
         result = self._call_and_validate(task_text + ctx + hints,
                                          retry_feedback=None)
@@ -276,13 +295,16 @@ class FileAgent(BaseAgent):
         self.logger.error(f"Falhou apos 2 tentativas: {result['reason']}")
         self._metrics["total_plans"] += 1
         self._metrics["failed_plans"] += 1
-        return {"steps": [], "error": result["reason"], "agent": "FILE"}
+        from agents.subagents import SafetyAuditor
+        return {"steps": [], "error": result["reason"], "agent": "FILE",
+                "subagents": getattr(self, "_traces", []) + [SafetyAuditor().trace(False, result["reason"][:120])]}
 
     # ── Internos ──────────────────────────────────────────────────
 
     def _call_and_validate(self, user_input: str,
                            retry_feedback: Optional[str]) -> dict:
-        message = f"TAREFA: {user_input}\nJSON puro."
+        from agents.base_agent import brain_guide
+        message = f"TAREFA: {user_input}{brain_guide('FILE')}\nJSON puro."
         if retry_feedback:
             message = (
                 f"TAREFA: {user_input}\n\n"
@@ -295,7 +317,9 @@ class FileAgent(BaseAgent):
                 model=self.model,
                 system=self.system_prompt,
                 user_content=message,
-                max_tokens=3000,
+                max_tokens=8000,
+                effort=self.effort,
+                agent=self.name,
             )
             plan = safe_parse(raw, self.model)
         except Exception as e:
@@ -325,15 +349,13 @@ class FileAgent(BaseAgent):
                                f"Linha: `{snippet}`"),
                 }
 
-            # Defesa em profundidade: codigo tentando rmtree em path sensivel?
-            for sp in ("C:\\\\Windows", "C:/Windows", "/etc", "/var",
-                       "Program Files"):
-                if sp in code and ("rmtree" in code or "os.remove" in code):
-                    return {
-                        "ok": False,
-                        "reason": (f"codigo gerado tenta operar em path "
-                                   f"sensivel ({sp}) — bloqueado"),
-                    }
+            # Subagente SafetyAuditor: sem apagar em modo simulacao, sem
+            # tocar em pastas do sistema (defesa em profundidade).
+            from agents.subagents import SafetyAuditor
+            audit = SafetyAuditor().run(code, getattr(self, "_mode", "executar"))
+            self._last_audit = audit
+            if not audit.ok:
+                return {"ok": False, "reason": f"SafetyAuditor: {audit.summary}"}
 
             steps.append({
                 "step": st.get("step", len(steps) + 1),
@@ -351,4 +373,7 @@ class FileAgent(BaseAgent):
         self._metrics["successful_plans"] += 1
         total_code = sum(len(s["params"]["code"]) for s in steps)
         self.logger.info(f"Plano: {len(steps)} step(s), {total_code} chars")
-        return {"steps": steps, "agent": "FILE"}
+        traces = list(getattr(self, "_traces", []))
+        if getattr(self, "_last_audit", None):
+            traces.append(self._last_audit)
+        return {"steps": steps, "agent": "FILE", "subagents": traces}

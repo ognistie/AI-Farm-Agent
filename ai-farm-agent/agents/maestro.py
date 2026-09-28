@@ -1,5 +1,14 @@
 """
-Maestro v17 — Roteamento inteligente + ambiguity gate.
+Maestro v18 — Roteamento inteligente + ambiguity gate + memoria de rotas.
+
+MUDANÇAS v18 (vs v17):
+- Sem cache de planos em memoria: a chave era task[:80], entao tarefas
+  diferentes com o mesmo comeco recebiam o MESMO plano, e repetir um
+  pedido devolvia sempre a mesma resposta.
+- Memoria deixou de ser ATALHO (antes: devolvia so o 1o agente, sem
+  params, sem chamar o LLM — perdia subtasks). Agora as rotas que ja
+  funcionaram entram no prompt como REFERENCIA; o plano e o conteudo sao
+  sempre gerados para a tarefa atual.
 
 MUDANÇAS v17 (vs v16):
 - AMBIGUITY GATE (cenários A e J do briefing): prompts vagos ("deixa o
@@ -26,7 +35,20 @@ PROMPT = (
 
     "═══ PRINCIPIO ═══\n"
     "PROCEDIMENTO ≠ CONTEUDO. Se usuario NAO pediu texto → text=''.\n"
-    "NUNCA invente texto, mensagens ou conteudo.\n\n"
+    "NUNCA invente texto que o usuario nao pediu.\n\n"
+
+    "═══ CONTEUDO PEDIDO ═══\n"
+    "a) Texto ditado (entre aspas ou 'escreva X'): use X exatamente.\n"
+    "b) Pedido para CRIAR conteudo (poema, email, resumo, lista, historia, texto sobre um tema):\n"
+    "   ESCREVA o conteudo completo e coloque em text/message. Isso nao e inventar: foi pedido.\n"
+    "c) Reproduzir obra protegida (letra de musica, capitulo de livro, texto pago): nao pode.\n"
+    "   NUNCA escreva um substituto (titulo, trecho inventado). Retorne:\n"
+    "   {\"cannot_do\": true, \"reason\": \"<por que>\", \"alternative\": \"<o que posso fazer>\"}\n"
+    "   (ex.: resumo do tema da musica com palavras proprias, ou pesquisar a letra oficial).\n\n"
+    "═══ PESQUISA WEB ═══\n"
+    "Toda subtask WEB de pesquisa precisa de params.query com o termo exato.\n"
+    "Cada pedido e novo: query, texto, nomes e tema saem SOMENTE da tarefa atual.\n"
+    "Os exemplos abaixo ensinam o FORMATO — nao copie seus valores.\n\n"
 
     "═══ ROTEAMENTO (ORDEM DE PRIORIDADE) ═══\n"
     "1. Se pede CRIAR codigo/projeto/arquivo de programacao → CODE (mesmo se menciona VS Code)\n"
@@ -204,12 +226,28 @@ def _detect_ambiguity(task: str) -> dict | None:
     return None
 
 
+def _format_route_hint(routes: list) -> str:
+    """Rotas da memoria -> bloco de referencia para o prompt (sem conteudo)."""
+    if not routes:
+        return ""
+    from memory.workflow_store import format_route
+    lines = [
+        "REFERENCIA (memoria): rotas de agentes que ja funcionaram em tarefas "
+        "parecidas. Use so como pista de roteamento. NAO reutilize textos, "
+        "temas, nomes ou valores; se a tarefa atual pede outra coisa, ignore."
+    ]
+    for r in routes:
+        lines.append(f"- {format_route(r['route'])}  [{r.get('success_count', 1)} sucesso(s)]")
+    return "\n".join(lines)
+
+
 class Maestro:
-    def __init__(self):
+    def __init__(self, memory=None):
         self._config = get_config()
         self._client = get_client()
         self.model = self._config.get_model("maestro")
-        self._cache = {}
+        self.effort = self._config.get_effort("maestro")
+        self._memory = memory
 
     def analyze(self, task):
         print("\n[Maestro] Analisando...")
@@ -226,47 +264,76 @@ class Maestro:
                 "subtasks": [],
             }
 
-        key = task.lower().strip()[:80]
-        if key in self._cache:
-            cached = self._cache[key]
-            if cached.get("subtasks") and len(cached["subtasks"]) > 0:
-                print("[Maestro] Cache hit!")
-                return cached
-            else:
-                del self._cache[key]
-
-        # Memória — falha do lookup nunca pode bloquear a tarefa,
-        # mas precisa de log para diagnosticar workflow_store quebrado.
-        # Anti cross-topic: o workflow e reusado como ATALHO DE ROTEAMENTO
-        # (agent + params), nunca como fonte de conteudo tematico. A `task`
-        # passada adiante e SEMPRE a do usuario atual; objectives genericos
-        # do workflow antigo sao descartados para nao vazar tema anterior.
+        # Memoria de rotas — falha do lookup nunca bloqueia a tarefa.
+        # Vai na mensagem do usuario (nao no system) para nao invalidar
+        # o prompt cache do PROMPT, que e o prefixo estavel.
+        routes = []
         try:
-            from memory.workflow_store import find_similar_workflow
-            wf = find_similar_workflow(task)
-            if wf:
-                print("[Maestro] Workflow da memória (rota reaproveitada, tema atual)")
-                return {
-                    "analysis": "Template de roteamento da memoria",
-                    "subtasks": [{
-                        "agent": wf["agent"],
-                        "task": task,
-                        "original_task": task,    # preserva (mesmo no atalho)
-                        "params": wf.get("params", {}),
-                        "objectives": [],
-                        "forbidden_assumptions": [], "depends_on": None,
-                    }],
-                    "skills": list(wf.get("tags", [])),
-                }
+            if self._memory is None:
+                from agents.memory_agent import MemoryAgent
+                self._memory = MemoryAgent()
+            routes = self._memory.find_routes(task, k=2)
+            if routes:
+                print(f"[Maestro] {len(routes)} rota(s) da memoria como referencia")
         except Exception as mem_err:
-            print(f"[Maestro] workflow_store indisponivel: {mem_err}")
+            print(f"[Maestro] memoria indisponivel: {mem_err}")
+        hint = _format_route_hint(routes)
 
-        # API
+        # Segundo cerebro: tarefas de referencia parecidas (caminhos que ja
+        # funcionaram, curados no Obsidian). Tambem so como referencia.
         try:
+            from core.brain import get_brain
+            refs = get_brain().find_references(task, k=2)
+            if refs:
+                print(f"[Maestro] {len(refs)} referencia(s) do segundo cerebro")
+                hint += ("\n" if hint else "") + "REFERENCIA (segundo cerebro, so pista — nao copie valores):\n"
+                hint += "\n".join(f"- {r['title']} [{r['agent']}]: {r['path']}" for r in refs)
+        except Exception as brain_err:
+            print(f"[Maestro] segundo cerebro indisponivel: {brain_err}")
+
+        plan = self._ask(task, hint)
+        if not plan.get("subtasks"):
+            return plan   # clarificacao, limitacao ou erro
+
+        # ── Politicas de aceite (codigo, nao LLM) ────────────────────
+        # O Maestro propoe; as politicas validam. Uma reprovacao ganha UMA
+        # chance de replanejar com o motivo literal.
+        from core.plan_validator import validate_plan
+        validation = validate_plan(task, plan)
+        if not validation.approved:
+            print(f"[Maestro] Plano reprovado: {validation.summary()}")
+            retry = self._ask(task, hint, feedback=validation.feedback())
+            if retry.get("limitation") or retry.get("needs_clarification"):
+                return retry
+            if retry.get("subtasks"):
+                plan = retry
+                validation = validate_plan(task, plan)
+
+        plan["validation"] = {"approved": validation.approved,
+                              "violations": validation.violations}
+        if routes:
+            plan["memory_routes"] = [r["route"] for r in routes]
+        if not validation.approved:
+            return {"error": True, "subtasks": [], "validation": plan["validation"],
+                    "rejected_plan": plan,
+                    "message": "O Maestro reprovou o plano: " + validation.summary()}
+        return plan
+
+    def _ask(self, task: str, hint: str = "", feedback: str = "") -> dict:
+        """Uma chamada ao LLM + saneamento do plano (sem validacao de politica)."""
+        try:
+            user = f"TAREFA: {task}\n"
+            if hint:
+                user += f"\n{hint}\n"
+            if feedback:
+                user += ("\nSEU PLANO ANTERIOR FOI REPROVADO PELAS POLITICAS DE ACEITE:\n"
+                         f"{feedback}\nCorrija e devolva o plano completo.\n")
+            user += "JSON puro."
             raw = self._client.message(
                 model=self.model, system=PROMPT,
-                user_content=f"TAREFA: {task}\nJSON puro.",
-                max_tokens=self._config.get("limits.max_tokens_fast", 1500),
+                user_content=user,
+                max_tokens=self._config.get("limits.max_tokens_strong", 16000),
+                effort=self.effort, agent="MAESTRO",
             )
             plan = safe_parse(raw, self.model)
 
@@ -280,6 +347,17 @@ class Maestro:
                     "why": plan.get("why", "ambiguidade detectada pelo LLM"),
                     "subtasks": [],
                 }
+
+            # Pedido que o sistema nao deve cumprir (ex.: letra de musica
+            # protegida). Melhor avisar do que escrever um substituto.
+            if plan.get("cannot_do"):
+                reason = plan.get("reason") or "Nao posso fazer isso como pedido."
+                alt = plan.get("alternative") or ""
+                print(f"[Maestro] Limitacao: {reason}")
+                if alt and not alt.lower().startswith("posso"):
+                    alt = "Posso " + alt[0].lower() + alt[1:]
+                return {"limitation": True, "subtasks": [],
+                        "message": reason + (f" {alt}" if alt else "")}
 
             if "subtasks" not in plan or not plan.get("subtasks"):
                 return {"error": True, "message": "Sem subtasks"}
@@ -336,7 +414,6 @@ class Maestro:
                     print(f"[Maestro] Removido(s) {removed} subtask(s) DESKTOP redundante(s) acoplada(s) ao CODE")
                     plan["subtasks"] = filtered
 
-            self._cache[key] = plan
             print(f"[Maestro] {len(plan['subtasks'])} subtask(s)")
             return plan
 

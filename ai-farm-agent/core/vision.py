@@ -1,5 +1,5 @@
 """
-VisionEngine v11 — OCR local antes da API Vision.
+VisionEngine v12 — OCR local antes da API Vision; zoom em resolucao cheia.
 - find_element() tenta EasyOCR local primeiro (custo zero)
 - Se OCR achar texto matching, retorna direto (economia ~60% chamadas Vision)
 - So cai para Sonnet Vision quando OCR falhar/baixa confianca
@@ -10,34 +10,30 @@ VisionEngine v11 — OCR local antes da API Vision.
 import os, io, json, base64, time
 import pyautogui
 from PIL import Image
-from anthropic import Anthropic
-
+from core.ai_client import get_client
+from core.config import get_config
 from core.ocr_local import find_text_on_screen, read_screen_text
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+SYS = """Você localiza elementos em screenshots de Windows (PT-BR) para um clique de mouse.
 
-SYS = """Você analisa screenshots de computador Windows PT-BR com PRECISÃO CIRÚRGICA.
-
-REGRAS CRÍTICAS:
-1. JSON puro, sem markdown, sem texto extra
-2. Coordenadas = centro EXATO do elemento em pixels da imagem
-3. IGNORE COMPLETAMENTE a barra de tarefas do Windows (barra escura na parte INFERIOR da tela com ícones pequenos)
-4. Se o elemento pedido está DENTRO de um aplicativo, as coordenadas devem ser DENTRO da janela do app, NUNCA na taskbar
-5. O campo de mensagem em apps de chat (Teams, WhatsApp) fica na PARTE INFERIOR da JANELA DO APP (não da tela)
-6. Botões de navegação em apps (Chat, Equipes, etc) ficam na BARRA LATERAL ESQUERDA DENTRO DO APP
-
-DIFERENÇA IMPORTANTE:
-- Barra de tarefas do WINDOWS = faixa escura no fundo da TELA com ícones minúsculos (IGNORE)
-- Barra lateral do APP = coluna de ícones/textos dentro da JANELA do aplicativo (USE ESTA)
-
-Quando procurar um botão como "Chat" no Teams:
-- NÃO clique no ícone do Teams na barra de tarefas do Windows
-- CLIQUE no texto/ícone "Chat" DENTRO da janela do Microsoft Teams"""
+REGRAS:
+1. JSON puro, sem markdown, sem texto extra.
+2. Coordenadas = CENTRO do elemento, em pixels DESTA imagem.
+3. Ignore a barra de tarefas do Windows (faixa no fundo da tela com ícones pequenos) e a
+   janela do próprio "AI Farm Agent". O alvo está DENTRO da janela do app/site citado.
+4. Links e resultados de busca: mire no TEXTO do link (título azul/sublinhado), não no
+   ícone, na URL cinza nem no espaço vazio ao lado. "Primeiro resultado" = primeiro
+   resultado orgânico da página, abaixo da caixa de busca, ignorando anúncios ("Patrocinado").
+5. Listas (e-mails, conversas, vídeos): "primeiro item" = linha mais alta da lista principal.
+6. Em apps com barra lateral (Teams, WhatsApp), a barra lateral é a DO APP, não a do Windows.
+7. confidence: 0.9+ só se o texto/ícone é inequívoco; <0.5 se está chutando.
+   Se não achar, found=false e diga o que vê. Nunca invente coordenada."""
 
 
 class VisionEngine:
     def __init__(self):
-        self.model = "claude-sonnet-4-20250514"
+        self.model = get_config().get_model("vision")
+        self.effort = get_config().get_effort("vision")
         self.screen_w, self.screen_h = pyautogui.size()
         self.last_img = None
         self._hidden_windows = []
@@ -120,9 +116,7 @@ class VisionEngine:
 Imagem: {img_w}x{img_h}px
 ZONA PROIBIDA: NÃO retorne coordenadas com Y > {taskbar_y} (isso é a barra de tarefas do Windows, NÃO é parte do app)
 
-Se o elemento é um botão/ícone DENTRO de um aplicativo:
-- As coordenadas devem estar DENTRO da janela do app
-- A barra lateral de apps como Teams fica no LADO ESQUERDO da janela, com Y entre 100 e 600 aproximadamente
+O elemento está DENTRO da janela do app/site citado (nunca na barra de tarefas).
 
 JSON: {{"found":true/false,"x":int,"y":int,"width":int,"height":int,"confidence":0.0-1.0,"element_text":"...","context":"onde o elemento está"}}
 Se não encontrar: {{"found":false,"reason":"...","screen_description":"o que vejo na tela"}}"""
@@ -133,6 +127,11 @@ Se não encontrar: {{"found":false,"reason":"...","screen_description":"o que ve
             for k in ["x", "y", "width", "height"]:
                 if res.get(k): res[k] = int(res[k] / r)
 
+        # Zoom: a imagem foi reduzida (1920 -> 1280) e links pequenos ficam com
+        # poucos pixels. Recorta a regiao em resolucao cheia e pede o ponto exato.
+        if res.get("found") and r < 1.0:
+            res = self._refine(orig, desc, res)
+
         # Validação: rejeita coordenadas na taskbar
         if res.get("found"):
             real_y = res.get("y", 0)
@@ -140,6 +139,28 @@ Se não encontrar: {{"found":false,"reason":"...","screen_description":"o que ve
                 res["found"] = False
                 res["reason"] = f"Coordenada Y={real_y} está na barra de tarefas. Elemento errado."
 
+        return res
+
+    def _refine(self, orig, desc, res, box=(640, 400)):
+        """Segundo passo: recorte em resolucao nativa ao redor do palpite."""
+        try:
+            bw, bh = box
+            x0 = max(0, min(orig.width - bw, int(res["x"]) - bw // 2))
+            y0 = max(0, min(orig.height - bh, int(res["y"]) - bh // 2))
+            crop = orig.crop((x0, y0, x0 + bw, y0 + bh))
+            buf = io.BytesIO(); crop.save(buf, format="PNG", optimize=True)
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            prompt = (f"Recorte ampliado ({bw}x{bh}px) de uma tela. Encontre: {desc}\n"
+                      f"JSON: {{\"found\":true/false,\"x\":int,\"y\":int,\"confidence\":0.0-1.0,\"element_text\":\"...\"}}\n"
+                      "Coordenadas em pixels DESTE recorte. Se o alvo nao esta no recorte, found=false.")
+            fine = self._call(prompt, b64)
+            if fine.get("found") and 0 <= fine.get("x", -1) < bw and 0 <= fine.get("y", -1) < bh:
+                res = dict(res, x=x0 + int(fine["x"]), y=y0 + int(fine["y"]),
+                           confidence=max(res.get("confidence", 0), fine.get("confidence", 0)),
+                           element_text=fine.get("element_text") or res.get("element_text"),
+                           method="vision_zoom")
+        except Exception:
+            pass   # fica com o palpite do primeiro passo
         return res
 
     def analyze_screen(self):
@@ -208,13 +229,10 @@ JSON: {{"verified":true/false,"match_confidence":0.0-1.0,"actual_state":"..."}}"
     def _call(self, prompt, b64):
         for attempt in range(3):
             try:
-                resp = client.messages.create(
-                    model=self.model, max_tokens=2048, system=SYS,
-                    messages=[{"role": "user", "content": [
-                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": b64}},
-                        {"type": "text", "text": prompt}
-                    ]}])
-                raw = resp.content[0].text.strip()
+                raw = get_client().message(
+                    model=self.model, system=SYS, max_tokens=4000,
+                    user_content=prompt, images=[{"base64": b64}],
+                    effort=self.effort, agent="VISION")
                 if raw.startswith("```"): raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
                 if raw.endswith("```"): raw = raw[:-3]
                 return json.loads(raw.strip())

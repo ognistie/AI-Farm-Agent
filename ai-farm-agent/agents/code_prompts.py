@@ -146,17 +146,21 @@ HTML OBRIGATORIO:
 CSS OBRIGATORIO:
 - Mobile-first responsivo (media queries)
 - :root com variaveis CSS (--bg, --text, --accent)
-- Tipografia: importar Google Fonts (Inter, Poppins, etc)
+- Tipografia: importar Google Fonts (escolha fontes que combinem com o tema)
 - Box model com box-sizing: border-box
 - Mim. 100 linhas REAIS (sem comentarios vazios)
 
-EXEMPLO ESTRUTURAL (use a estrutura, NUNCA o tema do exemplo):
+IDENTIDADE VISUAL PROPRIA: paleta, fontes e layout derivados do TEMA da
+tarefa (um site de cafeteria nao tem a cara de um site de tecnologia).
+Nao reutilize uma paleta/fonte padrao entre projetos diferentes.
+
+EXEMPLO ESTRUTURAL (use a estrutura, NUNCA os valores do exemplo):
     project_dir = os.path.join(base, 'site_<topic_real>')
     index_html = '''<!DOCTYPE html>...'''
-    style_css = '''@import url(...);
-:root { --bg: #fafaf7; --accent: #d97706; }
+    style_css = '''@import url(<fontes escolhidas para o tema>);
+:root { --bg: <cor>; --text: <cor>; --accent: <cor>; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; ... }
+body { font-family: <fonte escolhida>, sans-serif; ... }
 /* 100+ linhas reais */'''
 """
 

@@ -1,0 +1,17 @@
+filters:
+  and:
+    - 'tipo == "subagente"'
+properties:
+  papel:
+    displayName: Papel
+  agente:
+    displayName: Agente
+views:
+  - type: cards
+    name: Subagentes
+    groupBy:
+      property: note.agente
+      direction: ASC
+    order:
+      - file.name
+      - papel

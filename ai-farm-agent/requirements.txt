@@ -7,8 +7,9 @@
 PySide6>=6.6.0
 
 # Core / LLM
-anthropic==0.39.0
+anthropic>=0.50.0,<1
 python-dotenv==1.0.1
+PyYAML>=6.0   # config.yaml (sem ele o projeto ignora o yaml e usa defaults)
 
 # Automacao Desktop / OS
 pyautogui==0.9.54
@@ -16,6 +17,10 @@ pygetwindow==0.0.9
 psutil==5.9.8
 pyperclip==1.9.0
 Pillow
+
+# Acessibilidade do Windows (UIA): le/clica links do navegador do usuario
+# (browser_click/browser_read) e botoes de apps (uia_click)
+pywinauto>=0.6.9
 
 # OCR local (opcional, mas recomendado — Vision API usa OCR antes)
 # easyocr>=1.7.0

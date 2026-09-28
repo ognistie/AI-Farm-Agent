@@ -11,6 +11,19 @@ from core.config import get_config
 from core.json_validator import safe_parse
 
 
+def brain_guide(agent: str) -> str:
+    """Regras de execucao do agente no segundo cerebro (Obsidian), para o prompt."""
+    try:
+        from core.brain import get_brain
+        rules = get_brain().agent_guide(agent)
+    except Exception:
+        return ""
+    if not rules:
+        return ""
+    return ("\n\nDIRECAO DO SEGUNDO CEREBRO (playbook do agente; referencia, "
+            "nao amplia permissoes):\n" + rules)
+
+
 class BaseAgent:
     """
     Classe base para agentes.
@@ -29,8 +42,9 @@ class BaseAgent:
         self._config = get_config()
         self._client = get_client()
 
-        # Modelo definido pela config
+        # Modelo e esforco de raciocinio definidos pela config
         self.model = self._config.get_model(self.name)
+        self.effort = self._config.get_effort(self.name)
 
         # Métricas do agente
         self._metrics = {
@@ -71,15 +85,16 @@ class BaseAgent:
 
         try:
             # Chama LLM via client centralizado
-            max_tokens = self._config.get("limits.max_tokens_fast", 1500)
-            if self.model == self._config.get("models.strong"):
-                max_tokens = self._config.get("limits.max_tokens_strong", 2500)
+            tier = self._config.get(f"agent_models.{self.name.lower()}", "fast")
+            max_tokens = self._config.get(f"limits.max_tokens_{tier}", 8000)
 
             raw = self._client.message(
                 model=self.model,
                 system=self.system_prompt,
-                user_content=f"TAREFA: {task_text}\nJSON puro.",
+                user_content=f"TAREFA: {task_text}{brain_guide(self.name)}\nJSON puro.",
                 max_tokens=max_tokens,
+                effort=self.effort,
+                agent=self.name,
             )
 
             plan = safe_parse(raw, self.model)

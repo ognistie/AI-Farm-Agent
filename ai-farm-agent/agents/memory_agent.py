@@ -23,7 +23,10 @@ v1 era apenas um wrapper de 25 linhas sobre workflow_store. v2 adiciona
 
 API estavel (BaseAgent-compativel):
     find_template(task) -> {found, workflow?}
-    save_success(task, steps, agent)
+    find_routes(task, k) -> [rotas que ja funcionaram]
+    record(task, subtasks, success) -> {saved, reason}
+    save_success(task, subtasks, agent)
+    purge_legacy()     -> {moved}
     decay_and_clean()  -> {marked_cold, removed}
     detect_patterns()  -> [{task_fragment, count, days_span}]
 """
@@ -31,18 +34,23 @@ API estavel (BaseAgent-compativel):
 from __future__ import annotations
 
 import re
+import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
 
 from memory.workflow_store import (
+    CURRENT_VALIDATOR_VERSION,
+    find_similar_routes,
     find_similar_workflow,
-    save_workflow,
+    record_outcome,
     WORKFLOWS_DIR,
     QUARANTINE_DIR,
     _extract_tags,
     _extract_topic_words,
 )
+
+LEGACY_DIR = WORKFLOWS_DIR / ".legacy"
 
 
 # ───────────────────────────────────────────────────────────────────
@@ -111,6 +119,15 @@ class MemoryAgent:
             return {"found": True, "workflow": wf}
         return {"found": False}
 
+    def find_routes(self, task: str, k: int = 2) -> list[dict]:
+        """Rotas que ja funcionaram em tarefas parecidas (sem conteudo)."""
+        self.metrics["lookups"] += 1
+        clean_task, _ = _redact_pii(task or "")
+        routes = find_similar_routes(clean_task, k=k)
+        if routes:
+            self.metrics["hits"] += 1
+        return routes
+
     # ── Save com politicas ────────────────────────────────────────
 
     def should_remember(self, task: str) -> tuple[bool, str]:
@@ -130,41 +147,76 @@ class MemoryAgent:
             return False, f"tarefa curta ({len(words)} palavras)"
 
         topic = _extract_topic_words(task)
-        tags = _extract_tags(task)
+        # Verbos genericos viram tag (para casar "abra"/"abrir"), mas nao
+        # tornam uma tarefa memoravel sozinhos: "abra o vscode" nao ensina nada.
+        tags = _extract_tags(task) - {"abrir", "criar", "enviar", "pesquisar"}
         if not topic and len(tags) < 2:
             return False, "tarefa sem tema nem tags tecnicas suficientes"
 
+        # Marcadores de prompt de debug. Palavra inteira: "teste" sozinho
+        # bloquearia tarefas reais como "crie testes unitarios".
         t = task.lower()
-        debug_markers = ("teste", "test ", "debug", "lorem ipsum",
-                         "hello world", "asdf")
-        if any(m in t for m in debug_markers):
+        debug_patterns = (r"test", r"debug", r"lorem ipsum",
+                          r"hello world", r"asdf")
+        if any(re.search(p, t) for p in debug_patterns):
             return False, "parece prompt de teste/debug"
 
         return True, "ok"
 
-    def save_success(self, task: str, steps: list, agent: str) -> dict[str, Any]:
+    def record(self, task: str, subtasks: list, success: bool) -> dict[str, Any]:
         """
-        Salva workflow APENAS se passar pela politica + redige PII.
-        Retorna {saved, reason, redacted_types}.
+        Registra a rota (sucesso ou falha) APENAS se passar pela politica.
+        PII e redigida antes de gravar. Retorna {saved, reason, redacted_types}.
         """
         ok, reason = self.should_remember(task)
         if not ok:
             self.metrics["rejected_saves"] += 1
             return {"saved": False, "reason": reason}
 
-        # Redacao de PII
         clean_task, found_pii = _redact_pii(task)
         if found_pii:
             self.metrics["redacted_saves"] += 1
 
         try:
-            save_workflow(clean_task, steps, agent, success=True)
-            self.metrics["saves"] += 1
-            return {"saved": True, "reason": "ok",
-                    "redacted_types": found_pii,
-                    "task_stored": clean_task[:80]}
-        except Exception as e:
+            entry = record_outcome(clean_task, subtasks, success)
+        except OSError as e:
             return {"saved": False, "reason": f"erro ao escrever: {e}"}
+        if not entry:
+            return {"saved": False, "reason": "plano sem subtasks"}
+        self.metrics["saves"] += 1
+        return {"saved": True, "reason": "ok",
+                "redacted_types": found_pii,
+                "task_stored": clean_task[:80]}
+
+    def save_success(self, task: str, subtasks: list, agent: str = "") -> dict[str, Any]:
+        """Compat v2: registra sucesso."""
+        return self.record(task, subtasks, success=True)
+
+    # ── Limpeza de formatos antigos ───────────────────────────────
+
+    def purge_legacy(self) -> dict[str, int]:
+        """
+        Move workflows de versoes antigas (v5 e antes guardavam resultados,
+        nao rotas) para .legacy/. Nao apaga — so tira do caminho.
+        """
+        import json
+        moved = 0
+        if not WORKFLOWS_DIR.exists():
+            return {"moved": 0}
+        for f in WORKFLOWS_DIR.glob("*.json"):
+            try:
+                wf = json.loads(f.read_text(encoding="utf-8"))
+                version = wf.get("validator_version", 0) if isinstance(wf, dict) else 0
+            except (OSError, ValueError):
+                continue  # corrompido: a quarentena do store cuida
+            if version < CURRENT_VALIDATOR_VERSION:
+                try:
+                    LEGACY_DIR.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(f), str(LEGACY_DIR / f.name))
+                    moved += 1
+                except OSError:
+                    pass
+        return {"moved": moved}
 
     # ── Decay / cleanup ───────────────────────────────────────────
 

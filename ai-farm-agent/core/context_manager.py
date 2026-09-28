@@ -66,6 +66,8 @@ def _extract_text_content(step_results):
     for r in step_results:
         r_str = str(r)
         clean = re.sub(r'^[🌐🐍✅❌⚠️📊📁📄⏳👁️📸⌨️🎯📦\s]+', '', r_str).strip()
+        # Piloto do navegador: a trilha de acoes e log, nao conteudo para a proxima etapa
+        clean = re.split(r'\nTrilha( \(\d+ turnos\))?:', clean)[0].strip()
         if len(clean) < 15: continue
         skip = ["ok", "digitou", "clicou", "aguard", "aberto", "focado",
                 "enviado", "instalado", "failsafe", "timeout", "enter"]

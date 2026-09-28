@@ -1,112 +1,77 @@
-// Singleton de tokens — estetica Claude / Lanes.sh / Anthropic.
-// Minimalismo extremo, teal vibrante como acento, roxo sutil secundario,
-// fundo preto profundo, off-white para texto. Hairlines ultra-finas.
+// Tokens visuais. Neutros escuros, um unico destaque (branco para acoes
+// primarias) e cores de status do sistema. Mude aqui e a UI inteira segue.
 pragma Singleton
 import QtQuick
 
 QtObject {
-    // ─── Superficies (preto profundo + vidro fume) ──────────────────
-    readonly property color bgBase:      "#0A0A0B"   // preto profundo
-    readonly property color bgSidebar:   "#0C0D0F"
-    readonly property color bgTopbar:    "#0A0A0B"
-    readonly property color bgSurface:   "#121316"   // card base
-    readonly property color bgSurfaceHi: "#191B1F"   // hover / destaque
-    readonly property color bgGlass:     "#13141880" // 50% para overlay
-    readonly property color bgInput:     "#0E0F11"
+    // ─── Superficies ────────────────────────────────────────────────
+    readonly property color bgSidebar:   "#171717"
+    readonly property color bgBase:      "#1E1E1F"
+    readonly property color bgSurface:   "#262628"
+    readonly property color bgSurfaceHi: "#2F2F32"
+    readonly property color bgHover:     Qt.rgba(1, 1, 1, 0.05)
+    readonly property color bgPressed:   Qt.rgba(1, 1, 1, 0.09)
+    readonly property color hairline:    Qt.rgba(1, 1, 1, 0.08)
+    readonly property color hairlineHi:  Qt.rgba(1, 1, 1, 0.16)
 
-    // Hairlines invisiveis ate o foco
-    readonly property color hairline:    "#1C1E22"
-    readonly property color hairlineHi:  "#26292E"
+    // ─── Texto ──────────────────────────────────────────────────────
+    readonly property color textPrimary:   "#ECECEC"
+    readonly property color textSecondary: "#A1A1A6"
+    readonly property color textTertiary:  "#6E6E73"
+    readonly property color textInverse:   "#111112"
 
-    // ─── Texto (off-white premium) ──────────────────────────────────
-    readonly property color textPrimary:   "#EDEEF0"
-    readonly property color textSecondary: "#8B8E96"
-    readonly property color textMuted:     "#56595F"
-    readonly property color textInverse:   "#0A0A0B"
+    // ─── Acao primaria e status ─────────────────────────────────────
+    readonly property color primary:   "#ECECEC"
+    readonly property color success:   "#30D158"
+    readonly property color danger:    "#FF453A"
+    readonly property color warning:   "#FF9F0A"
+    readonly property color info:      "#64D2FF"
 
-    // ─── Acentos (teal vibrante + roxo sutil) ───────────────────────
-    readonly property color accent:       "#2dd4bf"   // teal Anthropic-ish
-    readonly property color accentDim:    "#0f766e"
-    readonly property color accentSoft:   "#2dd4bf"   // = accent (usado com alpha)
-    readonly property color cyan:         "#2dd4bf"   // mesmo teal
-    readonly property color violet:       "#a78bfa"   // roxo sutil
-    readonly property color amber:        "#fbbf24"
-    readonly property color coral:        "#f87171"
-    readonly property color info:         "#7dd3fc"   // azul claro discreto
+    // ─── Espacamento e raios ────────────────────────────────────────
+    readonly property int sp1: 4
+    readonly property int sp2: 8
+    readonly property int sp3: 12
+    readonly property int sp4: 16
+    readonly property int sp5: 24
+    readonly property int sp6: 32
 
-    // ─── Status semantico ───────────────────────────────────────────
-    readonly property color statusOnline:  "#2dd4bf"
-    readonly property color statusIdle:    "#56595F"
-    readonly property color statusRunning: "#a78bfa"
-    readonly property color statusWaiting: "#fbbf24"
-    readonly property color statusError:   "#f87171"
+    readonly property int rSm: 8
+    readonly property int rMd: 12
+    readonly property int rLg: 20
 
-    // ─── Espacamento ────────────────────────────────────────────────
-    readonly property int spXs:  4
-    readonly property int spSm:  8
-    readonly property int spMd:  12
-    readonly property int spLg:  16
-    readonly property int spXl:  24
-    readonly property int spXxl: 32
+    // Largura maxima da coluna de leitura (tela de tarefa e historico)
+    readonly property int contentMax: 760
 
-    // ─── Raios ──────────────────────────────────────────────────────
-    readonly property int rXs:   4
-    readonly property int rSm:   8
-    readonly property int rMd:   10
-    readonly property int rLg:   14
-    readonly property int rXl:   20
-    readonly property int rPill: 999
+    // ─── Tipografia ─────────────────────────────────────────────────
+    readonly property string fontSans:    "Segoe UI Variable Text"
+    readonly property string fontDisplay: "Segoe UI Variable Display"
+    readonly property string fontMono:    "Cascadia Mono"
+    readonly property string fontIcons:   "Segoe Fluent Icons"
 
-    // ─── Tipografia (Geist-like) ────────────────────────────────────
-    readonly property string fontSans:  "Inter"
-    readonly property string fontMono:  "JetBrains Mono"
+    readonly property int sizeXs:   11
+    readonly property int sizeSm:   12
+    readonly property int sizeMd:   14
+    readonly property int sizeLg:   16
+    readonly property int sizeXl:   20
+    readonly property int sizeHero: 28
 
-    readonly property int sizeMicro:  10
-    readonly property int sizeXs:     11
-    readonly property int sizeSm:     12
-    readonly property int sizeMd:     13
-    readonly property int sizeLg:     15
-    readonly property int sizeXl:     18
-    readonly property int sizeXxl:    22
-    readonly property int sizeHero:   28
-    readonly property int sizeDisplay: 34
-
-    // ─── Helpers ────────────────────────────────────────────────────
-    function agentColor(name) {
-        const n = (name || "").toUpperCase()
-        if (n === "MAESTRO") return violet
-        if (n === "CODE")    return accent
-        if (n === "DATA")    return info
-        if (n === "WEB")     return cyan
-        if (n === "DESKTOP") return amber
-        if (n === "FILE")    return "#fb923c"
-        if (n === "VISION")  return coral
-        if (n === "MEMORY")  return textSecondary
-        return textSecondary
-    }
-
-    function levelColor(level) {
-        switch ((level || "").toUpperCase()) {
-            case "ERROR":   return coral
-            case "WARN":
-            case "WARNING": return amber
-            case "INFO":    return info
-            case "SUCCESS": return accent
-            case "DEBUG":   return textMuted
-            default:        return textSecondary
-        }
-    }
-
-    function statusColor(status) {
-        switch ((status || "").toLowerCase()) {
-            case "online":   return statusOnline
-            case "running":  return statusRunning
-            case "waiting":  return statusWaiting
-            case "error":    return statusError
-            case "idle":     return statusIdle
-            default:         return textMuted
-        }
-    }
+    readonly property int durFast: 120
+    readonly property int durNormal: 200
 
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
+
+    // Nome amigavel do agente (o backend usa CODE, DATA, ...)
+    function agentLabel(name) {
+        switch ((name || "").toUpperCase()) {
+            case "MAESTRO": return "Maestro"
+            case "CODE":    return "Código"
+            case "DATA":    return "Dados"
+            case "WEB":     return "Web"
+            case "DESKTOP": return "Desktop"
+            case "FILE":    return "Arquivos"
+            case "MEMORY":  return "Memória"
+            case "SYSTEM":  return "Sistema"
+            default:        return name || ""
+        }
+    }
 }
