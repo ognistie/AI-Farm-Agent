@@ -49,6 +49,7 @@ ai-farm-agent/memory/evolution/
 # Workflows aprendidos sao especificos do usuario — NAO commitar
 ai-farm-agent/memory/workflows/*.json
 ai-farm-agent/memory/workflows/.corrupted/
+ai-farm-agent/memory/workflows/.legacy/
 !ai-farm-agent/memory/workflows/.gitkeep
 
 # ─── IDE / editor ────────────────────────────────────────────────
@@ -78,7 +79,7 @@ htmlcov/
 .claude/
 
 # ─── Lixo bizarro ────────────────────────────────────────────────
-{core,ui/
+[{]core,ui/
 reports/
 
 # Logs na raiz do repo (alem dos em ai-farm-agent/logs/)
@@ -92,3 +93,4 @@ AI-Farm-agents/40 Execucoes/Planos/
 AI-Farm-agents/40 Execucoes/Sucesso/
 AI-Farm-agents/40 Execucoes/Falhas/
 AI-Farm-agents/.obsidian/workspace*.json
+AI-Farm-agents/50 Diario/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].md

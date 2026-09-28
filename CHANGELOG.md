@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-09-23
 
 ### Changed
+- Replaced the README with implementation-grounded architecture, setup, evaluation and second-brain documentation, including local screenshot assets.
+- Adopted the MIT license and aligned contribution terms with open-source use.
+- Added security policy and repository review; historical credential exposure and execution-isolation limitations remain documented remediation items.
+- Removed generated reports and dated operational journals from version control while preserving local copies; added exclusions for daily journals and legacy learned routes.
 - All agents (Maestro, Data, Web, Code, Desktop, File, Vision, Narrator, planner) now run on `claude-sonnet-5`, with per-agent reasoning effort in `config.yaml` (`agent_effort`).
 - `AIClient` v3 is now the only path to the API: vision, narrator, VisionMaestro and JSON repair no longer create their own clients. It adds prompt caching on system prompts, streaming, and a cost that includes cache reads and writes. Text is read from `text` blocks only, because Sonnet 5 returns `thinking` blocks first.
 - Memory (`workflow_store` v6) stores **routes** (agent sequence, action type, and param names), never content. The Maestro gets these routes as a hint in the prompt and still generates a fresh plan. Entries are upserted per task, failures are recorded, and routes that fail more than they succeed are no longer suggested. Legacy files are moved to `memory/workflows/.legacy/`.

@@ -1,102 +1,35 @@
-# 🤝 Diretrizes de Contribuição
+# Contributing
 
-Obrigado pelo interesse em contribuir com este projeto.
+AI Farm Agent welcomes contributions under the [MIT License](LICENSE). By submitting a contribution, you agree to license it under the same terms; no copyright assignment is required.
 
-Este é um projeto **proprietário**, e todas as contribuições seguem diretrizes específicas para garantir a integridade, segurança e propriedade intelectual do código.
+## Scope
 
----
+Useful contributions include bug fixes, reproducible regression cases, agent evaluation, execution safety, documentation and improvements to the curated knowledge vault. For substantial architectural changes, discuss the problem and proposed approach in an issue before implementation. Small fixes can be submitted directly.
 
-## 📌 Objetivo das Contribuições
+## Workflow
 
-Contribuições são bem-vindas quando agregam valor ao projeto, incluindo:
+1. Fork the repository and create a focused branch.
+2. Set up the environment using the README.
+3. Make a coherent change and preserve unrelated behavior.
+4. Run relevant checks. For Python agent changes, run `python -X utf8 scripts/smoke_code_agent.py` from `ai-farm-agent/`.
+5. Open a pull request describing the problem, resulting behavior, validation and known limitations.
 
-* Correção de bugs
-* Melhorias de performance
-* Sugestões de funcionalidades
-* Ajustes e melhorias na documentação
-* Refatorações que aumentem qualidade e legibilidade
+Use concise commit messages that explain the change. Existing history follows Conventional Commits, such as `fix:`, `feat:` and `docs:`.
 
----
+## Tests and evidence
 
-## ⚙️ Processo de Contribuição
+Add deterministic regression coverage for logic defects. Use mocks for API, filesystem and UI interactions where practical. Label live-model or desktop experiments explicitly, including API costs and side effects. Do not present model-generated success messages as proof that an artifact or UI state is correct.
 
-Para manter organização e qualidade, siga o fluxo abaixo:
+## Documentation and knowledge vault
 
-1. **Abra uma Issue**
+Keep architecture descriptions grounded in current code. Reference tasks should use synthetic data, useful keywords, a clear execution path and testable acceptance criteria. Curated lessons belong in the public vault; generated plans, reports and daily journals remain local.
 
-   * Descreva claramente a proposta
-   * Explique o problema ou melhoria
+## Privacy and security
 
-2. **Aguarde aprovação**
+Before submitting, inspect `git diff --cached` and the staged file list. Never include `.env`, credentials, browser sessions, private contacts, screenshots of personal accounts, learned route files or execution records. Use fictional contacts and reserved example domains in tests.
 
-   * Não inicie implementações sem validação prévia
+Report suspected vulnerabilities through the process in [SECURITY.md](SECURITY.md), without posting credentials or personal data in public issues. Do not bypass hooks or rewrite shared history as part of a normal contribution.
 
-3. **Fork do repositório**
+## Third-party material
 
-4. **Crie uma branch**
-
-   ```bash
-   git checkout -b minha-contribuicao
-   ```
-
-5. **Implemente sua solução**
-
-6. **Commit das alterações**
-
-   ```bash
-   git commit -m "feat: descrição da melhoria"
-   ```
-
-7. **Envie um Pull Request (PR)** contendo:
-
-   * Descrição detalhada
-   * Motivação da mudança
-   * Impactos no sistema
-
----
-
-## 🚫 Restrições Importantes
-
-Ao contribuir com este projeto, você concorda com as seguintes condições:
-
-* Você não possui qualquer direito de propriedade sobre o código enviado
-* Você não poderá reutilizar este código em outros projetos sem autorização
-* Você não poderá vender, sublicenciar ou redistribuir qualquer parte do projeto
-* Todo o conteúdo enviado será incorporado ao projeto sob controle exclusivo do autor
-
----
-
-## ⚖️ Licenciamento de Contribuições (CLA Implícito)
-
-Ao submeter qualquer contribuição (código, documentação, ideias ou sugestões), você automaticamente concorda que:
-
-* Está cedendo irrevogavelmente todos os direitos sobre o conteúdo enviado
-* O autor do projeto poderá utilizar, modificar e redistribuir livremente esse conteúdo
-* Não haverá compensação financeira por contribuições realizadas
-* O reconhecimento do autor da contribuição é opcional e a critério do proprietário do projeto
-
----
-
-## 🔐 Propriedade Intelectual
-
-Este projeto é protegido por uma licença restritiva.
-
-Todas as contribuições passam a fazer parte do projeto e tornam-se propriedade exclusiva do autor.
-
----
-
-## 📬 Contato
-
-Para contribuições mais complexas, parcerias ou solicitações especiais:
-
-📧 [og.guifranco@gmail.com](mailto:og.guifranco@gmail.com)
-
----
-
-## ⚠️ Observação Final
-
-Este projeto **não é open source**.
-
-Contribuições são voluntárias e têm como objetivo exclusivamente melhorar o projeto, respeitando todas as regras estabelecidas neste documento.
-
-Ao contribuir, você declara estar ciente e de acordo com todos os termos descritos acima.
+Preserve original copyright and license notices. Verify that new assets and dependencies allow redistribution and document their origin. Contributions must be yours to license or included under compatible terms with attribution.

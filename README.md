@@ -1,682 +1,208 @@
-<!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║              AI FARM AGENT — README                        ║ -->
-<!-- ║              github.com/ognistie/AI-Farm-Agent              ║ -->
-<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+# AI Farm Agent
 
-<div align="center">
+A Windows desktop agent system for natural-language task execution, combining LLM planning, deterministic validation, native UI automation and an editable knowledge base.
 
-<!-- MATRIX RAIN HEADER -->
-<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
+[Architecture](#architecture) · [Second brain](#second-brain) · [Getting started](#getting-started) · [Evaluation](#evaluation) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
 
-<br>
+![AI Farm Agent desktop interface](docs/images/desktop-interface.png)
 
-<!-- ASCII LOGO -->
-```
-     █████╗ ██╗    ███████╗ █████╗ ██████╗ ███╗   ███╗
-    ██╔══██╗██║    ██╔════╝██╔══██╗██╔══██╗████╗ ████║
-    ███████║██║    █████╗  ███████║██████╔╝██╔████╔██║ 
-    ██╔══██║██║    ██╔══╝  ██╔══██║██╔══██╗██║╚██╔╝██║
-    ██║  ██║██║    ██║     ██║  ██║██║  ██║██║ ╚═╝ ██║
-    ╚═╝  ╚═╝╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
-                    A  G  E  N  T       v1.0
-```
+## Overview
 
-<h3>🟢 An autonomous multi-agent system that operates your computer.</h3>
-<p><i>Natural language in → Real-world actions out.</i></p>
+AI Farm Agent translates a user goal into a sequence of actions on a Windows workstation. A central orchestrator, **Maestro**, decomposes requests and delegates them to domain agents. The application executes their validated plans, passes results between dependent subtasks and records outcomes for later inspection.
 
-<br>
+The project explores **agentic desktop automation**, **hierarchical orchestration**, **structured planning**, **retrieval-augmented context** and **human-supervised execution**. It is an experimental implementation under active development. There is no published benchmark establishing general task success, latency or cost.
 
-<!-- BADGES -->
-<a href="#-quick-start"><img src="https://img.shields.io/badge/⚡_QUICK_START-00FF41?style=for-the-badge&labelColor=000000" /></a>
-<a href="#-architecture"><img src="https://img.shields.io/badge/🏛_ARCHITECTURE-00FF41?style=for-the-badge&labelColor=000000" /></a>
-<a href="#-agents"><img src="https://img.shields.io/badge/🤖_AGENTS-00FF41?style=for-the-badge&labelColor=000000" /></a>
-<a href="#-roadmap"><img src="https://img.shields.io/badge/🗺️_ROADMAP-00FF41?style=for-the-badge&labelColor=000000" /></a>
+Typical tasks include creating spreadsheets, generating software projects, navigating websites, interacting with desktop applications and organizing files. The interface is in Brazilian Portuguese; example requests below reflect that language.
 
-<br><br>
+## Capabilities
 
-<img src="https://img.shields.io/badge/Python-3.11+-00FF41?style=flat-square&logo=python&logoColor=00FF41&labelColor=0a0a0a" />
-<img src="https://img.shields.io/badge/Claude_API-Anthropic-00FF41?style=flat-square&logo=anthropic&logoColor=00FF41&labelColor=0a0a0a" />
-<img src="https://img.shields.io/badge/Windows-10%2F11-00FF41?style=flat-square&logo=windows&logoColor=00FF41&labelColor=0a0a0a" />
-<img src="https://img.shields.io/badge/MIT-License-00FF41?style=flat-square&labelColor=0a0a0a" />
+| Agent | Responsibility | Implementation approach |
+| --- | --- | --- |
+| Maestro | Intent analysis, ambiguity detection, decomposition and routing | LLM-generated JSON plans, reference retrieval and deterministic acceptance policies |
+| Web | Search, navigation and page reading | Fixed routines for simple requests; an observation–action loop for complex browser goals |
+| Desktop | Application launch, text entry and window interaction | Application routines, Windows UI Automation and screenshot-based targeting |
+| Code | Generate scripts, websites and multi-file projects | Task classification, optional architecture planning, code generation and static validation |
+| Data | Generate Excel workbooks, formulas and charts | Python generation with workbook-oriented validation |
+| File | Locate, organize and manipulate files | Path resolution, operation classification and destructive-operation checks |
+| Memory | Suggest previously useful execution routes | Local JSON route store with similarity matching and outcome counters |
 
-</div>
+Supporting modules provide screenshot capture, OCR, retries, conditional waits, context propagation, action logging and report generation. Domain agents use named helpers for interpretation, preparation and review; these helpers are primarily deterministic components, with model calls in selected planning and generation paths.
 
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+## Architecture
 
-<br>
+The application uses a **controller-driven, sequential orchestration pipeline**. Agents propose actions; Python validators assess plans before the execution engine dispatches them. Dependencies carry extracted outputs, file paths and URLs into subsequent subtasks.
 
-## 🟢 What is this?
-
-> **AI Farm Agent** sees your computer not as pixels — but as a structured world of windows, buttons, fields, and workflows that can be understood and controlled.
-
-You speak naturally. The system **thinks**, **plans**, **executes**, and **verifies** — creating spreadsheets in Excel, sending messages on Teams, building websites in VS Code, organizing files, and navigating the web. Autonomously.
-
-```
- ╭──────────────────────────────────────────────────────────────╮
- │                                                              │
- │  💬 "Crie uma planilha de vendas Q1-Q4 e abra no Excel"     │
- │                                                              │
- │      ┌─────────────────────────────────────────────┐         │
- │      │ 1. 🧠 Maestro routes → DATA AGENT           │         │
- │      │ 2. 📊 Data Agent generates openpyxl code     │         │
- │      │ 3. ⚡ Execution engine runs Python            │         │
- │      │ 4. 📂 .xlsx saved to Desktop                 │         │
- │      │ 5. 🖥️  Excel opens with formatted data       │         │
- │      │ 6. 👁️ Vision Maestro confirms success        │         │
- │      │ 7. ✅ "task_complete" → WebSocket             │         │
- │      └─────────────────────────────────────────────┘         │
- │                                                              │
- │  ⏱ ~4s  ·  💰 ~$0.002  ·  🎯 Method: L1 (API direct)       │
- │                                                              │
- ╰──────────────────────────────────────────────────────────────╯
+```mermaid
+flowchart TD
+    UI[PySide6 / QML desktop] --> C[Controller and event bus]
+    C --> M[Maestro: intent and structured plan]
+    R[Route memory] -. routing hints .-> M
+    B[Obsidian vault] -. rules and references .-> M
+    M --> V[Deterministic plan validation]
+    V --> A[Web / Desktop / Code / Data / File]
+    B -. execution guides .-> A
+    A --> S[Agent steps and step validation]
+    S --> E[Automation engine]
+    E --> P[Python / filesystem / subprocess]
+    E --> U[Windows UI Automation]
+    E --> I[Vision targeting and optional OCR]
+    E --> O[Results and extracted context]
+    O --> C
+    O --> H[History / logs / reports]
+    O --> R
+    O --> B
 ```
 
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🏛 Architecture
-
-<div align="center">
-
-
-
-</div>
-
-<br>
-
-```
-                              USER
-                           "do X..."
-                               │
-                               ▼
-                 ╔═══════════════════════════╗
-                 ║        🧠 MAESTRO         ║
-                 ║    Haiku 4.5 · ~$0.001    ║
-                 ║    Analyze → Decompose    ║
-                 ║    → Route to Agent       ║
-                 ╚═════════════╤═════════════╝
-                               │
-         ┌─────────┬───────────┼───────────┬─────────┐
-         ▼         ▼           ▼           ▼         ▼
-     ┌───────┐ ┌───────┐ ┌─────────┐ ┌────────┐ ┌───────┐
-     │  📊   │ │  🌐   │ │   💻    │ │  🖥️    │ │  📁   │
-     │ DATA  │ │  WEB  │ │  CODE   │ │DESKTOP │ │ FILE  │
-     │       │ │       │ │         │ │        │ │       │
-     │Haiku  │ │Haiku  │ │Sonnet 4 │ │Sonnet 4│ │Haiku  │
-     │$0.001 │ │$0.001 │ │ $0.01   │ │ $0.01  │ │$0.001 │
-     └───┬───┘ └───┬───┘ └────┬────┘ └───┬────┘ └───┬───┘
-         └─────────┴──────────┼──────────┴─────────┘
-                              ▼
-                ╔══════════════════════════╗
-                ║  ⚡ INTERACTION LAYER    ║
-                ║                          ║
-                ║  L1 ██████████████ 99%   ║ ← API/Code
-                ║  L2 ████████████░░ 95%   ║ ← UIA
-                ║  L3 ████████░░░░░░ 80%   ║ ← Vision
-                ╚═════════════╤════════════╝
-                              │
-                ┌─────────────┼─────────────┐
-                ▼             ▼             ▼
-          ┌──────────┐ ┌──────────┐ ┌──────────┐
-          │ 👁️ VISION│ │ 🔄 RETRY │ │ 🧠MEMORY │
-          │ MAESTRO  │ │  ENGINE  │ │  AGENT   │
-          │ validate │ │ 5 strats │ │  cache   │
-          └──────────┘ └──────────┘ └──────────┘
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🤖 Agents
-
-### The Team
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-#### 🧠 Maestro — _The Brain_
-> Routes every task to the right specialist. Analyzes intent, decomposes complex requests into subtasks, and coordinates execution order.
->
-> **Model:** `Haiku 4.5` · **Cost:** ~$0.001/call
-
-#### 📊 Data Agent — _The Analyst_
-> Creates Excel spreadsheets, charts, and data analysis using `openpyxl`. Generates complete Python code that runs on first attempt.
->
-> **Model:** `Haiku 4.5` · **Trigger:** _planilha, dados, Excel_
-
-#### 🌐 Web Agent — _The Navigator_
-> Browses the web using `Playwright`. Handles cookies, popups, form submissions, and complex navigation sequences.
->
-> **Model:** `Haiku 4.5` · **Trigger:** _pesquise, site, Google_
-
-#### 📁 File Agent — _The Organizer_
-> Manages files and folders using `os`/`shutil`. Organizes downloads, moves files, creates directory structures.
->
-> **Model:** `Haiku 4.5` · **Trigger:** _organize, mova, copie_
-
-</td>
-<td width="50%" valign="top">
-
-#### 💻 Code Agent — _The Builder_
-> Creates full projects with HTML, CSS, JS, Python. Generates production-quality code with proper structure and separation.
->
-> **Model:** `Sonnet 4` · **Cost:** ~$0.01/call
-
-#### 🖥️ Desktop Agent — _The Operator_
-> Interacts with any Windows app via UIA + Vision cascade. Has pre-built routines for Teams, WhatsApp, Word, Outlook, Spotify.
->
-> **Model:** `Sonnet 4` · **Trigger:** _Teams, WhatsApp, abra_
-
-#### 👁️ Vision Maestro — _The Watchdog_
-> Captures and analyzes screenshots before/after every visual action. Detects errors, popups, wrong windows, and loading states.
->
-> **Model:** `Haiku 4.5` · **Scope:** visual actions only
-
-#### 🧠 Memory Agent — _The Archive_
-> Caches successful workflows as JSON templates. Next time a similar task appears, it skips planning entirely.
->
-> **Model:** — · **Scope:** automatic
-
-</td>
-</tr>
-</table>
-
-### 💰 Why Two Models?
-
-```
- ┌──────────────────────────────────────────────────────────┐
- │                                                          │
- │  HAIKU 4.5  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  80%      │
- │  Fast · Cheap · Routing, data, web, files                │
- │                                                          │
- │  SONNET 4   ━━━━━━━━━━━━  20%                           │
- │  Powerful · Precise · Code, desktop, vision, retry       │
- │                                                          │
- │  Result: ~70% cost reduction vs single-model approach    │
- │                                                          │
- └──────────────────────────────────────────────────────────┘
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## ⚡ Interaction Layer
-
-**The core innovation.** The system cascades through 3 reliability levels — only falling to the next when the current one fails:
-
-```
- ╔══════════════════════════════════════════════════════════════╗
- ║                                                              ║
- ║  🟢 LEVEL 1 ─── API / Direct Code ──── 99% reliable         ║
- ║  │                                                           ║
- ║  │  openpyxl creates .xlsx directly                          ║
- ║  │  Playwright navigates with selectors                      ║
- ║  │  subprocess runs commands                                 ║
- ║  │  Cost: $0 · Speed: <1s                                    ║
- ║  │                                                           ║
- ║  │  ↓ if not possible                                        ║
- ║  │                                                           ║
- ║  🟡 LEVEL 2 ─── UI Automation (UIA) ── 95% reliable         ║
- ║  │                                                           ║
- ║  │  pywinauto reads Windows accessibility tree               ║
- ║  │  Clicks buttons by name, not coordinates                  ║
- ║  │  No screenshots needed                                    ║
- ║  │  Cost: $0 · Speed: ~2s                                    ║
- ║  │                                                           ║
- ║  │  ↓ if UIA fails                                           ║
- ║  │                                                           ║
- ║  🔴 LEVEL 3 ─── Vision + PyAutoGUI ─── 80% reliable         ║
- ║                                                              ║
- ║     Claude Vision analyzes screenshot                        ║
- ║     Identifies target element coordinates                    ║
- ║     PyAutoGUI performs the click                              ║
- ║     Cost: ~$0.01 · Speed: ~5s                                ║
- ║                                                              ║
- ╚══════════════════════════════════════════════════════════════╝
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🔄 Pipeline
-
-```python
-# ── 1. User sends task via WebSocket ──────────────────────────
-task = "Crie uma planilha de vendas e abra no Excel"
-
-# ── 2. Memory check ──────────────────────────────────────────
-cached = memory_agent.find_template(task)
-if cached: skip_to_execution(cached)
-
-# ── 3. Maestro analyzes ──────────────────────────────────────
-plan = maestro.analyze(task)
-# → {"agent": "DATA", "subtasks": [...]}
-
-# ── 4. Agent generates steps ─────────────────────────────────
-steps = data_agent.plan(subtask)
-# → {"steps": [{"action": "run_python", "code": "..."}]}
-
-# ── 5. Execute with full pipeline ────────────────────────────
-for step in steps:
-    state   = state_machine.identify(app)        # Where are we?
-    result  = interaction_layer.execute(step)     # L1 → L2 → L3
-    wait    = wait_engine.until(condition)        # Smart wait
-    recover = retry_engine.on_failure(result)     # Self-heal
-    log     = action_logger.record(step, result)  # JSONL
-    emit    = socketio.emit("progress", result)   # Real-time UI
-
-# ── 6. Success ───────────────────────────────────────────────
-memory_agent.save(task, steps)                    # Cache workflow
-narrator.report(task, results)                    # Generate report
-socketio.emit("task_complete")                    # ✅ Done
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🛡️ Self-Healing
-
-When a step fails, the **Retry Engine** diagnoses the problem and chooses a recovery strategy:
-
-```
- FAILURE DETECTED
-       │
-       ▼
- ┌─────────────────────────────────────────────────────────┐
- │  🔍 DIAGNOSE                                            │
- │                                                         │
- │  "not found" / "timeout"                                │
- │    → WAIT_AND_RETRY (wait 3s, try again)               │
- │                                                         │
- │  "blocked" / "popup" / "dialog"                         │
- │    → ALTERNATIVE_PATH (close blocker, retry)            │
- │                                                         │
- │  "wrong window" / "lost focus"                          │
- │    → RECOVER_STATE (Alt+Tab, Escape, refocus)           │
- │                                                         │
- │  UIA method failed                                      │
- │    → ESCALATE_METHOD (switch to Vision L3)              │
- │                                                         │
- │  "crash" / "permission denied"                          │
- │    → ABORT (stop + detailed error log)                  │
- │                                                         │
- └─────────────────────────────────────────────────────────┘
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🗺️ State Machines
-
-Each supported app has a **JSON navigation map** — the agent always knows where it is and how to reach the target state:
-
-```json
-{
-  "app": "Microsoft Teams",
-  "states": {
-    "main":      { "indicators": ["Chat", "Teams", "Calendar"],
-                   "transitions": { "chat_list": [{"action": "uia_click", "target": "Chat"}] }},
-    "chat_list": { "indicators": ["Recent", "Filter"],
-                   "transitions": { "chat_open": [{"action": "uia_click", "target": "{contact}"}] }},
-    "chat_open": { "indicators": ["Type a new message"],
-                   "transitions": { "sent": [{"action": "uia_type", "text": "{msg}"}, 
-                                              {"action": "hotkey", "keys": "Enter"}] }}
-  }
-}
-```
-
-**Supported:** `Teams` · `Excel` · `VS Code` · `Chrome` · `Explorer` — extensible via JSON.
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 📁 Structure
-
-```
-ai-farm-agent/
-│
-├── main.py                        ← Entry point
-├── requirements.txt               ← Dependencies
-├── .env                           ← API key (git-ignored)
-│
-├── agents/                        ← 🤖 Multi-agent system
-│   ├── maestro.py                    Orchestrator
-│   ├── vision_maestro.py             Visual supervisor
-│   ├── data_agent.py                 Excel specialist
-│   ├── web_agent.py                  Browser specialist
-│   ├── code_agent.py                 Code generator
-│   ├── desktop_agent.py              App controller
-│   ├── file_agent.py                 File manager
-│   ├── memory_agent.py               Workflow cache
-│   └── app_routines.py               Pre-built routines
-│
-├── core/                          ← ⚙️ Engine
-│   ├── automation.py                 Action executor
-│   ├── interaction_layer.py          L1 → L2 → L3 cascade
-│   ├── uia_driver.py                 pywinauto driver
-│   ├── state_machine.py              JSON navigation
-│   ├── retry_engine.py               Self-healing (5 strategies)
-│   ├── wait_engine.py                Conditional waits
-│   ├── ocr_local.py                  EasyOCR (no API cost)
-│   ├── vision.py                     Claude Vision
-│   ├── capture.py                    Screenshots
-│   ├── action_logger.py              JSONL logging
-│   └── json_validator.py             Safe JSON parsing
-│
-├── memory/                        ← 🧠 Learning
-│   ├── workflow_store.py             Template storage
-│   └── workflows/                    Cached workflows
-│
-├── state_maps/                    ← 🗺️ App maps
-│   ├── teams.json                    
-│   ├── excel.json                    
-│   ├── vscode.json                   
-│   ├── chrome.json                   
-│   └── explorer.json                 
-│
-├── ui/                            ← 🖥️ Interface
-│   ├── server.py                     Flask + SocketIO
-│   ├── templates/index.html          
-│   └── static/{css,js}/              
-│
-├── logs/actions.jsonl             ← 📊 Action logs
-├── captures/                      ← 📸 Screenshots
-└── reports/                       ← 📋 Reports
-```
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🚀 Quick Start
-
-<div align="center">
-
-<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
-
-
-<br>
-
-_Take the red pill._
-
-</div>
-
-<br>
+### Planning and execution
+
+1. The desktop bridge submits a task to the controller, which starts a background worker and publishes progress events.
+2. Maestro detects common ambiguities, retrieves similar routes and reference tasks, and requests a structured plan from the model.
+3. `plan_validator.py` checks agent identifiers, required content, search terms and context dependencies. A rejected Maestro plan receives one replan attempt with explicit feedback.
+4. Each domain agent produces action steps. Additional validators inspect content, code syntax, project structure or operation safety, depending on the agent.
+5. The automation engine dispatches accepted actions. Selected visual failures receive retries; browser tasks run their own bounded loop.
+6. The controller records step outcomes, extracts artifacts, updates route statistics and writes execution notes.
+
+The distinction between **planning**, **validation** and **execution** makes failures inspectable. Validation coverage is finite: an accepted plan is not a proof of safety or complete task fulfillment.
+
+### Interaction backends
+
+Direct Python and filesystem operations handle tasks that can be expressed programmatically, such as generating workbooks or writing project files. Windows UI Automation exposes semantic controls for application interaction. Screenshot-based vision provides an alternative when accessible controls are insufficient; optional local OCR supports text discovery.
+
+For complex browser tasks, `BrowserPilot` repeatedly reads an accessibility snapshot, presents numbered elements and visible context to the model, executes one selected action and observes the new state. The loop supports navigation, clicking, typing and scrolling, with a configurable constructor turn limit. Simple open/search requests retain fixed routines. Playwright is an optional backend for supported web actions.
+
+### Model access and observability
+
+`AIClient` centralizes Anthropic API access, streaming, system-prompt caching, text-block extraction and usage accounting. Model tiers and per-agent reasoning effort are configured in `config.yaml`; `MODEL_FAST` and `MODEL_STRONG` can override tier identifiers through the environment.
+
+Token usage comes from API responses. Dollar costs are **estimates calculated from the pricing table in the source**, rather than billing records. Model availability, supported parameters and pricing must be checked against the provider before use.
+
+## Second brain
+
+![Obsidian graph of the AI Farm Agent second brain](docs/images/second-brain.png)
+
+The second brain is an **Obsidian-compatible Markdown vault**, stored in `AI-Farm-agents/`. Notes use YAML frontmatter, sections and wiki links to connect the orchestrator, domain agents, policies, playbooks and reference tasks. Obsidian visualizes those links as a graph; the runtime reads the files directly and does not require Obsidian to be running.
+
+`core/brain.py` implements the integration:
+
+- **Agent guidance:** extracts the `Regras de execução` section from an agent note and adds a bounded excerpt to the planning context.
+- **Reference retrieval:** tokenizes the request, normalizes accents, scores word-set overlap and selects relevant paths from curated tasks, playbooks and successful execution notes. This is lexical retrieval, without embeddings or a vector database.
+- **Execution provenance:** writes proposed plans, validation outcomes, helper traces and execution results to Markdown notes, with a daily operations index.
+- **Graceful degradation:** the application continues when the vault is absent or disabled.
+
+The runtime applies pattern-based redaction to selected note content, but this is not comprehensive anonymization. Generated notes and daily journals are local operational data and are excluded from version control.
+
+| Vault directory | Purpose |
+| --- | --- |
+| `00 Maestro/` | Orchestration, routing and validation guidance |
+| `10 Agentes/` | Agent notes, playbooks and helper descriptions |
+| `20 Politicas/` | Human-readable counterparts of acceptance policies |
+| `30 Skills/` | Curated skill references |
+| `30 Tarefas de referencia/` | Task examples with paths and acceptance criteria |
+| `40 Execucoes/` | Local proposed plans and success/failure records, alongside public index notes |
+| `50 Diario/` | Local daily execution journals and a public index |
+| `60 Aprendizados/` | Curated lessons |
+| `90 Sistema/` | Templates and Obsidian Bases definitions |
+
+To extend the knowledge base, add a reference note with `keywords` in its frontmatter and a `Caminho` section. Related requests can then retrieve it as a planning hint. Runtime blocking policies remain in Python; editing a note does not establish an execution permission boundary.
+
+### Route memory
+
+Route memory is separate from the vault. Version 6 stores the agent sequence, routing fields, parameter names and dependency structure, together with task descriptions and success/failure counters. It omits task-specific parameter values from the stored route and always supplies hints for a fresh plan. Routes with more failures than successes are not suggested.
+
+This is retrieval and outcome tracking, not model training or automatic policy rewriting. Route files can still contain sensitive task descriptions and must remain local.
+
+## Getting started
 
 ### Requirements
 
-```
-OS          Windows 10/11 (PT-BR recommended)
-Python      3.11+
-API Key     https://console.anthropic.com/
-```
+- Windows 10 or 11 with an interactive desktop session.
+- Python 3.11 or later as the project target; dependency compatibility depends on the installed Python version.
+- An Anthropic API key and access to the model identifiers selected in the configuration.
+- Target applications installed when a task requires them. Excel is needed to open workbooks in Excel; workbook generation uses Python libraries.
 
-### Install
+### Installation
 
-```bash
-# Clone
+Run from PowerShell:
+
+```powershell
 git clone https://github.com/ognistie/AI-Farm-Agent.git
-cd AI-Farm-Agent/ai-farm-agent
-
-# Environment
+cd AI-Farm-Agent
 python -m venv .venv
-.venv\Scripts\activate
-
-# Dependencies
-pip install -r requirements.txt
-pip install pywinauto easyocr
-python -m playwright install chromium
-
-# API Key
-copy .env.example
-# → Edit .env with your ANTHROPIC_API_KEY
-
-# Launch
-python main.py
+.\.venv\Scripts\python.exe -m pip install -r .i-farm-agentequirements.txt
+Copy-Item .env.example .env
 ```
 
-### Try It
+Edit `.env` and set `ANTHROPIC_API_KEY` to your own key. Select provider-supported model identifiers in `config.yaml` or through `MODEL_FAST` / `MODEL_STRONG`. Configuration precedence is environment overrides, then YAML, then source defaults.
 
-```
-📊  "Crie uma planilha com nomes de frutas e preços"
-🌐  "Pesquise no Google sobre inteligência artificial"
-💻  "Crie um site sobre café com HTML e CSS"
-📁  "Organize meus Downloads por tipo de arquivo"
-💬  "Mande 'oi' para João no Teams"
+Start **from the repository root** so the root `config.yaml` is discovered:
+
+```powershell
+.\.venv\Scripts\python.exe .i-farm-agent\main.py
 ```
 
-<br>
+The entry point launches a native Qt application. No Flask server or browser UI is required. Optional dependencies such as Playwright and EasyOCR are documented in `requirements.txt`; libraries imported by generated Python may also be installed automatically by the execution engine.
 
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+### Example requests
 
-<br>
-
-## 📊 Available Actions
-
-<details>
-<summary>📊 <b>Data & Code</b></summary>
-<br>
-
-```
-run_python(code)                   Execute Python (18 stdlib modules pre-loaded)
-excel_write(data, path)            Create formatted .xlsx via openpyxl
-pip_install(lib)                   Auto-install Python packages
-```
-</details>
-
-<details>
-<summary>🌐 <b>Web (Playwright)</b></summary>
-<br>
-
-```
-web_goto(url)                      Navigate (auto-opens browser)
-web_type(field, text)              Type in form fields
-web_click(target)                  Click by text/selector
-web_key(key)                       Press keyboard key
-web_read()                         Extract page text
-web_new_tab(url)                   Open new tab
-web_wait_for(selector, timeout)    Wait for element
-```
-</details>
-
-<details>
-<summary>🖥️ <b>Desktop</b></summary>
-<br>
-
-```
-app_open(name)                     Open application
-uia_click(app, element)            Click via accessibility tree [L2]
-uia_type(app, field, text)         Type via accessibility tree [L2]
-vision_click(description)          AI-guided click [L3]
-vision_type(description, text)     AI-guided type [L3]
-vision_smart(goal)                 AI decides best action [L3]
-hotkey(keys)                       Keyboard shortcut
-focus_window(title)                Focus window by title
-```
-</details>
-
-<details>
-<summary>📁 <b>Files</b></summary>
-<br>
-
-```
-create_folder(path)                Create directory
-write_file(path, content)          Write file
-read_file(path)                    Read content
-move_file(src, dest)               Move/rename
-copy_file(src, dest)               Copy
-find_files(path, pattern)          Search by pattern
-delete_file(path)                  Delete (with safety check)
-```
-</details>
-
-<details>
-<summary>🔧 <b>System</b></summary>
-<br>
-
-```
-wait_for_window(title, timeout)    Wait until window appears
-wait_for_element(app, element)     Wait until UI element exists
-navigate_to_state(app, state)      State machine navigation
-ocr_read_screen(region)            Local OCR (zero API cost)
-screenshot()                       Capture current screen
-```
-</details>
-
-<br>
-
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
-
-<br>
-
-## 🛠️ Tech Stack
-
-```
- LAYER             TECHNOLOGY              PURPOSE
- ─────────────────────────────────────────────────────────
- AI Engine         Claude API (Anthropic)   LLM reasoning + vision
- Backend           Flask + SocketIO         Real-time communication
- UI Automation     pywinauto                Windows accessibility tree
- Browser           Playwright               Web automation
- GUI Fallback      PyAutoGUI                Mouse/keyboard simulation
- Vision            Claude Vision + EasyOCR  Screen analysis + local OCR
- Data              openpyxl                 Excel manipulation
- Frontend          HTML/CSS/JS + WS         Live dashboard
+```text
+Crie uma planilha de gastos do mês com gráfico.
+Crie um site sobre uma cafeteria artesanal.
+Pesquise sobre um tema e anote um resumo no bloco de notas.
+Organize os arquivos da pasta Downloads por tipo.
 ```
 
-<br>
+Use **Simular** to inspect supported planned actions before execution. Simulation can still invoke the model and write local records; some generic filesystem handlers do not enforce the simulation flag, so it is not an isolation guarantee. **Esc** requests cancellation; it is cooperative and does not forcibly terminate code already running inside the process.
 
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+## Repository layout
 
-<br>
-
-## 🗺️ Roadmap
-
-```
- VERSION    STATUS              FEATURES
- ──────────────────────────────────────────────────────────────────
- v1.0       ████████████████    Multi-agent, run_python, Vision
-            ✅ DONE              Maestro, Web UI, App Routines
-
- v1.5       ████████░░░░░░░░    Interaction Layer, UIA Driver,
-            🔧 IN PROGRESS       Retry Engine, Wait Engine, Logging
-
- v2.0       ░░░░░░░░░░░░░░░░    State Machines, Memory Agent,
-            📋 PLANNED            OCR Local, Workflow Templates
-
- v2.5       ░░░░░░░░░░░░░░░░    Metrics Dashboard, Tests, CI/CD
-            📋 PLANNED
-
- v3.0       ░░░░░░░░░░░░░░░░    Full Autonomy — queues, triggers
-            🔮 FUTURE
-
- v4.0       ░░░░░░░░░░░░░░░░    SaaS — multi-user, REST API,
-            🔮 FUTURE             installer, cloud dashboard
+```text
+AI-Farm-Agent/
+├── ai-farm-agent/
+│   ├── agents/             Domain agents, planners and validators
+│   ├── core/               LLM client, automation, browser pilot and vault integration
+│   ├── desktop/            Qt bridge, controller, QML views and local history
+│   ├── memory/             Route storage
+│   ├── scripts/            Smoke tests and evaluation utilities
+│   ├── state_maps/         Application navigation maps
+│   ├── main.py             Desktop entry point
+│   └── requirements.txt
+├── AI-Farm-agents/          Curated Obsidian knowledge vault
+├── docs/                   Images and security review
+├── config.yaml
+├── CONTRIBUTING.md
+├── SECURITY.md
+└── LICENSE
 ```
 
-<br>
+## Evaluation
 
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+Run the deterministic smoke suite from the application directory:
 
-<br>
-
-## 🤝 Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
-
-```bash
-# Fork → Clone → Branch → Code → PR
-git clone https://github.com/YOUR_USER/AI-Farm-Agent.git
-cd AI-Farm-Agent/ai-farm-agent
-pip install -r requirements.txt
-copy .env.example .env
-python main.py
+```powershell
+cd ai-farm-agent
+..\.venv\Scripts\python.exe -X utf8 scripts\smoke_code_agent.py
 ```
 
-**Add a new agent:** Create `agents/new.py` → Register in `server.py` → Update `maestro.py` prompt
+The suite exercises routing heuristics, validation, route memory, parsing, context handling and browser-pilot behavior with mocked components. It makes no live API calls and does not establish end-to-end reliability on arbitrary Windows applications.
 
-**Add a new app:** Run `uia.list_controls("App")` → Create `state_maps/app.json` → Add to `uia_driver.py`
+Additional scripts (`run_evolution_suite.py`, `run_diverse_suite.py`, `run_creative_suite.py`) perform model-backed generation experiments. Review them before running: they use the configured API and may create local artifacts. The vault also contains a manual regression checklist at `00 Maestro/Roteiro de testes.md`.
 
-<br>
+For reproducible experiments, record the commit, Windows/application versions, model identifiers, configuration, task dataset, artifact checks and API usage. No aggregate benchmark results are claimed here.
 
-## ⚠️ Notes
+## Security and privacy
 
-```
- ⚠ Windows only      Uses pywinauto, pygetwindow (Windows APIs)
- ⚠ PT-BR optimized   UI labels and OCR tuned for Brazilian Portuguese
- ⚠ API costs          Vision (L3) consumes tokens — cascade minimizes this
- ⚠ Security           Never commit .env — use .env.example as template
-```
+The application runs with the permissions of the current Windows user. Generated Python executes in-process, shell actions can launch commands, and browser automation can interact with an authenticated session. **Use a dedicated test environment with non-sensitive files and accounts.**
 
-<br>
+Prompts, retrieved content and screenshots can be sent to the configured model provider. Local histories, logs, reports and notes can retain request text or other personal data. Git exclusions limit accidental publication; they do not encrypt records or remove previously committed content from Git history.
 
-<!-- GREEN LINE SEPARATOR -->
-<img src="https://i.imgur.com/waxVImv.png" width="100%" />
+The current implementation includes validation and selected blocking checks, but lacks an isolated execution sandbox and a universal authorization gate at dispatch time. Read [SECURITY.md](SECURITY.md) and the [repository security review](docs/security-review.md) before running tasks with sensitive data.
 
-<br>
+## Development directions
 
-<div align="center">
+Current engineering priorities are isolated execution, action-level authorization, stronger secret redaction, reproducible end-to-end evaluations and dependency integrity. These are development directions, not implemented guarantees or delivery commitments.
 
-<!-- FOOTER GIF -->
-<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd6OWF0MjVkYnRsZGNkcHNtdGN0Z2o3MnQ5cGJ6dXRhb3l2NiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ieaUhBIHssPiRLQB3x/giphy.gif" width="100%" />
+Contributions to documentation, regression cases, reproducibility and execution safety are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANGELOG.md) for implementation history.
 
-<br>
+## License
 
-```
- ╔══════════════════════════════════════════════════════════╗
- ║                                                          ║
- ║   Built by @ognistie — Guilherme Moraes Franco           ║
- ║                                                          ║
- ║   "Teaching computers to operate themselves."            ║
- ║                                                          ║
- ╚══════════════════════════════════════════════════════════╝
-```
-
-<br>
-
-<img src="https://img.shields.io/badge/MADE_WITH-PYTHON-00FF41?style=for-the-badge&logo=python&logoColor=00FF41&labelColor=000" />
-<img src="https://img.shields.io/badge/POWERED_BY-CLAUDE_AI-00FF41?style=for-the-badge&logo=anthropic&logoColor=00FF41&labelColor=000" />
-<img src="https://img.shields.io/badge/INSPIRED_BY-THE_MATRIX-00FF41?style=for-the-badge&labelColor=000" />
-
-<br><br>
-
-⬡
-
-</div>
+Project code and documentation are licensed under the [MIT License](LICENSE). Bundled third-party assets retain their original notices and license terms, including the Obsidian Minimal theme.
