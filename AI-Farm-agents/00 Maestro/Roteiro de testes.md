@@ -45,6 +45,56 @@ atualizado: 2026-09-24
 - [ ] Com o WhatsApp Web aberto numa aba, rode qualquer tarefa web — **Esperado:** o piloto abre **aba nova** e não mexe na sua aba.
 - [ ] Aperte **Esc** no meio de uma tarefa do piloto — **Esperado:** para no próximo turno.
 
+### 2.2 Conversa contínua (um pedido continua o outro)
+- [ ] `abra o youtube e pesquise lofi para estudar` → `agora abra o segundo vídeo que está aparecendo` — **Esperado:** "Entendi: …" cita o vídeo; abre na **mesma aba**.
+- [ ] `abra o bloco de notas` → `agora escreva um texto curto sobre café` — **Esperado:** escreve no **mesmo** documento em branco (não abre outro).
+- [ ] Com um documento seu aberto no Bloco de Notas, rode `abra o bloco de notas e escreva oi` — **Esperado:** abre **aba nova**; seu documento não é tocado.
+- [ ] `crie um site em html, css e js sobre floricultura` → `troque a cor principal para azul` → `desfaz` — **Esperado:** só o CSS muda; "desfaz" volta em ~1 s.
+- [ ] `troque algumas coisas` (com o site da conversa) — **Esperado:** UMA pergunta com opções; sua resposta continua no mesmo projeto.
+- [ ] Depois de uma pesquisa, pergunte `qual era o primeiro resultado?` — **Esperado:** resposta da conversa, sem abrir nada.
+- [ ] Clique em **Nova conversa** e diga `agora abra o segundo` — **Esperado:** ele não lembra de nada (pede detalhes ou trata como pedido novo).
+
+### 2.2b Conversas salvas e retomadas
+- [ ] Faça 2–3 pedidos, clique em **Nova conversa**, depois clique na conversa anterior na barra lateral — **Esperado:** pedidos e respostas voltam; diga `agora…` e ele continua de onde parou.
+- [ ] Diga/escreva `valeu` — **Esperado:** resposta curta como mensagem própria, nada executado.
+- [ ] `abre as configurações do windows` → `clica em sistema` → `agora entra em acessibilidade` — **Esperado:** clica de verdade, sem reabrir as Configurações.
+- [ ] `abre o excel` → `preenche a primeira linha com Nome, Idade e Cidade` → `abre o excel` — **Esperado:** escreve na MESMA planilha; o último só traz o Excel para a frente.
+- [ ] `abre o bloco de notas e escreve de 1 até 10` (com outro documento seu aberto no Bloco de Notas) — **Esperado:** aba nova; seu documento intacto.
+
+### 2.3 Piloto de apps
+- [ ] `abra a calculadora` → `agora calcule 12 vezes 7 e me diga o resultado` — **Esperado:** clica os botões na mesma janela e responde 84.
+- [ ] Com um app aberto pela conversa, peça algo dentro dele (ex.: Configurações → `agora abra a parte de Bluetooth`) — **Esperado:** navega na mesma janela.
+
+### 2.4 Modo voz (microfone real)
+**Mensagem de áudio** (microfone ao lado de Enviar ou Ctrl+Alt+V):
+- [ ] Clique, diga `abre o bloco de notas pra mim`, clique em enviar — **Esperado:** "Ouvi: …" na tela, resposta curta falada, abre.
+- [ ] Diga `abrir vs code` — **Esperado:** abre o VS Code (não "google escute").
+- [ ] Diga `abre o google` gaguejando ("o meu, meu google") — **Esperado:** abre o Google, sem repetir palavras.
+- [ ] Diga `abre as configurações do windows` com o YouTube aberto — **Esperado:** Configurações do **Windows**.
+- [ ] Diga `abre o bluetooth nas configurações` — **Esperado:** abre direto a página de Bluetooth.
+- [ ] Diga algo confuso ("abre o negócio lá") — **Esperado:** UMA pergunta com palpite; responda `isso` para executar.
+- [ ] Grave e clique **Cancelar** — **Esperado:** nada acontece.
+
+**Conversa ao vivo** (opção Conversa):
+- [ ] `abre o google` … `agora pesquisa receita de bolo` … `abre o primeiro` — **Esperado:** confirma cada um na hora e executa em ordem.
+- [ ] Fale três pedidos seguidos rápido — **Esperado:** "Fica na fila: …" dizendo qual pedido espera, e a fila andando.
+- [ ] Durante uma tarefa diga `para` — **Esperado:** para e esvazia a fila.
+- [ ] Diga `valeu` — **Esperado:** resposta curta, nada é executado.
+
+**Rodada 4 (estilo assistente pessoal):**
+- [ ] `que horas são` / `que dia é hoje` — **Esperado:** responde na hora, sem abrir nada.
+- [ ] `quanto é doze vezes sete` — **Esperado:** "84" falado, nada executado. `quanto tá o dólar` — **Esperado:** vai pesquisar.
+- [ ] `abre o...` (e para) — **Esperado:** "Abrir o quê?" (nunca abre algo aleatório).
+- [ ] `meu time ganhou ontem` — **Esperado:** comenta e oferece ("Quer que eu veja o placar?"); diga `pode` — **Esperado:** pesquisa.
+- [ ] Com o Excel aberto: `coloca cem na b2` — **Esperado:** escreve na mesma planilha, sem pausa extra para "entender".
+- [ ] Pedido longo (ex.: `pesquisa fone no mercado livre e me fala o mais barato`) — **Esperado:** um aviso "ainda tô nisso" e depois o preço.
+- [ ] Na conversa ao vivo, enquanto ele fala, aperte o atalho — **Esperado:** cala na hora e continua ouvindo.
+- [ ] Com a conversa ao vivo ligada, converse com outra pessoa — **Esperado:** ele não responde a conversa de fundo.
+- [ ] Edite uma fala em [[Persona do assistente]] (ex.: `open`) e peça para abrir algo — **Esperado:** usa a fala nova, sem reiniciar.
+- [ ] Diga `para de ouvir` — **Esperado:** desliga a conversa.
+- [ ] Com som alto na caixa, confira que ele **não** responde à própria voz.
+- [ ] Anote no [[Confusoes de transcricao]] toda palavra que ele ouvir errado.
+
 ## 3. Desktop
 - [ ] `abra o bloco de notas e escreva a frase "reunião às 15h"` — texto exato.
 - [ ] `abra o bloco de notas e escreva um poema curto sobre o mar` — poema **completo e original**, não o título.

@@ -29,9 +29,20 @@ _ALIASES = {
     "videos": "Videos", "musicas": "Music", "music": "Music",
     "pasta pessoal": "Home", "pasta do usuario": "Home",
 }
-# Abrir um desses com startfile EXECUTA o arquivo: open_path recusa.
-EXECUTABLE_EXT = {".exe", ".bat", ".cmd", ".ps1", ".vbs", ".vbe", ".js", ".jse", ".wsf",
-                  ".msi", ".scr", ".com", ".lnk", ".hta", ".reg", ".pif", ".cpl"}
+# Abrir um desses com startfile EXECUTA o arquivo (ou instala/monta/roda codigo): open_path recusa.
+EXECUTABLE_EXT = {".exe", ".bat", ".cmd", ".ps1", ".psm1", ".psd1", ".ps1xml", ".vbs", ".vbe", ".vb", ".js",
+                  ".jse", ".wsf", ".wsh", ".ws", ".msi", ".msp", ".mst", ".scr", ".com", ".lnk", ".hta", ".reg",
+                  ".pif", ".cpl", ".msc", ".jar", ".url", ".chm", ".inf", ".scf", ".gadget", ".application",
+                  ".appref-ms", ".appx", ".appxbundle", ".msix", ".msixbundle", ".appinstaller",
+                  ".settingcontent-ms", ".library-ms", ".search-ms", ".searchconnector-ms", ".diagcab",
+                  ".iso", ".img", ".vhd", ".vhdx", ".sys", ".dll", ".ocx"}
+
+
+def is_network_path(path: str) -> bool:
+    """Caminho de rede (\\\\servidor\\pasta, //servidor/pasta). So de TOCAR nele o Windows tenta
+    autenticar no servidor e envia o hash da senha (NTLM): open_path recusa antes de qualquer acesso."""
+    p = (path or "").strip().replace("/", "\\")
+    return p.startswith("\\\\") or p.lower().startswith("file:")
 
 _WIN_PATH = re.compile(r"([A-Za-z]:[\\/][^\"'<>|?*\n]*|%[A-Za-z_]+%[\\/]?[^\"'<>|?*\n]*|~[\\/][^\"'<>|?*\n]*)")
 

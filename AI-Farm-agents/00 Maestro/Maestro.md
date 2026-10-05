@@ -35,3 +35,9 @@ aliases: [Orquestrador, Cérebro]
 - [[Fonte de verdade e precedencia]]
 - [[Como usar o cerebro]]
 - Skills do Maestro: [[ai-agent-engineer]] · [[tech-lead]] · [[context-and-prompt-engineer]] · [[security-and-guardrails-engineer]] · [[ai-evaluation-engineer]]
+
+> [!tip] Conversa
+> O Maestro recebe o contexto da conversa e, quando é continuação, o alvo já aberto. Ver [[Conversa continua]].
+
+> [!tip] Voz
+> Pedidos também podem ser falados (Ctrl+Alt+V). Ver [[Modo voz]].

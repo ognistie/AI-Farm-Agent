@@ -5,7 +5,7 @@ DesktopAgent v16 — Rotinas utilitárias + Few-shot LLM.
 - Sem 'Ola!', Paint→LLM, Notepad sem digitar vazio
 """
 
-import json, os
+import json, os, re
 from core.ai_client import get_client
 from core.config import get_config
 from core.json_validator import safe_parse
@@ -70,8 +70,11 @@ def _build_steps(app, params):
     if app in ("notepad", "bloco de notas"):
         add("app_search", {"name": "Bloco de Notas"}, "Abrir Notepad")
         add("wait", {"seconds": 3}, "Aguardar")
+        # Notepad do Windows 11 reaproveita a janela aberta (com abas): sem
+        # isto o texto caia no documento que o usuario ja estava editando.
+        add("blank_document", {"app": "notepad"}, "Garantir documento em branco")
         if text and text.strip():
-            add("app_type", {"window_title": "Notas", "text": text}, "Digitar")
+            add("app_type", {"window_title": "Notas", "text": text, "require_untitled": True}, "Digitar")
         return steps
 
     if app in ("word", "microsoft word"):
@@ -123,6 +126,144 @@ def _build_steps(app, params):
         return steps
 
     return None
+
+
+TEXT_EDITORS = ("notepad", "bloco de notas", "word", "wordpad")
+
+# Configuracoes do Windows: abre a pagina certa direto (ms-settings:), sem procurar no menu
+_SETTINGS = re.compile(r"\b(configura\w*|config|ajustes|settings|painel de controle)\b")
+# Palavra INTEIRA (\b): "tema" casava dentro de "sistema" e abria Cores.
+SETTINGS_PAGES = [
+    (r"\b(?:bluetooth|fones?|dispositivos)\b", "ms-settings:bluetooth"),
+    (r"\b(?:wi-?fi|rede|redes|internet)\b", "ms-settings:network-status"),
+    (r"\b(?:som|audio|volume|microfone|alto-?falante)\b", "ms-settings:sound"),
+    (r"\b(?:tela|monitor|video|resolucao|brilho|exibicao|display)\b", "ms-settings:display"),
+    (r"\b(?:atualizac\w*|atualizar|update|windows update)\b", "ms-settings:windowsupdate"),
+    (r"\b(?:bateria|energia)\b", "ms-settings:powersleep"),
+    (r"\b(?:aplicativos?|apps?|programas?)\b", "ms-settings:appsfeatures"),
+    (r"\b(?:papel de parede|plano de fundo|fundo de tela)\b", "ms-settings:personalization-background"),
+    (r"\b(?:temas?|cores|modo escuro|modo claro|tema escuro)\b", "ms-settings:colors"),
+    (r"\b(?:personaliza\w*)\b", "ms-settings:personalization"),
+    (r"\b(?:privacidade|seguranca)\b", "ms-settings:privacy"),
+    (r"\b(?:data|hora|relogio|fuso)\b", "ms-settings:dateandtime"),
+    (r"\b(?:idiomas?|lingua|teclado|regiao)\b", "ms-settings:regionlanguage"),
+    (r"\b(?:mouse|touchpad)\b", "ms-settings:mousetouchpad"),
+    (r"\b(?:impressoras?|scanner)\b", "ms-settings:printers"),
+    (r"\b(?:notificac\w*)\b", "ms-settings:notifications"),
+    (r"\b(?:armazenamento|disco|espaco)\b", "ms-settings:storagesense"),
+    (r"\b(?:contas?|usuario|login|senha do windows)\b", "ms-settings:accounts"),
+    (r"\b(?:acessibilidade)\b", "ms-settings:easeofaccess"),
+    (r"\b(?:jogos|game bar|xbox)\b", "ms-settings:gaming-gamebar"),
+    (r"\b(?:sistema|sobre o pc|sobre)\b", "ms-settings:about"),
+]
+
+# Pedido de INTERAGIR (clicar, ativar, mudar...) com as Configuracoes: nao e so abrir
+# uma pagina — vai para o piloto de apps na janela aberta.
+_SETTINGS_ACT = re.compile(r"\b(clic\w*|clique|selecion\w*|aperta\w*|marc\w*|ativ\w*|desativ\w*|lig\w*|"
+                           r"deslig\w*|mud\w*|troc\w*|alter\w*|escolh\w*|rol\w*|desc[ae]\w*)\b")
+
+
+def _vault_settings_page(t: str) -> tuple[str, str]:
+    """Pagina das Configuracoes ensinada no Obsidian (70 Dicionario/Configuracoes do Windows).
+    -> (uri, jeito de falar que casou). 'abre a tela de bloqueio' -> ms-settings:lockscreen."""
+    try:
+        from core.lexicon import get_lexicon
+        best_uri, best_v = "", ""
+        for e in get_lexicon().table("Configuracoes do Windows"):
+            uri = e.meaning.strip("` ")
+            if not uri.startswith("ms-settings:") or uri == "ms-settings:":
+                continue                               # so paginas especificas
+            for v in e.variants:
+                if len(v) > len(best_v) and len(v) >= 3 and re.search(rf"\b{re.escape(v)}\b", t):
+                    best_uri, best_v = uri, v          # o jeito de falar mais especifico vence
+        return best_uri, best_v
+    except Exception:
+        return "", ""
+
+
+def settings_steps(task_text: str):
+    """'abra as configuracoes do windows' / 'abre o bluetooth nas configuracoes' -> ms-settings:.
+    So para ABRIR: 'clica em sistema', 'ativa o modo escuro' vao para o piloto."""
+    from core.lexicon import norm
+    t = norm(task_text)
+    if not _SETTINGS.search(t):
+        return None
+    # "configuracoes do youtube/do chrome/do site" nao sao do Windows
+    if re.search(r"\b(youtube|chrome|edge|navegador|site|spotify|whatsapp|teams|vs ?code|word|excel|jogo)\b", t) \
+            and "windows" not in t:
+        return None
+    # Nome de varias palavras ensinado no Obsidian ("tela de bloqueio") e mais especifico que a
+    # lista em codigo ("tela" -> Video); palavra solta: a lista em codigo vem primeiro.
+    vault_uri, vault_v = _vault_settings_page(t)
+    code_uri = next((u for pat, u in SETTINGS_PAGES if re.search(pat, t)), "")
+    page = (vault_uri if " " in vault_v else "") or code_uri or vault_uri or "ms-settings:"
+    steps = [{"step": 1, "action": "open_path", "params": {"path": page},
+              "description": "Abrir Configurações do Windows" + ("" if page == "ms-settings:" else f" ({page.split(':')[1]})"),
+              "agent": "DESKTOP"}]
+    if _SETTINGS_ACT.search(t):
+        # Abre a pagina mais proxima e o piloto termina o pedido (clicar/ativar) nela
+        steps += [{"step": 2, "action": "app_task", "params": {"goal": task_text, "app": "configuracoes"},
+                   "description": f"Nas Configurações: {task_text[:50]}", "agent": "DESKTOP"}]
+    return steps
+
+
+_DO_MORE = re.compile(r"\b(escrev\w*|digit\w*|preench\w*|anot\w*|coloc\w*|bot[ae]|insir\w*|cri[ae]\w* uma? "
+                      r"(?:tabela|lista|planilha)|calcul\w*|clic\w*|selecion\w*|toc\w*|pesquis\w*|procur\w*|"
+                      r"desenh\w*|mand\w*|envi\w*)\b")
+TYPING_ACTIONS = ("app_type", "type_text", "vision_type", "uia_type", "app_task")
+
+
+def _then_do_rest(steps: list, app: str, task_text: str, params: dict) -> list:
+    """Rotina de ABRIR + o resto do pedido. As rotinas so abrem o app; quando o
+    pedido tambem manda escrever/preencher/clicar ("abre o Excel e preenche as
+    colunas"), o piloto de apps faz o resto NA janela que acabou de abrir."""
+    from core.lexicon import norm
+    if any(s["action"] in TYPING_ACTIONS for s in steps):
+        return steps
+    t = norm(task_text)
+    after_open = re.split(r"\b(?:e|depois|entao)\b", t, maxsplit=1)
+    rest = after_open[1] if len(after_open) > 1 else ""
+    wants = (params.get("text") or params.get("message")) or _DO_MORE.search(rest or t)
+    if not wants or app in ("notepad", "bloco de notas"):
+        return steps
+    from core.lexicon import get_lexicon
+    key = get_lexicon().app_key(app) or app
+    return steps + [{"step": len(steps) + 1, "action": "app_task",
+                     "params": {"goal": task_text, "app": key},
+                     "description": f"Fazer no {app}: {task_text[:50]}", "agent": "DESKTOP"}]
+
+
+def continue_steps(cont: dict, task_text: str, params: dict) -> list:
+    """Passos para continuar numa janela ja aberta (sem reabrir o app).
+    Editor de texto + texto pedido -> digita no MESMO documento; qualquer outra
+    coisa (tocar a musica de baixo, calcular, clicar...) -> piloto de apps."""
+    title = cont.get("title", "")
+    key = (cont.get("key") or "").lower()
+    text = (params.get("text") or params.get("message") or "").strip()
+    from core.lexicon import norm
+    t = norm(task_text)
+    # "abre o Excel" com o Excel ja aberto: so trazer para a frente (nada de reabrir).
+    # "voltar para a tela anterior" e NAVEGAR dentro do app (piloto), nao trazer a janela.
+    if not text and re.match(r"^(?:abr\w*|mostr\w*|traz\w*|traga|volt\w* (?:pro|para|ao|a)|vai (?:pro|para|no|na)|"
+                             r"foc\w*|ir (?:pro|para))\b", t) \
+            and not re.search(r"\b(clic|selecion|digit|escrev|preench|toc|pesquis|procur|marc|aperta)", t) \
+            and not re.search(r"\b(anterior|atras|pagina|tela|inicio|menu|aba|item|opcao|secao)\b", t):
+        return [{"step": 1, "action": "focus_window", "params": {"hwnd": cont.get("hwnd"), "title": title},
+                 "description": f"Trazer {title[:40]} para a frente", "agent": "DESKTOP"}]
+    editor = key in TEXT_EDITORS or "bloco de notas" in title.lower() or "word" in title.lower()
+    if not (text and editor):
+        return [{"step": 1, "action": "app_task",
+                 "params": {"goal": task_text, "hwnd": cont.get("hwnd"), "title": title},
+                 "description": f"Continuar em {title[:30]}: {task_text[:50]}", "agent": "DESKTOP"}]
+    if cont.get("last_text"):
+        text = "\n\n" + text          # continua abaixo do que ja foi escrito
+    return [{"step": 1, "action": "focus_window",
+             "params": {"hwnd": cont.get("hwnd"), "title": title},
+             "description": f"Voltar para {title[:40]}", "agent": "DESKTOP"},
+            {"step": 2, "action": "app_type",
+             "params": {"window_title": title, "hwnd": cont.get("hwnd"), "text": text,
+                        "expect_title": title},
+             "description": "Digitar", "agent": "DESKTOP"}]
 
 
 def _utility_steps(task_lower):
@@ -236,6 +377,15 @@ class DesktopAgent:
             params = dict(context)
         task_text = task.get("task", "") if isinstance(task, dict) else str(task)
 
+        # Continuacao da conversa: age na MESMA janela do pedido anterior
+        cont = params.get("continue") or {}
+        if cont.get("type") == "app":
+            steps = continue_steps(cont, task_text, params)
+            guard = ScreenGuard().run(steps)
+            return {"steps": guard.data["steps"], "agent": "DESKTOP",
+                    "subagents": [ScreenGuard().trace(True, f"continuar em \"{cont.get('title', '')[:50]}\""),
+                                  guard]}
+
         app_t = AppResolver().run(task_text, params)
         text_t = ContentComposer().run(params)
         params = text_t.data["params"]
@@ -271,6 +421,11 @@ class DesktopAgent:
         app = (params.get("app", "") or "").lower().strip()
         task_lower = str(task_text).lower()
 
+        sett = settings_steps(str(task_text)) or (settings_steps(app) if app else None)
+        if sett:
+            print(f"  [DESKTOP] Configurações do Windows: {sett[0]['params']['path']}")
+            return {"steps": sett, "agent": "DESKTOP"}
+
         # "abra a pasta downloads" / "abra C:\projetos": abre direto, sem
         # digitar no menu Iniciar (fragil) nem navegar pelo Explorer.
         from core.paths import is_open_folder_request, extract_path
@@ -283,7 +438,13 @@ class DesktopAgent:
 
         if app:
             steps = _build_steps(app, params)
+            if not steps and (params.get("action_type") or "").lower() not in ("", "open"):
+                # Rotina so sabe ABRIR: abre e o piloto de apps faz o resto na janela
+                # ("abre a calculadora e calcula 15% de 200"). Antes caia no modo de
+                # cliques "chutados" pela visao.
+                steps = _build_steps(app, {**params, "action_type": "open", "text": "", "message": ""})
             if steps:
+                steps = _then_do_rest(steps, app, str(task_text), params)
                 print(f"  [DESKTOP] Rotina: {len(steps)} steps ($0)")
                 return {"steps": steps, "agent": "DESKTOP"}
 
@@ -307,13 +468,14 @@ class DesktopAgent:
                     break
                 steps = _build_steps(detected, {"app": detected, "action_type": "open"})
                 if steps:
-                    return {"steps": steps, "agent": "DESKTOP"}
+                    return {"steps": _then_do_rest(steps, detected, str(task_text), params),
+                            "agent": "DESKTOP"}
 
         print("  [DESKTOP] LLM fallback ($)")
         try:
             raw = self._client.message(
                 model=self.model, system=PROMPT_FALLBACK,
-                user_content=f"TAREFA: {task_text}{brain_guide('DESKTOP')}\nJSON puro.", max_tokens=8000,
+                user_content=f"TAREFA: {task_text}{brain_guide('DESKTOP', task_text)}\nJSON puro.", max_tokens=8000,
                 effort=self.effort, agent="DESKTOP",
             )
             plan = safe_parse(raw, self.model)

@@ -89,13 +89,8 @@ def _parse(raw: str) -> dict:
 
 
 def _paste(text: str) -> None:
-    import pyautogui
-    try:
-        import pyperclip
-        pyperclip.copy(text)
-        pyautogui.hotkey("ctrl", "v")
-    except Exception:
-        pyautogui.write(text, interval=0.02)
+    from core.clipboard import paste_text
+    paste_text(text)              # devolve o que o usuario tinha copiado
 
 
 def _blank(url: str) -> bool:
@@ -150,11 +145,31 @@ class BrowserPilot:
                                     max_tokens=3000, effort=cfg.get_effort("web"), agent="WEB_PILOT")
 
     # ── loop ──────────────────────────────────────────────────────
-    def run(self, goal: str, start_url: str = "", hints: str = "") -> dict:
+    def run(self, goal: str, start_url: str = "", hints: str = "",
+            resume: Optional[dict] = None) -> dict:
+        """resume: aba de um pedido anterior da conversa ({hwnd, url, title}).
+        Continua NELA (sem aba nova), conferindo antes se ainda e a mesma pagina."""
         history: list[str] = []
         trail: list[str] = []
         win = B.browser_window()
-        if start_url:
+        if resume:
+            win = B.window_from_handle(resume.get("hwnd")) or win
+            if win is None:
+                return {"ok": False, "status": "fail", "turns": 0, "trail": trail,
+                        "result": "A janela do navegador da conversa foi fechada."}
+            try:
+                win.set_focus()
+                time.sleep(0.4)
+            except Exception:
+                pass
+            self._own_tab = True     # a aba ja e nossa: navegar nela, nao abrir outra
+            now = B.current_url(win)
+            history.append(f"continuando a conversa na aba \"{resume.get('title', '')[:60]}\" "
+                           f"({resume.get('url', '')[:90]})")
+            if resume.get("url") and now and now.split("#")[0] != resume["url"].split("#")[0]:
+                history.append(f"ATENCAO: a aba ativa agora mostra {now[:90]} (o usuario pode ter navegado). "
+                               "Use a pagina atual se servir ao objetivo; senao goto na URL da conversa.")
+        elif start_url:
             ok = self._goto(win, start_url)
             if _blank(start_url):
                 history.append("aba nova aberta (em branco): abra o site com goto")

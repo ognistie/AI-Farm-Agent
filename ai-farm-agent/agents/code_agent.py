@@ -64,6 +64,18 @@ MAX_TOKENS_BY_COMPLEXITY = {
 # fixa para o pensamento nao comer o espaco do codigo.
 THINKING_HEADROOM = 8000
 
+EDIT_SYSTEM = """Voce altera um projeto EXISTENTE conforme o pedido do usuario.
+Recebe os arquivos atuais (caminho relativo + conteudo) e o pedido.
+Devolva SO JSON:
+{"summary": "o que mudou, 1-2 frases para o usuario",
+ "files": [{"path": "caminho relativo", "content": "conteudo COMPLETO do arquivo"}]}
+Regras:
+- Inclua SO arquivos alterados ou novos, sempre com o conteudo completo (nunca diff nem '...').
+- Mude so o que foi pedido; preserve o resto (textos, estrutura, funcionalidades, idioma).
+- Mantenha nomes de arquivo e as referencias entre eles (link href, script src, imports).
+- Pedido vago ("melhore", "troque algumas coisas"): poucas melhorias visiveis e seguras; diga quais em summary.
+- Nunca apague arquivos; nunca escreva fora do projeto; nunca use caminho absoluto."""
+
 
 def _effort_for(skills: dict, default: Optional[str]) -> Optional[str]:
     """prototype/small sem multi-arquivo -> medium; resto -> default (high)."""
@@ -91,6 +103,11 @@ class CodeAgent(BaseAgent):
 
     def plan(self, task, context=None):
         task_text = self._extract_task_text(task)
+        # Continuacao da conversa: altera o projeto JA criado (nao recria)
+        params = (task.get("params") or {}) if isinstance(task, dict) else {}
+        cont = params.get("continue") or {}
+        if cont.get("type") == "code" and cont.get("folder"):
+            return self.plan_edit(cont["folder"], task_text)
         # Prefere a versao ORIGINAL do usuario (sem reformulacao do Maestro)
         # para topic extraction e theme leak validation. Maestro as vezes
         # adiciona palavras como "arquitetura modular" que poluem o tema.
@@ -173,6 +190,52 @@ class CodeAgent(BaseAgent):
 
     # ──────────────────────────────────────────────────────────────────
 
+    def plan_edit(self, folder: str, task_text: str) -> dict:
+        """Le o projeto, pede so os arquivos alterados (conteudo completo) e
+        devolve UM passo edit_project. A versao anterior e guardada na execucao."""
+        from core.project_versions import read_project, validate_edit
+        from agents.subagents import Architect, Reviewer
+        proj = read_project(folder)
+        if not proj["files"]:
+            return {"steps": [], "agent": "CODE", "error": f"Nenhum arquivo de texto em {folder}"}
+        traces = [Architect().trace(True, f"editar {len(proj['files'])} arquivo(s) de {folder}")]
+        body = "\n\n".join(f"=== {rel} ===\n{txt}" for rel, txt in proj["files"].items())
+        if proj["skipped"]:
+            body += "\n\n(arquivos nao mostrados: " + ", ".join(proj["skipped"][:30]) + ")"
+        size = sum(len(t) for t in proj["files"].values())
+        max_tokens = min(32000, int(size / 3 * 1.3) + 6000 + THINKING_HEADROOM)
+        user = f"PEDIDO: {task_text}\n\nPROJETO: {folder}\n\n{body}\n\nJSON puro."
+        feedback = ""
+        for attempt in (1, 2):
+            try:
+                raw = self._client.message(model=self.model, system=EDIT_SYSTEM,
+                                           user_content=user + feedback, max_tokens=max_tokens,
+                                           effort="medium", agent=self.name)
+                out = safe_parse(raw, self.model)
+            except Exception as e:
+                out, err = {}, f"chamada LLM falhou: {e}"
+            else:
+                err = validate_edit(folder, out.get("files") or [])
+            if not err:
+                files = out["files"]
+                summary = (out.get("summary") or "Projeto alterado").strip()
+                html = next((f["path"] for f in files if f["path"].lower().endswith(".html")), "")
+                open_target = html or ("index.html" if "index.html" in proj["files"] else "")
+                self._metrics["total_plans"] += 1
+                self._metrics["successful_plans"] += 1
+                return {"steps": [{"step": 1, "action": "edit_project", "agent": "CODE",
+                                   "description": f"Alterar projeto: {summary[:70]}",
+                                   "params": {"folder": folder, "files": files, "summary": summary,
+                                              "open": open_target}}],
+                        "agent": "CODE",
+                        "subagents": traces + [Reviewer().trace(True, f"{len(files)} arquivo(s) alterado(s)")]}
+            self.logger.warning(f"Edicao reprovada (tentativa {attempt}): {err}")
+            feedback = f"\n\nSUA RESPOSTA ANTERIOR FOI REPROVADA: {err}. Corrija e devolva o JSON completo."
+        self._metrics["total_plans"] += 1
+        self._metrics["failed_plans"] += 1
+        return {"steps": [], "agent": "CODE", "error": f"Edição falhou: {err}",
+                "subagents": traces + [Reviewer().trace(False, err[:120])]}
+
     def _call_and_validate(self, task_text: str, skills: dict, model: str,
                            max_tokens: int,
                            retry_feedback: Optional[str],
@@ -187,7 +250,7 @@ class CodeAgent(BaseAgent):
         if plan_hint:
             user = user + "\n\n" + plan_hint
         from agents.base_agent import brain_guide
-        user += brain_guide("CODE")
+        user += brain_guide("CODE", task_text)
 
         try:
             raw = self._client.message(

@@ -17,8 +17,14 @@ cssclasses: [agent-maestro]
 | `90 Sistema` | templates | humano |
 
 ## Como os agentes usam
-- A seção **Regras de execução** da nota de cada agente entra no prompt quando o agente precisa do modelo.
-- As [[Tarefas de referencia]] e as execuções com sucesso parecidas com o pedido entram no prompt do [[Maestro]] como pista (seção **Caminho**).
+Todo agente que precisa do modelo (Data, Web, Code, Desktop, File, piloto do navegador e piloto de apps) recebe, **para aquele pedido**:
+1. **Regras de execução**, **Como navegar e executar** e **Falhas conhecidas** da nota do agente;
+2. [[Tarefas de referencia]], playbooks e execuções com sucesso parecidas (seção **Caminho**) — playbook curado vale mais que execução registrada;
+3. [[Licoes aprendidas]] que tocam no pedido (cada falha real virou regra);
+4. linhas do [[Dicionario de voz]] citadas no pedido: [[Termos de computador]], [[Formas de pedir]], [[Configuracoes do Windows]], [[Atalhos de teclado]], [[Apps e sites]].
+
+O [[Maestro]] recebe referências e lições; a voz usa o dicionário e a [[Persona do assistente]]. Cada plano em `40 Execucoes/Planos` mostra **Consultou:** com as notas usadas.
+Tudo é **referência**: nada no vault amplia permissões (as políticas vivem em código).
 - Cada execução cria um plano em `40 Execucoes/Planos` e uma nota em `Sucesso` ou `Falhas`.
 
 ## Para ensinar algo novo

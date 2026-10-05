@@ -42,6 +42,114 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - File: PathResolver, OperationPlanner, SafetyAuditor
 
   All of them are deterministic except Builder. Their traces go to the log and to the plan note in the vault. A post-step `review_step` hook was added (ContentGuard flags prompt injection in `web_read` output).
+- Continuous conversation: a request can continue the previous one ("open YouTube" → "now open that second video"; "open Notepad" → "now write a text"; "make a site" → "change the main color" → "undo").
+  - `core/session.py` keeps the turns of the conversation and what was left open: the browser tab (window, URL, visible items), app windows, the code project and the last folder. It also tracks which of these is in focus.
+  - `core/followup.py` turns a follow-up utterance into a complete request with a target. Cancel, undo, answers to a pending question, and self-contained requests are handled without an LLM call; references use one short call to the `resolver` model (low effort). A target the model invents is discarded.
+  - `core/observer.py` records what is open after each subtask. The Maestro receives the conversation and a `CONTINUAR EM` target, and the controller passes that target to the matching agent as `params.continue`.
+  - In continue mode each agent works on what is already open:
+    - Web: the pilot resumes the same tab and checks that it still shows the same page.
+    - Desktop: focuses the same window by handle and refuses to type if the active tab or document changed.
+    - Code: `CodeAgent.plan_edit` returns only the changed files. A new `edit_project` action saves the previous version to `<project>/.ai_versions/`, and `revert_project` restores it ("desfaz").
+  - Answering a clarification question continues the original request and its target instead of starting over.
+  - The UI shows the conversation: earlier requests stay above in compact form, each request shows "Entendi: …", and "Nova tarefa" became "Nova conversa".
+- Security hardening before the round 4 commit (negative tests in `test_security_guards_round4`):
+  - `open_path` refuses network paths (`\\server\share`, `//host/x`, `file:`) before touching them. Merely checking such a path makes Windows authenticate to the remote host and send the NTLM hash.
+  - The list of blocked executable types now includes `.msc`, `.jar`, `.url`, `.chm`, `.appinstaller`, `.settingcontent-ms`, disk images, `.dll` and others that run code when opened.
+  - The Start-menu fallback of `app_search` (type + Enter) refuses names with paths, arguments (`cmd /c`, `-Command`) or shell symbols. Known apps still open by their fixed program.
+  - The voice understanding and conversation resolver prompts now state that page and window text in the context is data, never instructions.
+- Voice assistant, round 4: closer to a high-end assistant, with faster and more precise understanding:
+  - Instant answers without the model:
+    - Local answers for time and date.
+    - "abre o X" and "pesquisa X no Google/YouTube" when the speech was heard clearly.
+    - A cut-off request ("abre o...") asks what is missing instead of becoming "abrir algum aplicativo".
+    - Fillers ("hum") are ignored.
+    - About 20% of utterances skip the model.
+  - The understanding step now:
+    - returns the target the request continues in (Excel, a browser tab, a folder);
+    - lets voice commands skip the second resolver call (`followup.from_hint`, validated in code with the same rules);
+    - answers knowledge questions directly as `answer`, while live data (prices, weather, news) still goes to the PC;
+    - treats comments ("meu time ganhou") as chat, which may *offer* an action but never runs one;
+    - treats background talk as noise in live mode;
+    - lets accepting an offer ("Quer que eu toque o primeiro?" → "pode") run that offer, because the assistant's replies are now in the conversation context.
+  - Persona (`core/voice/persona.py`, editable in Obsidian at `00 Maestro/Persona do assistente`):
+    - one speaking style shared by voice understanding, end-of-task replies and small talk;
+    - ready-made lines that vary and never repeat the last ones;
+    - consequential actions are announced as "prepare and confirm", never as already done.
+  - Long tasks get one spoken progress update ("Ainda tô nisso no navegador").
+  - The hotkey cuts the assistant's speech in live mode.
+  - The queue message says which request is waiting.
+- Voice dictionary fixes and expansion (`70 Dicionario/`):
+  - Auto-correction was rewriting normal speech: "ponto" became punctuation, "print" gained "(captura de tela)", "vê esse código" became VS Code, and "time" could become Teams. Confusions now carry a `Corrigir` column: only `auto` rows are replaced before understanding, while `dica` rows go to the model as hints.
+  - Dictionary excerpts are ranked by specificity, so the most specific matches go first.
+  - Sound-alike app detection ("espotifaim" ~ Spotify) is used as a hint only.
+  - Expanded from about 1,160 to about 2,630 ways of speaking, in 822 rows.
+  - "Apps e sites" gains an "Abrir com" column (URL or program), and "Formas de pedir" now maps intent → how to execute → whether to confirm.
+  - New notes: "Configuracoes do Windows" (62 `ms-settings:` pages, used by the Desktop agent beyond the built-in list), "Atalhos de teclado" and "Referencias e contexto".
+- The Obsidian vault is now the retrieval source for every agent (`Brain.context_for`):
+  - Each LLM-planned step of the Data, Web, Code, Desktop and File agents receives the agent's rules and known failures, matching playbooks and executions, matching lessons learned, and dictionary terms for that request. The browser and app pilots get the same context, and the Maestro also receives matching lessons.
+  - Notes consulted are recorded in the plan note ("Consultou: …").
+  - Recorded executions rank below curated playbooks, so an automatic "success" cannot outrank a reviewed path.
+  - The Desktop agent note and the Word/Excel and Notepad playbooks were updated to match the current behaviour, since agents now read them.
+- `scripts/eval_voice.py`: 50 hard utterances (misheard names, slang, stutters, self-correction, background talk, questions, follow-ups) run through the real understanding step without executing anything:
+  - Baseline: 91% (82/90).
+  - After the changes: 100/100 over 2 trials. This includes 5 cases written after tuning to check that the gains generalize.
+  - The report is written to `00 Maestro/Avaliacao de voz.md`.
+- Desktop `continue_steps`: "voltar para a tela anterior" (navigate inside the app) was treated like "voltar para o Excel" (bring the window forward). It now goes to the app pilot unless the phrase is about the window itself. Found by `eval_conversations.py` after the Maestro reworded a subtask.
+- Conversations now feel like chatting with an assistant:
+  - Every conversation is saved to `memory/sessions/<id>.json` with its requests, replies and the windows, tab, project and folder left open. The sidebar lists conversations, and clicking one reopens it and restores its context.
+  - Each request ends with a natural assistant reply written by `core/reply.py` (for example "Feito! Entrei em Acessibilidade…"), not just "Tarefa concluída". The voice speaks this reply only when it adds something.
+  - Small talk ("valeu", "oi") gets its own short message and no longer gets attached to the previous request, typed or spoken.
+- Fixed root causes found in real use:
+  - The resolver only consulted the conversation when the request had words like "agora" or "esse". With Settings open, "clica em sistema" became a new request and reopened a Settings page. Now, when something is open and no other app is named, the model decides whether the request continues it.
+  - A command was never supposed to become a "question", but the resolver could answer "abrir o Excel" with "já está aberto aqui". It now acts on the command. A new request also no longer carries the previous target ("abre outro bloco de notas").
+  - When an app was already open in the conversation, Desktop reopened it from scratch, so Excel went back to its start screen. Desktop now continues in that window (`core/routing.py`, shared by the app and the evaluation) unless the user asks for another one. "Abre o Excel" with Excel open only brings it to the front.
+  - App routines could only open the app. "Abre o Excel e preenche…" and "abre a calculadora e calcula…" now open the app and hand the rest of the request to the app pilot. The pilot has a new `write` action that types where the cursor is, with Tab/Enter, for spreadsheets and documents.
+  - Notepad: the blank-document check looked at the foreground window, which is often not Notepad right after it opens. It now finds the Notepad window by title, opens a new tab if needed and types there. Known apps (`notepad.exe`, `excel`, `calc`, `code`, `ms-settings:`…) open directly instead of being typed into the Start menu.
+  - Settings: page matching uses whole words ("tema" matched inside "sistema" and opened Colors). Requests to click or toggle something go to the pilot, and more pages are mapped. A new policy check rejects a Desktop plan when the request asks for a click and no step clicks; such plans used to be reported as completed.
+  - App names have one canonical key (`settings` = `configurações` = `Configurações do Windows`), and windows the user has closed drop out of the conversation.
+  - FILE safety audit: a system path cited in a blocklist or a protective comparison inside generated code is no longer treated as touching that path. Real use, such as `rmtree("C:/Windows/…")`, is still blocked.
+- `scripts/eval_conversations.py` runs 28 multi-turn scenarios across Settings, Excel, Notepad, Calculator, YouTube, a shop, a code project, folders, closing apps and small talk. Each scenario runs the real resolver, Maestro, routing, agent plans and policy checks without executing anything on the PC. Result: 28/28 passed, US$ 0.15 per run. `--vault` writes the report to Obsidian.
+- Voice mode, second pass (after real use: words that were never said, wrong apps, robotic and repeated speech):
+  - Brazilian voice dictionary in the vault (`70 Dicionario/`): 7 notes, 310 rows, about 1,200 spoken variants. It covers app and site nicknames, colloquial ways of asking, modern slang, fillers to ignore, numbers and time, PC terms, and common transcription confusions such as "google escute" = VS Code and "Windows" ↔ "YouTube". `core/lexicon.py` reads it and reloads it when a note changes, so the user can teach new words in Obsidian.
+  - Transcription:
+    - Removed the app-list prompt that made Whisper "hear" names nobody said.
+    - Beam search 5, `no_repeat_ngram_size` (fixes "meu, meu, meu"), and stricter no-speech/log-prob filters that drop ghost segments.
+    - `large-v3-turbo` was measured at 16.5 s per phrase on this CPU, so the model stays `small` (about 2.7 s).
+  - Understanding step (`core/voice/understand.py`) between transcription and execution:
+    - Corrects the utterance with the dictionary and the conversation, drops noise, and classifies it as command, chat, stop, unclear or noise.
+    - Writes the immediate spoken reply.
+    - When unsure it asks once with its best guess, and "sim" runs the guess. It never runs a guess on its own.
+    - Simple "abre o X" phrases heard with high confidence skip the model and get an instant reply.
+  - Natural voice: Piper neural TTS runs locally in pt-BR (voice `cadu`, about 0.3 s per sentence) and can be interrupted. Windows SAPI is now only a fallback.
+  - Replies are short, conversational and varied, and recent replies are not repeated. The agent asks "didn't catch that" only once. After a task it speaks only when there is something to tell (data it read, or a failure).
+  - Two ways to talk:
+    - Microphone button works like a voice message: click, talk, send. A recording bar shows the timer, levels and Cancel.
+    - "Conversa" keeps the microphone open. Each utterance becomes a request with an instant spoken acknowledgement, and requests run in a queue while you keep talking. "para" stops and clears the queue; "para de ouvir" turns live mode off. The microphone ignores the agent's own voice and its echo.
+  - The UI shows "Ouvi: …" (what the microphone heard) and the agent's spoken replies in the conversation. The hotkey (default `Ctrl+Alt+V`) is active from app launch.
+- Routing fixes found in voice use:
+  - "configurações do Windows" (and pages such as Bluetooth, Wi-Fi, sound and display) opens directly with `ms-settings:`.
+  - Naming an app or site that is not open in the conversation is always a new request. Previously, with YouTube open, "configurações" became YouTube's settings.
+  - Two-word commands like "abre youtube" are no longer blocked as vague.
+  - A new full request no longer gets glued onto a pending clarification.
+  - POL-001 no longer rejects "open" steps that carry a label in `text`.
+- Review fixes:
+  - Typing no longer wipes the user's clipboard (`core/clipboard.py` restores it).
+  - The observer only records a window or tab after confirming it is the app or site that was opened, so it can never adopt one of the user's own tabs or windows.
+  - `.ai_versions/` gets its own `.gitignore`.
+  - The voice queue has a lock, its retry watchdog is bounded with daemon timers, and a guess is kept only when the question was actually asked.
+- App pilot (`core/app_pilot.py`, action `app_task`) works like the browser pilot but inside any app window. Each turn it reads the window through UI Automation (`browser_uia.snapshot(app=True)`), then clicks, double-clicks, types, presses keys or scrolls, and falls back to vision when the app exposes little.
+  - Desktop continuations ("now play that song below", "now calculate 12 times 7") use it on the window from the conversation.
+  - Tested on Calculator: 12 × 7 = 84. The pilot saw a wrong digit on the display and corrected it.
+- Voice mode (`core/voice/`, `desktop/voice.py`):
+  - The global hotkey (default `Ctrl+Alt+V`) or the mic button records one utterance and stops when you stop talking. If the hotkey is taken, it falls back to `Ctrl+Alt+M` and `Ctrl+F9`.
+  - The utterance is transcribed locally with faster-whisper (`small`, int8, Portuguese) and enters the same conversation as typed text.
+  - The reply is spoken with the Windows pt-BR voice (SAPI, Microsoft Maria): the result, clarification questions and errors. After a question it listens again for the answer.
+  - Saying "para" during a run stops it.
+  - UI: a "Voz" toggle, a mic button with a level ring, and the listening/transcribing state.
+  - Tested by turning Windows TTS output into audio files: 4 of 4 phrases were transcribed correctly in 2.5–3.4 s each on CPU. End to end through the real app: voice command → Calculator opened → spoken reply. Not yet tested with a real microphone utterance.
+  - The `av` package (audio file decoding) is blocked by Windows Smart App Control on this machine. It is not needed for microphone audio, so it is stubbed if its import fails; no Windows policy is changed.
+- Fixed: Windows 11 Notepad reuses its open window (with tabs), so "abra o bloco de notas e escreva…" could type into a document the user already had open. Notepad routines now ensure a blank, unmodified document first (`blank_document`), and typing requires one.
+- Fixed: `write_file` ignored simulation mode and wrote files during dry runs.
 - Browser pilot (`core/browser_pilot.py`, action `browser_task`): any browser request beyond "open a known site" or "search on Google/YouTube" is handled by one goal-driven loop, on any site and with no site-specific rules.
   - Each turn it reads the open page through UI Automation (`browser_uia.snapshot`, about 0.3–0.9 s with one batched query).
   - The page is presented in reading order and grouped by region (header, main, sidebars). Text and captioned images sit next to the links they belong to, so prices and "Patrocinado" labels stay with their item, and ads are marked.

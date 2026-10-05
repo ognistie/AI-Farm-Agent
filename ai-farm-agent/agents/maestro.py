@@ -140,6 +140,15 @@ PROMPT = (
     '"objectives":["Notepad aberto","Numeros escritos"],'
     '"forbidden_assumptions":["NAO escrever Ola"],"depends_on":null}],"skills":["notepad"]}\n\n'
 
+    "═══ CONVERSA EM ANDAMENTO ═══\n"
+    "Se vier CONTEXTO DA CONVERSA, o usuario esta continuando uma conversa.\n"
+    "Com CONTINUAR EM <alvo>, o pedido age sobre algo JA ABERTO:\n"
+    "- 1 subtask para o agente do alvo (web->WEB, app:<x>->DESKTOP, code->CODE, folder->FILE).\n"
+    "- NAO reabra o app/site e NAO recrie o projeto: o sistema entrega o alvo ao agente.\n"
+    "- app: mantenha params.app do alvo (ex.: notepad) e o texto pedido em params.text.\n"
+    "- code: params.action_type='edit_existing'; task diz O QUE mudar.\n"
+    "Sem CONTINUAR EM, use a conversa so para entender referencias; o pedido e novo.\n\n"
+
     "═══ AMBIGUITY GATE (cenarios A e J do briefing) ═══\n"
     "Se a tarefa for AMBIGUA ou faltam dados essenciais para executar com\n"
     "seguranca (qual app? qual arquivo? qual periodo? qual destinatario?),\n"
@@ -197,7 +206,15 @@ def _detect_ambiguity(task: str) -> dict | None:
 
     # Curto demais para uma intencao acionavel
     word_count = len(re.findall(r"\w+", t))
-    if word_count <= 2 and t not in {"oi", "ola", "ajuda", "help"}:
+    # "abre youtube", "abre calculadora" sao curtos mas claros (comuns na voz)
+    short_but_clear = False
+    if word_count == 2:
+        try:
+            from core.lexicon import get_lexicon
+            short_but_clear = bool(get_lexicon().apps_in(task))
+        except Exception:
+            short_but_clear = False
+    if word_count <= 2 and not short_but_clear and t not in {"oi", "ola", "ajuda", "help"}:
         return {
             "question": f"'{task}' — pode detalhar o que voce quer fazer?",
             "why": "tarefa curta demais para roteamento confiavel",
@@ -249,7 +266,9 @@ class Maestro:
         self.effort = self._config.get_effort("maestro")
         self._memory = memory
 
-    def analyze(self, task):
+    def analyze(self, task, conversation: str = "", continue_in: str = ""):
+        """conversation: resumo da sessao (Session.context_block); continue_in:
+        alvo ja aberto onde o pedido continua (web, app:notepad, code...)."""
         print("\n[Maestro] Analisando...")
 
         # Ambiguity gate (cenarios A e J): bloqueia ANTES do cache,
@@ -288,8 +307,18 @@ class Maestro:
                 print(f"[Maestro] {len(refs)} referencia(s) do segundo cerebro")
                 hint += ("\n" if hint else "") + "REFERENCIA (segundo cerebro, so pista — nao copie valores):\n"
                 hint += "\n".join(f"- {r['title']} [{r['agent']}]: {r['path']}" for r in refs)
+            # Licoes aprendidas que tocam no pedido (falhas reais que viraram regra)
+            lessons = get_brain().find_lessons(task, k=2)
+            if lessons:
+                hint += ("\n" if hint else "") + "LICOES APRENDIDAS (segundo cerebro):\n"
+                hint += "\n".join(f"- {l['title']}: {l['rule']}" for l in lessons)
         except Exception as brain_err:
             print(f"[Maestro] segundo cerebro indisponivel: {brain_err}")
+
+        if conversation:
+            hint = (hint + "\n\n" if hint else "") + "CONTEXTO DA CONVERSA:\n" + conversation
+        if continue_in:
+            hint += f"\nCONTINUAR EM: {continue_in}"
 
         plan = self._ask(task, hint)
         if not plan.get("subtasks"):

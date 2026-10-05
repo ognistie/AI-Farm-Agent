@@ -22,6 +22,13 @@ Pillow
 # (browser_click/browser_read) e botoes de apps (uia_click)
 pywinauto>=0.6.9
 
+# Modo voz (opcional): transcricao local em portugues + microfone.
+# O modelo 'small' (~480 MB) e baixado no primeiro uso.
+faster-whisper>=1.2
+sounddevice>=0.5
+piper-tts>=1.8      # voz neural local pt-BR (baixa ~60 MB na 1a fala)
+pywin32>=306        # reserva: voz do Windows (SAPI)
+
 # OCR local (opcional, mas recomendado — Vision API usa OCR antes)
 # easyocr>=1.7.0
 # numpy

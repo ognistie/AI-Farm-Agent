@@ -41,6 +41,11 @@ AGENT_FOLDERS = {
 
 GUIDE_MAX_CHARS = 1200
 REFERENCE_MAX_CHARS = 450
+CONTEXT_MAX_CHARS = 3200
+LESSONS_DIR = "60 Aprendizados"
+# Notas do dicionario que ajudam a EXECUTAR (nao so a entender a fala)
+AGENT_DICT = ("Termos de computador", "Atalhos de teclado", "Configuracoes do Windows", "Formas de pedir",
+              "Apps e sites")
 
 
 def _strip_accents(text: str) -> str:
@@ -65,6 +70,15 @@ def _section(md: str, title: str) -> str:
     want = _strip_accents(title).lower()
     for m in re.finditer(r"^##\s+(.+?)\s*$(.*?)(?=^##\s|\Z)", md, re.MULTILINE | re.DOTALL):
         if _strip_accents(m.group(1)).lower().strip() == want:
+            return m.group(2).strip()
+    return ""
+
+
+def _section_prefix(md: str, title: str) -> str:
+    """Como _section, mas aceita titulo que COMECA com `title` ('Falhas conhecidas (e correção)')."""
+    want = _strip_accents(title).lower()
+    for m in re.finditer(r"^##\s+(.+?)\s*$(.*?)(?=^##\s|\Z)", md, re.MULTILINE | re.DOTALL):
+        if _strip_accents(m.group(1)).lower().strip().startswith(want):
             return m.group(2).strip()
     return ""
 
@@ -106,6 +120,7 @@ class Brain:
         self.enabled = bool(enabled) and self.root.is_dir()
         self._lock = threading.Lock()
         self._cache: dict[str, tuple[float, str]] = {}
+        self.last_sources: dict[str, list] = {}     # agente -> notas usadas no ultimo prompt
         if not self.enabled:
             logger.info(f"Segundo cerebro indisponivel em {root}")
 
@@ -173,12 +188,94 @@ class Brain:
                 if not have:
                     continue
                 score = len(want & have) / len(want | have)
+                if folder.startswith("40"):
+                    # execucao registrada vale menos que playbook curado: um "sucesso" automatico
+                    # pode ter sido falso (ex.: abriu a pagina errada e declarou concluido)
+                    score *= 0.75
                 if score >= 0.2:
                     path = _section(md, "Caminho") or _section(md, "Plano executado")
                     scored.append((score, {"title": f.stem, "agent": fm.get("agente", ""),
                                            "path": path[:REFERENCE_MAX_CHARS], "note": rel}))
         scored.sort(key=lambda x: x[0], reverse=True)
         return [ref for _, ref in scored[:k]]
+
+    def agent_notes(self, agent: str) -> str:
+        """Regras + como executar + falhas conhecidas da nota do agente (o essencial do playbook)."""
+        if not self.enabled:
+            return ""
+        folder, name = AGENT_FOLDERS.get((agent or "").upper(), (None, None))
+        if not folder:
+            return ""
+        md = self._read(f"{folder}/{name}.md")
+        parts = []
+        for title, label, limit in (("Regras de execucao", "Regras", 900),
+                                    ("Como navegar e executar", "Como executar", 500),
+                                    ("Falhas conhecidas", "Falhas conhecidas", 500)):
+            body = _section_prefix(md, title)
+            if body:
+                parts.append(f"{label}:\n{body[:limit]}")
+        return "\n".join(parts)
+
+    def find_lessons(self, task: str, k: int = 3) -> list[dict]:
+        """Licoes aprendidas (60 Aprendizados) que tocam no pedido: cada falha real vira regra."""
+        if not self.enabled:
+            return []
+        want = _tokens(task)
+        if not want:
+            return []
+        scored = []
+        base = self.root / LESSONS_DIR
+        for f in sorted(base.glob("*.md")) if base.is_dir() else []:
+            md = self._read(f.relative_to(self.root).as_posix())
+            for m in re.finditer(r"^>\s*\[!lesson\]\s*(.+)\n((?:>.*(?:\n|$))*)", md, re.MULTILINE):
+                title = m.group(1).strip()
+                body = re.sub(r"^>\s?", "", m.group(2), flags=re.MULTILINE).strip()
+                have = _tokens(title + " " + body)
+                hit = want & have
+                if len(hit) >= 2 or (len(want) <= 3 and hit):
+                    rule = re.search(r"\*\*Regra:\*\*\s*(.+)", body)
+                    scored.append((len(hit) / len(want), {
+                        "title": title, "note": f.stem,
+                        "rule": re.sub(r"\s*·\s*\[\[.*$", "", (rule.group(1) if rule else body))[:240]}))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [l for _, l in scored[:k]]
+
+    def context_for(self, agent: str, task: str, compact: bool = False) -> str:
+        """O que o Obsidian sabe sobre ESTE pedido, para o prompt do agente:
+        regras/falhas do agente, playbooks e execucoes parecidas, licoes aprendidas e
+        termos do dicionario (atalhos, paginas das Configuracoes, jeitos de pedir).
+        Tudo e referencia — nunca amplia permissoes. Guarda as notas usadas em last_sources."""
+        if not self.enabled:
+            return ""
+        agent = (agent or "").upper()
+        blocks, sources = [], []
+        notes = "" if compact else self.agent_notes(agent)
+        if notes:
+            blocks.append(notes)
+            sources.append(AGENT_FOLDERS.get(agent, (None, agent))[1])
+        refs = [r for r in self.find_references(task, k=2) if r.get("path")]
+        if refs:
+            blocks.append("Playbooks e execuções parecidas:\n" + "\n".join(
+                f"- {r['title']}: {r['path'][:300 if compact else REFERENCE_MAX_CHARS]}" for r in refs))
+            sources += [r["title"] for r in refs]
+        lessons = self.find_lessons(task, k=2 if compact else 3)
+        if lessons:
+            blocks.append("Lições aprendidas (falhas reais que viraram regra):\n" + "\n".join(
+                f"- {l['title']}: {l['rule']}" for l in lessons))
+            sources += sorted({l["note"] for l in lessons})
+        try:
+            from core.lexicon import get_lexicon
+            terms = [t for t in get_lexicon().relevant(task, limit=40) if any(f"[{n}]" in t for n in AGENT_DICT)]
+        except Exception:
+            terms = []
+        if terms:
+            blocks.append("Dicionário (termos citados no pedido):\n" + "\n".join(terms[:4 if compact else 6]))
+            sources.append("Dicionario de voz")
+        self.last_sources[agent] = sources
+        if sources:
+            logger.info(f"[{agent}] segundo cerebro: {', '.join(sources)}")
+        text = "\n\n".join(blocks)
+        return text[:CONTEXT_MAX_CHARS // (2 if compact else 1)]
 
     # ── Escrita: planos e execucoes ───────────────────────────────────
     def write_plan(self, task: str, plan: dict) -> Optional[str]:
@@ -226,6 +323,10 @@ class Brain:
             return
         link = AGENT_FOLDERS.get((agent or "").upper(), (None, agent))[1]
         out = [f"### [[{link}]] — {_redact(subtask.get('task', ''))[:100]}"]
+        used = self.last_sources.pop((agent or "").upper(), [])
+        if used:
+            # rastreabilidade: quais notas do cerebro o agente consultou para planejar
+            out.append("Consultou: " + " · ".join(f"[[{n}]]" for n in dict.fromkeys(used)))
         if subagents:
             out.append("> [!metric] Subagentes")
             for t in subagents:

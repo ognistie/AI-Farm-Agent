@@ -30,9 +30,12 @@ skills: 3
 - Máximo 15 passos.
 
 ## Como navegar e executar
-- Abrir app: `app_search(nome)` → `wait(3-5)` → `focus_window(título)`.
-- Digitar: `app_type(window_title, text)` (Bloco de Notas) ou `type_text(text)` com o campo focado.
-- Clicar em elemento: `uia_click` (acessibilidade) → fallback `vision_click` (visão).
+- **Abrir app conhecido**: a rotina abre pelo executável/URI (`notepad.exe`, `excel`, `winword`, `code`, `ms-settings:`…, ver [[Apps e sites]] › *Abrir com*) e acha a janela **pelo título** — nunca "a janela da frente".
+- **App já aberto na conversa**: não reabrir. "Abre o Excel" com o Excel aberto só traz a janela pra frente; o resto continua na **mesma** janela ([[Conversa continua]]).
+- **Escrever em editor**: `blank_document` garante documento novo e sem alterações (Ctrl+N se preciso) e `app_type(require_untitled)` digita **só nele** — nunca no arquivo do usuário.
+- **Tudo além de abrir** (preencher planilha, clicar em itens, calcular, mexer em opções): `app_task(goal)` — o **piloto de apps** lê a janela pela acessibilidade, age pelo **nome** do elemento e confere a cada turno; visão só como último recurso.
+- **Configurações do Windows**: `open_path(ms-settings:página)` com a página exata de [[Configuracoes do Windows]]; clicar/ativar algo → `app_task` na janela das Configurações.
+- **Atalhos**: quando existir, preferir o atalho ([[Atalhos de teclado]]); no Office em português alguns mudam.
 
 ## Playbooks
 - [[Playbook - Bloco de Notas]]
@@ -49,6 +52,10 @@ skills: 3
 ## Falhas conhecidas (e correção)
 - **Escreveu só o título da música** — o Maestro não gerou conteúdo e colocou o próprio pedido no texto. Agora a política [[POL-002]] reprova eco do pedido.
 - **Clique por visão com baixa confiança** era contado como sucesso. Agora `⚠️` conta como falha.
+- **Escreveu no documento do usuário** — o Bloco de Notas reabriu a aba existente. Agora `blank_document` + `require_untitled`.
+- **Bloco de Notas não abria/escrevia** — dependia da janela da frente logo após abrir. Agora executável direto + janela pelo título.
+- **Excel voltava para a tela inicial a cada pedido** — reabria o app. Agora app aberto na conversa não é reaberto.
+- **"Clica em sistema" abria Cores** — "tema" dentro de "sis**tema**". Agora palavra inteira; pedido de clique sem passo que clique é reprovado ([[POL-007]]).
 
 ## Subagentes
 Três ajudantes executam junto com o agente — entender, montar, conferir:

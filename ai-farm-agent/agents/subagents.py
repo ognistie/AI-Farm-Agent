@@ -343,19 +343,45 @@ _DESTRUCTIVE_CALLS = re.compile(r"\b(shutil\.rmtree|os\.remove|os\.unlink|os\.rm
 _SENSITIVE_IN_CODE = ("C:/Windows", "C:\\\\Windows", "Program Files", "System32", "/etc", "/var")
 
 
+def _sensitive_paths_in_use(tree: ast.AST) -> list:
+    """Caminhos de sistema USADOS no codigo. Citar o caminho numa lista de bloqueio
+    ou numa comparacao de protecao (`if p.startswith("C:/Windows")`, `PROIBIDAS = [...]`)
+    e o codigo se defendendo — antes isso reprovava o plano (falso positivo)."""
+    parents = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parents[child] = node
+    found = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        hit = next((sp for sp in _SENSITIVE_IN_CODE if sp.replace("\\\\", "\\") in node.value
+                    or sp in node.value), None)
+        if not hit:
+            continue
+        parent = parents.get(node)
+        defensive = isinstance(parent, (ast.List, ast.Tuple, ast.Set, ast.Compare)) or (
+            isinstance(parent, ast.Call) and isinstance(parent.func, ast.Attribute)
+            and parent.func.attr in ("startswith", "endswith", "lower", "upper", "find", "count"))
+        if not defensive:
+            found.append(hit)
+    return found
+
+
 class SafetyAuditor(Subagent):
     name, parent, role = "SafetyAuditor", "FILE", "conferir"
     description = "Audita o codigo gerado: sem apagar em modo simulacao, sem tocar em pastas do sistema."
 
     def run(self, code: str, mode: str) -> Trace:
         try:
-            ast.parse(code)
+            tree = ast.parse(code)
         except SyntaxError as e:
             return self.trace(False, f"SyntaxError linha {e.lineno}: {e.msg}")
         destructive = bool(_DESTRUCTIVE_CALLS.search(code))
-        for sp in _SENSITIVE_IN_CODE:
-            if sp in code and (destructive or "shutil.move" in code):
-                return self.trace(False, f"codigo mexe em caminho do sistema ({sp})")
+        if destructive or "shutil.move" in code:
+            used = _sensitive_paths_in_use(tree)
+            if used:
+                return self.trace(False, f"codigo mexe em caminho do sistema ({used[0]})")
         if mode == "simular" and destructive:
             return self.trace(False, "pedido sem confirmacao: o codigo deve so LISTAR, mas apaga arquivos")
         if "print" not in code:

@@ -866,6 +866,277 @@ def test_browser_pilot():
     return passed == total
 
 
+def test_conversation_session():
+    """Sessao: fala solta vira pedido completo; alvo certo chega ao agente; desfazer funciona."""
+    print("\n=== Conversa continua (sessao) ===")
+    import json as _json
+    import tempfile
+    from core.session import Session
+    from core.followup import resolve
+    from core.project_versions import apply_edit, revert_last, read_project, safe_rel
+    from agents.desktop_agent import continue_steps
+    from agents.web_agent import WebAgent
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    s = Session()
+    calls = []
+
+    def fake_llm(answer):
+        def f(system, user):
+            calls.append(user)
+            return _json.dumps(answer)
+        return f
+
+    r = resolve("abra o bloco de notas", s, llm=fake_llm({}))
+    check("sessao vazia: pedido novo sem chamar o modelo", r["kind"] == "new" and not calls)
+
+    s.add_turn("entre no google e vai no youtube", "abrir o youtube", "new", ["WEB"], True)
+    s.remember_web(0, "https://www.youtube.com/results?search_query=lofi", "lofi - YouTube",   # 0 = sem handle (viva)
+                   ['1. link "Lofi girl"', '2. link "Study lofi 1h"'])
+    r = resolve("agora abra esse segundo vídeo", s, llm=fake_llm(
+        {"kind": "continue", "task": "na aba do YouTube já aberta, abrir o 2º vídeo (Study lofi 1h)",
+         "target": "web"}))
+    check("'agora abra esse segundo video' -> continue na aba web", r["kind"] == "continue" and r["target"] == "web")
+    check("contexto enviado ao modelo lista os itens visiveis", "Study lofi 1h" in calls[-1])
+
+    r = resolve("abra aquele outro", s, llm=fake_llm({"kind": "continue", "task": "x", "target": "app:spotify"}))
+    check("alvo inventado pelo modelo e descartado (vira pedido novo)", r["kind"] == "new" and r["target"] is None)
+
+    n = len(calls)
+    r = resolve("abre o bloco de notas e escreve oi", s, llm=fake_llm({}))
+    check("app que NAO esta aberto = pedido novo, sem chamar o modelo", r["kind"] == "new" and len(calls) == n)
+    r = resolve("clica em sistema", s, llm=fake_llm({"kind": "continue", "task": "na aba aberta, clicar em sistema",
+                                                     "target": "web"}))
+    check("com algo aberto, 'clica em X' consulta a conversa (antes virava pedido novo)",
+          r["kind"] == "continue" and len(calls) == n + 1)
+    r = resolve("abrir o YouTube", s, llm=fake_llm({"kind": "question", "answer": "O YouTube já está aberto aqui."}))
+    check("comando nunca vira 'resposta' (ex.: 'já está aberto'): age", r["kind"] in ("continue", "new"))
+    check("'para' cancela sem modelo", resolve("para", s)["kind"] == "cancel")
+
+    s.set_pending("Qual relatorio?", "atualiza o relatorio")
+    r = resolve("o de vendas de setembro", s)
+    check("resposta a pergunta continua o pedido original",
+          r["via"] == "pending" and "atualiza o relatorio" in r["task"] and "setembro" in r["task"])
+    s.clear_pending()
+
+    st = continue_steps({"type": "app", "key": "notepad", "hwnd": 42, "title": "Sem título - Bloco de Notas",
+                         "last_text": "oi"}, "escrever um texto", {"text": "Bom dia"})
+    check("desktop continua na MESMA janela (foco por handle + digitar, sem reabrir)",
+          [x["action"] for x in st] == ["focus_window", "app_type"] and st[0]["params"]["hwnd"] == 42
+          and st[1]["params"]["text"].startswith("\n\n"))
+
+    os.environ.setdefault("ANTHROPIC_API_KEY", "sk-test-offline")   # caminho de continuacao nao chama a API
+    st = continue_steps({"type": "app", "key": "calculadora", "hwnd": 7, "title": "Calculadora"},
+                        "calcular 12 vezes 7", {"text": "12x7"})
+    check("app que nao e editor de texto -> piloto de apps na mesma janela (nao digita as cegas)",
+          [x["action"] for x in st] == ["app_task"] and st[0]["params"]["hwnd"] == 7)
+    plan = WebAgent().plan({"task": "abrir o 2o video", "params": {"continue": {
+        "type": "web", "hwnd": 111, "url": "https://www.youtube.com/results", "title": "lofi"}}})
+    ps = plan["steps"]
+    check("web continua na mesma aba (resume, sem aba nova)",
+          len(ps) == 1 and ps[0]["action"] == "browser_task" and ps[0]["params"]["resume"]["hwnd"] == 111
+          and ps[0]["params"]["start_url"] == "")
+
+    d = tempfile.mkdtemp()
+    open(os.path.join(d, "index.html"), "w", encoding="utf-8").write("<h1>Cafe</h1>")
+    r1 = apply_edit(d, [{"path": "index.html", "content": "<h1>Café Novo</h1>"},
+                        {"path": "script.js", "content": "console.log(1)"}])
+    check("edicao grava e guarda versao", r1["ok"] and "Novo" in open(os.path.join(d, "index.html"), encoding="utf-8").read())
+    check("projeto lido ignora .ai_versions", ".ai_versions" not in " ".join(read_project(d)["files"]))
+    r2 = revert_last(d)
+    check("desfaz restaura o arquivo e apaga o criado",
+          r2["ok"] and open(os.path.join(d, "index.html"), encoding="utf-8").read() == "<h1>Cafe</h1>"
+          and not os.path.exists(os.path.join(d, "script.js")))
+    bad = apply_edit(d, [{"path": "../fora.txt", "content": "x"}])
+    check("caminho fora do projeto e recusado", not bad["ok"] and safe_rel(d, "C:/Windows/x") is None)
+
+    s2 = Session()
+    s2.remember_code(d, ["index.html"])
+    check("'desfaz' com projeto na conversa -> undo sem modelo", resolve("desfaz", s2)["kind"] == "undo")
+    check("contexto da sessao marca o FOCO", "<- FOCO" in s2.context_block())
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_voice_mode():
+    """Voz sem microfone: dicionario, entendimento, fila, perguntar UMA vez, rotas novas."""
+    print("\n=== Modo voz (sem microfone) ===")
+    import json as _json
+    from core.voice.tts import clean_for_speech
+    from core.voice.hotkey import parse
+    from core.voice.recorder import is_speech
+    from core.voice.understand import understand, yes_no
+    from core.lexicon import get_lexicon
+    from core.session import Session
+    from core.followup import resolve
+    from agents.desktop_agent import settings_steps
+    from agents.maestro import _detect_ambiguity
+    from desktop.event_bus import bus
+    from desktop.voice import VoiceController
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    spoken = clean_for_speech("✅ Abri o vídeo https://youtube.com/watch?v=x em C:\\Users\\a\\b.html\nTrilha (2 turnos): click x")
+    check("fala sem URL, caminho, emoji nem trilha",
+          "http" not in spoken and "C:" not in spoken and "Trilha" not in spoken and "✅" not in spoken)
+    check("atalho 'ctrl+alt+v' -> Ctrl|Alt + V", parse("ctrl+alt+v") == (0x3, ord("V")))
+    check("detector de fala ignora ruido de fundo", not is_speech(0.01, 0.005) and is_speech(0.05, 0.005))
+
+    lex = get_lexicon()
+    check("dicionario carregado do Obsidian (>500 jeitos de falar)", lex.size() > 500)
+    check("'google escute' -> VS Code", "VS Code" in lex.fix("abrir google escute"))
+    check("gaguejo 'o meu, meu, meu Google' -> 'o Google'", lex.fix("O meu, meu, meu Google.").startswith("o Google"))
+    check("'zap' e WhatsApp", lex.apps_in("chama no zap")[0][0] == "WhatsApp")
+    check("'receita de bolo' nao vira Receita Federal", not any("Receita" in a for a, _ in lex.apps_in("receita de bolo")))
+
+    def never(system, user):
+        raise AssertionError("nao deveria chamar o modelo")
+    u = understand("Abre o YouTube.", 0.9, llm=never)
+    check("'abre o youtube' bem ouvido: sem modelo, confirma na hora", u["via"] == "rapido" and "YouTube" in u["command"])
+    u = understand("abre o youtube e pesquisa lofi", 0.9,
+                   llm=lambda s, x: _json.dumps({"kind": "command", "command": "abrir o YouTube e pesquisar lofi",
+                                                 "reply": "Bora."}))
+    check("pedido composto nao cai no atalho (vai inteiro)", u["via"] == "llm" and "lofi" in u["command"])
+    u = understand("abre o negocio la", 0.4, llm=lambda s, x: _json.dumps({"kind": "unclear", "guess": "abrir o Excel"}))
+    check("duvida -> pergunta com o palpite (nunca executa o palpite)", u["kind"] == "unclear" and "Excel" in u["reply"])
+    check("'pode sim' = sim; 'melhor nao' = nao", yes_no("pode sim") is True and yes_no("melhor não") is False)
+
+    sett = settings_steps("abra as configurações do windows")
+    check("configuracoes do Windows -> ms-settings (sem procurar no menu)", sett and sett[0]["params"]["path"] == "ms-settings:")
+    check("'abre o bluetooth nas configurações' -> pagina certa",
+          settings_steps("abre o bluetooth nas configurações")[0]["params"]["path"] == "ms-settings:bluetooth")
+    check("'configurações do youtube' NAO e do Windows", settings_steps("abre as configurações do youtube") is None)
+    s = Session()
+    s.add_turn("abre o youtube", "abrir youtube", "new", ["WEB"], True)
+    s.remember_web(0, "https://youtube.com", "YouTube", ['1. link "x"'])
+    r = resolve("agora abra a configuração do windows", s, llm=never)
+    check("YouTube aberto + 'configuração do windows' = pedido novo (sem modelo)", r["kind"] == "new")
+    check("'abre youtube' (2 palavras) nao e barrado como vago", _detect_ambiguity("abre youtube") is None)
+    from core.plan_validator import validate_steps
+    v = validate_steps("DESKTOP", {"agent": "DESKTOP", "task": "abrir bluetooth do windows",
+                                   "params": {"app": "settings", "text": "Bluetooth", "action_type": "open"}},
+                       [{"action": "open_path", "params": {"path": "ms-settings:bluetooth"}}], "abrir bluetooth")
+    check("abrir pagina com rotulo em 'text' nao e reprovado por POL-001 (bug do teste ao vivo)", v.approved)
+
+    got, said = [], []
+    bus.on("voice_command", got.append)
+
+    class FakeCtrl:
+        state = {"running": False}
+        session = None
+
+        def force_stop(self):
+            got.append("STOP")
+
+    class MuteSpeaker:            # teste nao fala em voz alta
+        speaking = False
+        def speak(self, t): said.append(t)
+        def stop(self): pass
+        def wait(self, timeout=0): pass
+
+    vc = VoiceController(FakeCtrl(), {})
+    vc.tts = MuteSpeaker()
+    fake = lambda kind, **kw: (lambda h, c, ctx, rec: {"kind": kind, "command": kw.get("command", ""),
+                                                       "reply": kw.get("reply", ""), "guess": kw.get("guess", "")})
+    vc.handle_text("Abre o Bloco de Notas.", 0.9, understand_fn=fake("command", command="abrir o Bloco de Notas",
+                                                                       reply="Abrindo o Bloco de Notas."))
+    check("fala entendida vira pedido e o agente confirma", got and got[-1]["text"] == "abrir o Bloco de Notas"
+          and said[-1] == "Abrindo o Bloco de Notas.")
+    vc.handle_text("abre o google", 0.9, understand_fn=fake("command", command="abrir o Google", reply="Abrindo o Google."))
+    check("com um pedido em andamento, o proximo entra na FILA (e a fala diz qual)",
+          len(vc._cmd_q) == 1 and "abrir o google" in said[-1].lower())
+    n = len(said)
+    vc.handle_text("hmm o negocio", 0.4, understand_fn=fake("unclear", guess="abrir o Excel", reply="Foi o Excel?"))
+    vc.handle_text("aquilo la", 0.4, understand_fn=fake("unclear", guess="abrir o Word", reply="Foi o Word?"))
+    check("nao entendeu: pergunta UMA vez so", len(said) == n + 1)
+    vc._pending_guess = "abrir o Excel"
+    vc._inflight = False
+    vc._cmd_q.clear()
+    vc.handle_text("isso mesmo", 0.9, understand_fn=fake("noise"))
+    check("'isso mesmo' executa o palpite confirmado", got[-1]["text"] == "abrir o Excel")
+    n = len(said)
+    vc.handle_text("", 0.0, mode="live")
+    check("silencio/ruido na conversa ao vivo: fica quieto", len(said) == n)
+    FakeCtrl.state["running"] = True
+    vc.handle_text("para", 0.9, understand_fn=fake("stop", reply="Parei."))
+    check("'para' interrompe e esvazia a fila", got[-1] == "STOP" and not vc._cmd_q)
+    FakeCtrl.state["running"] = False
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_root_causes_round3():
+    """Causas de fundo dos erros vistos em uso real (Configuracoes, Excel, Bloco de Notas, historico)."""
+    print("\n=== Causas de fundo (rodada 3) ===")
+    import tempfile
+    from pathlib import Path
+    from core.lexicon import get_lexicon
+    from core.session import Session
+    from core.plan_validator import validate_steps
+    from agents.desktop_agent import settings_steps, continue_steps, _then_do_rest
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    L = get_lexicon()
+    check("chave unica do app: settings = configurações = Configurações do Windows",
+          L.app_key("settings") == L.app_key("configurações") == L.app_key("Configurações do Windows") == "configuracoes")
+    st = settings_steps("clicar em Sistema nas Configurações do Windows")
+    check("'clicar em Sistema' NAO abre Cores ('tema' dentro de 'sistema')",
+          st and "colors" not in st[0]["params"]["path"])
+    check("'clicar em X' nas Configurações termina com o piloto (clique de verdade)",
+          st and st[-1]["action"] == "app_task")
+    sub = {"agent": "DESKTOP", "task": "clicar em Sistema nas Configuracoes", "params": {"app": "configuracoes"}}
+    v = validate_steps("DESKTOP", sub, [{"action": "open_path", "params": {"path": "ms-settings:"}}], sub["task"])
+    check("pedido de clicar sem passo que clique e REPROVADO (antes saia 'concluida')", not v.approved)
+
+    cont = {"type": "app", "key": "excel", "hwnd": 5, "title": "Pasta1 - Excel"}
+    st = continue_steps(cont, "abrir o Excel", {})
+    check("'abrir o Excel' com o Excel aberto: so traz para a frente (nao reabre)",
+          [x["action"] for x in st] == ["focus_window"])
+    st = continue_steps(cont, "preencher as colunas A, B e C com o alfabeto", {"text": "A B C"})
+    check("preencher no Excel aberto: piloto NA mesma janela", st[0]["action"] == "app_task" and st[0]["params"]["hwnd"] == 5)
+    opened = [{"action": "app_search", "params": {"name": "Excel"}}, {"action": "wait", "params": {}}]
+    st = _then_do_rest(list(opened), "excel", "abrir o Excel e preencher as colunas A, B e C", {})
+    check("abrir o Excel E preencher: a rotina de abrir ganha o piloto no fim (antes POL-001 reprovava)",
+          st[-1]["action"] == "app_task" and st[-1]["params"]["app"] == "excel")
+    check("so abrir o Excel nao chama o piloto", _then_do_rest(list(opened), "excel", "abrir o Excel", {}) == opened)
+
+    d = Path(tempfile.mkdtemp())
+    s = Session()
+    s.add_turn("abre o youtube", "abrir o youtube", "new", ["WEB"], True, "YouTube aberto")
+    s.set_last_reply("Prontinho, o YouTube tá aberto.")
+    s.remember_code("C:/projeto", ["index.html"])
+    s.save(d)
+    lst = Session.list_saved(base=d)
+    check("conversa salva aparece na lista com titulo", lst and lst[0]["title"] == "abre o youtube" and lst[0]["turns"] == 1)
+    s2 = Session()
+    s2.load(Session.read_saved(s.id, base=d))
+    check("conversa reaberta traz pedidos, respostas e o projeto",
+          s2.id == s.id and s2.turns[0].reply.startswith("Prontinho") and s2.code["folder"] == "C:/projeto")
+    check("id de conversa invalido nao le arquivo arbitrario", Session.read_saved("../../x", base=d) is None)
+    s3 = Session()
+    s3.remember_app("notepad", 99999991, "Sem título - Bloco de notas")
+    check("janela fechada sai dos alvos (nunca continuar no vazio)", "app:notepad" not in s3.targets())
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 def test_code_skills_detection():
     """code_skills.py v21: detecta project_type, complexity, stack, topic."""
     print("\n=== CodeAgent v21 skills detection ===")
@@ -1813,6 +2084,241 @@ def test_reference_retrieval():
     return passed == total
 
 
+def test_voice_round4():
+    """Rodada 4: entendimento mais rapido e preciso, persona, voz -> execucao sem 2a chamada,
+    Obsidian como fonte de todos os agentes."""
+    print("\n=== Voz e segundo cerebro (rodada 4) ===")
+    import inspect
+    import json as _json
+    import re as _re
+    import tempfile
+    import time as _time
+    from pathlib import Path
+    from core.lexicon import get_lexicon
+    from core.session import Session
+    from core.voice.understand import understand, yes_no
+    from core.voice.persona import Persona
+    from core.followup import from_hint
+    from core.brain import get_brain
+    from agents.base_agent import brain_guide
+    from agents.desktop_agent import settings_steps
+    from desktop.event_bus import bus
+    from desktop.voice import VoiceController
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    def never(system, user):
+        raise AssertionError("nao deveria chamar o modelo")
+
+    # ── dicionario: correcao so do que e seguro ───────────────────
+    lex = get_lexicon()
+    check("dicionario ampliado (>2000 jeitos de falar)", lex.size() > 2000)
+    check("'ficou excelente' NAO vira Excel", "excel" not in lex.fix("o site ficou excelente").lower().replace("excelente", ""))
+    check("'o ponto de encontro' nao vira pontuacao", lex.fix("escreve o ponto de encontro") == "escreve o ponto de encontro")
+    check("'tira um print' nao ganha '(captura de tela)'", "captura" not in lex.fix("tira um print da tela"))
+    check("'vê esse código aqui' nao vira VS Code (so dica)", "VS Code" not in lex.fix("vê esse código aqui que deu erro"))
+    check("'google escute' continua virando VS Code", lex.fix("abre o google escute") == "abre o VS Code")
+    check("'clica ali' / 'liga pro pedro' / 'tô do lado' nao sao apps",
+          not lex.apps_in("clica ali embaixo") and not lex.apps_in("liga pro pedro") and not lex.apps_in("to do lado"))
+    like = lex.sounds_like_app("abre o espotifaim pra mim")
+    check("som parecido: 'espotifaim' ~ Spotify (so pista)", like and like[0] == "Spotify")
+    rel = lex.relevant("abre aí o youtube pra mim mano")
+    check("trechos do dicionario: o mais especifico primeiro", rel and "youtube" in rel[0].lower() or "abre" in rel[0].lower())
+    check("pagina das Configuracoes ensinada no Obsidian ('tela de bloqueio')",
+          settings_steps("abre a tela de bloqueio nas configurações")[0]["params"]["path"] == "ms-settings:lockscreen")
+    check("lista em codigo continua valendo ('bluetooth')",
+          settings_steps("abre o bluetooth nas configurações")[0]["params"]["path"] == "ms-settings:bluetooth")
+    check("'configurações do windows' sozinho abre a inicial",
+          settings_steps("abra as configurações do windows")[0]["params"]["path"] == "ms-settings:")
+
+    # ── entendimento sem modelo ───────────────────────────────────
+    t0 = _time.time()
+    u = understand("que horas são?", 0.9, llm=never)
+    check("'que horas são' responde na hora, sem modelo", u["kind"] == "answer" and u["via"] == "local"
+          and _re.search(r"\d|meio|meia", u["reply"]))
+    check("'que dia é hoje' responde a data local", understand("que dia é hoje", 0.9, llm=never)["kind"] == "answer")
+    u = understand("abre o...", 0.8, llm=never)
+    check("pedido cortado ('abre o...') pergunta o que falta (nunca 'abrir algum app')",
+          u["kind"] == "unclear" and not u["guess"] and u["reply"])
+    check("'hum' e ruido, sem modelo", understand("hum", 0.4, llm=never)["kind"] == "noise")
+    u = understand("Abre o YouTube...", 0.9, llm=never)
+    check("reticencias do reconhecimento em fala completa NAO viram pedido cortado",
+          u["kind"] == "command" and "YouTube" in u["command"])
+    check("'fecha' sozinho NAO e pedido cortado (fecha o que esta aberto)",
+          understand("fecha", 0.9, llm=lambda s, x: _json.dumps({"kind": "command", "command": "fechar"}))["kind"] == "command")
+    u = understand("pesquisa receita de pão de queijo no google", 0.92, llm=never)
+    check("'pesquisa X no google' bem ouvido: sem modelo e com acento na fala",
+          u["via"] == "rapido" and "pão de queijo" in u["command"] and "pão" in u["reply"])
+    s = Session()
+    s.add_turn("abre o youtube", "abrir youtube", "new", ["WEB"], True)
+    s.remember_web(0, "https://youtube.com", "YouTube", ['1. link "x"'])
+    u = understand("pesquisa lofi", 0.92, session=s,
+                   llm=lambda sy, x: _json.dumps({"kind": "command", "command": "pesquisar lofi no YouTube aberto",
+                                                  "target": "web", "reply": "Buscando lofi."}))
+    check("com site aberto, 'pesquisa X' vai pro modelo (pode ser DENTRO do site)", u["via"] == "llm" and u["target"] == "web")
+    s2 = Session()
+    s2.add_turn("abre o excel", "abrir o Excel", "new", ["DESKTOP"], True)
+    s2.remember_app("excel", 0, "Pasta1 - Excel")
+    u = understand("abre o excel", 0.9, session=s2, llm=never)
+    check("'abre o excel' com o Excel aberto: continua nele (alvo), sem modelo", u["target"] == "app:excel")
+    seen = {}
+
+    def spy(system, user):
+        seen["system"], seen["user"] = system, user
+        return _json.dumps({"kind": "command", "command": "clicar", "target": "app:inventado", "reply": "Ok."})
+    u = understand("clica no botão azul", 0.9, session=s2, llm=spy)
+    check("alvo inventado pelo modelo e descartado", u["target"] == "")
+    check("prompt do entendimento traz alvos abertos e a persona",
+          "app:excel" in seen["user"] and "mordomo" in seen["system"])
+    u = understand("quanto tá o dólar", 0.9,
+                   llm=lambda sy, x: _json.dumps({"kind": "answer", "reply": "Uns cinco reais."}))
+    check("dado do momento nunca sai 'de cabeça' (vira pedido)", u["kind"] == "command" and not u["reply"].startswith("Uns"))
+    understand("meu time ganhou", 0.9, mode="live", llm=spy)
+    check("conversa ao vivo: prompt manda tratar conversa de fundo como ruido", "CONVERSA AO VIVO" in seen["system"])
+    check("'e abre o spotify' NAO e um 'sim'; 'é' sozinho e", yes_no("e abre o spotify") is None and yes_no("é") is True)
+
+    # ── persona ───────────────────────────────────────────────────
+    with tempfile.TemporaryDirectory() as vault:
+        Path(vault, "00 Maestro").mkdir()
+        Path(vault, "00 Maestro", "Persona do assistente.md").write_text(
+            "## Estilo\n- Fala como um mordomo britânico.\n\n## Falas prontas\n| Chave | Quando | Variações |\n|---|---|---|\n"
+            "| `open` | abrir | Às ordens, abrindo {obj}. / Abrindo {app_errado}. |\n", encoding="utf-8")
+        pz = Persona(vault)
+        check("persona lida do Obsidian (estilo editavel)", "britânico" in pz.style())
+        check("fala pronta do Obsidian; variacao com campo desconhecido e ignorada",
+              all(pz.pick("open", obj="o Excel") == "Às ordens, abrindo o Excel." for _ in range(5)))
+    pd = Persona(tempfile.gettempdir())
+    picks = [pd.pick("open", obj="o Word") for _ in range(6)]
+    check("persona nao repete a fala anterior", all(a != b for a, b in zip(picks, picks[1:])))
+
+    # ── voz -> execucao sem 2a chamada ────────────────────────────
+    s3 = Session()
+    s3.add_turn("abre o excel", "abrir o Excel", "new", ["DESKTOP"], True)
+    s3.remember_app("excel", 0, "Pasta1 - Excel")
+    r = from_hint("no Excel já aberto, colocar 100 na B2", s3, {"kind": "continue", "target": "app:excel"})
+    check("dica da voz valida: continua no Excel sem chamar o resolvedor", r and r["kind"] == "continue"
+          and r["target"] == "app:excel" and r["via"] == "voz")
+    check("dica com alvo que nao existe -> resolvedor normal",
+          from_hint("clica em ok", s3, {"kind": "continue", "target": "app:word"}) is None)
+    r = from_hint("abrir o Spotify", s3, {"kind": "continue", "target": "app:excel"})
+    check("dica que cita app NAO aberto vira pedido novo", r and r["kind"] == "new" and r["target"] is None)
+    s3.set_pending("Qual cor?", "trocar a cor", None)
+    check("com pergunta pendente, a dica nao atropela", from_hint("azul", s3, {"kind": "new"}) is None)
+    s3.clear_pending()
+    s3.set_last_reply("Abri o Excel. Quer que eu preencha a primeira linha?")
+    check("contexto da conversa inclui o que o assistente disse (ofertas)", "Quer que eu preencha" in s3.context_block())
+
+    hints, got, said, chats = {}, [], [], []
+    bus.on("voice_command", got.append)
+    bus.on("voice_chat", chats.append)
+
+    class Ctrl:
+        state = {"running": False}
+        session = s3
+
+        def voice_hint(self, text, hint):
+            hints[text] = hint
+
+        def force_stop(self):
+            pass
+
+    class Mute:
+        speaking = False
+        def speak(self, t): said.append(t)
+        def stop(self): pass
+
+    vc = VoiceController(Ctrl(), {"progress_after_s": 0.2})
+    vc.tts = Mute()
+    fake = lambda d: (lambda h, c, ctx, rec: d)
+    vc.handle_text("coloca cem na b2", 0.9, understand_fn=fake({"kind": "command", "command": "colocar 100 na B2 do Excel",
+                                                                  "target": "app:excel", "reply": "Colocando 100 na B2.",
+                                                                  "via": "llm"}))
+    check("voz entrega ao controller como entendeu (continua no Excel)",
+          hints.get("colocar 100 na B2 do Excel") == {"kind": "continue", "target": "app:excel"})
+    vc._on_phase({"msg": "DESKTOP Agent..."})
+    _time.sleep(0.5)
+    check("pedido demorado ganha UM aviso de progresso", any("app" in x for x in said[-2:]))
+    vc._on_done({})
+    n = len(got)
+    vc._inflight = False
+    vc.handle_text("quanto é doze vezes sete", 0.9, understand_fn=fake({"kind": "answer", "reply": "Dá 84.", "command": ""}))
+    check("pergunta respondida de cabeça: mensagem propria, nada executado",
+          len(got) == n and chats and chats[-1].get("kind") == "answer" and said[-1] == "Dá 84.")
+
+    from agents.desktop_agent import continue_steps
+    cont = {"key": "configuracoes", "hwnd": 0, "title": "Configurações"}
+    check("'voltar para a tela anterior' navega no app (piloto), nao so traz a janela",
+          continue_steps(cont, "Voltar para a tela anterior nas Configurações", {})[0]["action"] == "app_task")
+    check("'voltar para o Excel' continua so trazendo a janela pra frente",
+          continue_steps({"key": "excel", "hwnd": 0, "title": "Pasta1 - Excel"}, "voltar para o Excel", {})[0]["action"]
+          == "focus_window")
+
+    # ── Obsidian como fonte de TODOS os agentes ───────────────────
+    brain = get_brain()
+    ctx = brain.context_for("DESKTOP", "abrir o Excel e preencher a primeira linha com nome e idade")
+    check("cerebro: regras e falhas conhecidas do agente", "Regras" in ctx and "Falhas conhecidas" in ctx)
+    check("cerebro: termos do dicionario que tocam no pedido", "[Apps e sites]" in ctx or "[Termos de computador]" in ctx)
+    check("cerebro: registra as notas consultadas", "Desktop Agent" in brain.last_sources.get("DESKTOP", []))
+    lessons = brain.find_lessons("abre o excel de novo e preenche a planilha", k=3)
+    check("licoes aprendidas recuperadas pelo pedido", any("Excel" in l["title"] + l["rule"] or "aberto" in l["title"]
+                                                           for l in lessons))
+    check("brain_guide(agente, pedido) usa o contexto completo",
+          "SEGUNDO CEREBRO" in brain_guide("WEB", "pesquisar fone bluetooth no mercado livre"))
+    root = Path(__file__).resolve().parent.parent
+    calls = []
+    for f in ("agents/base_agent.py", "agents/code_agent.py", "agents/data_agent.py", "agents/desktop_agent.py",
+              "agents/file_agent.py", "agents/web_agent.py"):
+        src = (root / f).read_text(encoding="utf-8")
+        calls += [(f, c) for c in _re.findall(r"brain_guide\(([^)]*)\)", src) if "agent: str" not in c]
+    check("todos os agentes passam o PEDIDO ao segundo cerebro", calls and all("," in c for _, c in calls))
+    auto = (root / "core/automation.py").read_text(encoding="utf-8")
+    check("pilotos (navegador e apps) recebem o contexto do cerebro",
+          '_brain_hints("WEB"' in auto and '_brain_hints("DESKTOP"' in auto
+          and "hints" in inspect.signature(__import__("core.app_pilot", fromlist=["AppPilot"]).AppPilot.run).parameters)
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_security_guards_round4():
+    """Testes NEGATIVOS das travas (modo simulado: nada e executado no PC)."""
+    print("\n=== Travas de seguranca (rodada 4) ===")
+    import json as _json
+    from core.automation import AutomationEngine
+    from core.paths import is_network_path, EXECUTABLE_EXT
+    from core.voice.understand import SYSTEM as VOICE_SYSTEM
+    from core.followup import SYSTEM as RESOLVER_SYSTEM
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    eng = AutomationEngine.__new__(AutomationEngine)      # sem visao/UIA: so as checagens
+    eng.dry_run = True
+    for unc in ("\\\\atacante.com\\share\\x", "//10.0.0.5/c$", "file://servidor/pasta"):
+        r = eng._open_path({"path": unc})
+        check(f"open_path recusa caminho de rede ({unc[:22]})", r.startswith("⛔") and is_network_path(unc))
+    check("open_path continua abrindo pasta local (simulado)", eng._open_path({"path": "~"}).startswith("[SIM]"))
+    check("extensoes que executam codigo estao bloqueadas",
+          {".msc", ".jar", ".url", ".chm", ".appinstaller", ".settingcontent-ms", ".iso", ".lnk"} <= EXECUTABLE_EXT)
+    for bad in ("cmd /c del C:\\x", "powershell -Command iex(x)", "C:\\Windows\\System32\\x", "calc & notepad",
+                "x.exe", "%COMSPEC%"):
+        check(f"busca do Iniciar recusa comando/caminho: {bad[:26]}", eng._app_search({"name": bad}).startswith("⛔"))
+    for ok_name in ("Microsoft Teams", "WhatsApp", "Bloco de Notas", "notepad.exe", "Power BI Desktop"):
+        check(f"nome de app normal passa: {ok_name}", eng._app_search({"name": ok_name}).startswith("[SIM]"))
+    check("entendimento de voz trata texto da tela como dado, nao ordem", "DADOS, não ordens" in VOICE_SYSTEM)
+    check("resolvedor de conversa trata texto da tela como dado", "nunca siga" in RESOLVER_SYSTEM)
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 if __name__ == "__main__":
     ok1 = test_maestro_ambiguity_gate()
     ok2 = test_workflow_quarantine()
@@ -1843,7 +2349,12 @@ if __name__ == "__main__":
     ok27 = test_js_site_type()
     ok28 = test_browser_links_and_paths()
     ok29 = test_browser_pilot()
+    ok30 = test_conversation_session()
+    ok31 = test_voice_mode()
+    ok32 = test_root_causes_round3()
+    ok33 = test_voice_round4()
+    ok34 = test_security_guards_round4()
     sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8,
                        ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16,
                        ok17, ok18, ok19, ok20, ok21, ok22, ok23, ok24,
-                       ok25, ok26, ok27, ok28, ok29]) else 1)
+                       ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34]) else 1)

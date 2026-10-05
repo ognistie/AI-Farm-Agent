@@ -197,7 +197,7 @@ class DataAgent(BaseAgent):
             ctx = "\nCONTEXTO: " + json.dumps(context)
         hint = _hint_for_type(stype, wants_chart, formulas)
         from agents.base_agent import brain_guide
-        hint += brain_guide("DATA")
+        hint += brain_guide("DATA", task_text)
 
         result = self._call_and_validate(task_text + ctx + hint, retry_feedback=None)
         if result["ok"]:

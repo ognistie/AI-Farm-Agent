@@ -15,6 +15,10 @@ Item {
     property string phaseMsg: ""
     property string errorMsg: ""
     property string question: ""
+    property string resolvedText: ""   // como o pedido foi entendido no contexto da conversa
+    property string heardText: ""      // o que o microfone ouviu (se diferente do pedido)
+    property string assistantText: ""  // resposta do assistente a este pedido (como numa conversa)
+    readonly property bool hasConversation: turnsModel.count > 0
     property string reportSummary: ""
     property bool wasDryRun: false
     property real progress: 0
@@ -31,25 +35,78 @@ Item {
     readonly property bool idle: status === "idle"
     readonly property bool running: status === "running"
 
+    ListModel { id: turnsModel }  // pedidos anteriores da conversa { said, resolved, status, summary }
     ListModel { id: planModel }
+    ListModel { id: replyModel }  // falas do agente (modo voz) neste pedido
     ListModel { id: stepModel }   // { n, agent, desc, state, result, kind }
 
     // ── API usada pelo Main ──────────────────────────────────────────
+    // Nova conversa: esquece o contexto (o que foi feito e o que ficou aberto)
     function newTask() {
         if (running) return
+        turnsModel.clear()
+        Bridge.newSession()
         status = "idle"
         composer.text = ""
         composer.focusInput()
     }
 
+    // Conversa salva reaberta pela barra lateral: pedidos e respostas voltam para a tela
+    function showConversation(data) {
+        if (running) return
+        turnsModel.clear()
+        for (const t of (data.turns || [])) {
+            turnsModel.append({
+                said: t.said || "", resolved: t.resolved || "",
+                status: t.kind === "chat" ? "done" : (t.success === false ? "failed" : "done"),
+                summary: (t.reply || t.summary || "").substring(0, 400)
+            })
+        }
+        clearCurrent()
+        composer.focusInput()
+        scrollSoon()
+    }
+
+    // Pedido atual vira historico e a tela fica pronta para o proximo
+    function clearCurrent() {
+        status = "idle"; task = ""; resolvedText = ""; heardText = ""; assistantText = ""
+        errorMsg = ""; question = ""; reportSummary = ""
+        planModel.clear(); stepModel.clear(); replyModel.clear()
+    }
+
+    // Papo por voz ("valeu", "oi"): mensagem propria, sem grudar no pedido anterior
+    function addChat(heard, reply) {
+        if (running) { replyModel.append({ text: reply }); return }
+        archiveTurn()
+        clearCurrent()
+        turnsModel.append({ said: heard, resolved: "", status: "done", summary: reply })
+        scrollSoon()
+    }
+
     function prefill(text) {
         if (running) return
-        status = "idle"
         composer.text = text
         composer.focusInput()
     }
 
-    function start(text) {
+    // O pedido que terminou vai para o topo da conversa, em forma compacta
+    function archiveTurn() {
+        if (idle || !task) return
+        const lastReply = replyModel.count ? replyModel.get(replyModel.count - 1).text : ""
+        turnsModel.append({
+            said: task, resolved: resolvedText, status: status,
+            summary: (assistantText || reportSummary || errorMsg || question || lastReply || "").substring(0, 400)
+        })
+    }
+
+    // heard: o que o microfone ouviu, quando o pedido veio por voz
+    function start(text, heard) {
+        archiveTurn()
+        resolvedText = ""
+        heardText = (heard && heard.trim().toLowerCase().replace(/[.!?,]/g, "")
+                     !== text.trim().toLowerCase().replace(/[.!?,]/g, "")) ? heard : ""
+        replyModel.clear()
+        assistantText = ""
         task = text
         phaseMsg = "Entendendo o pedido"
         errorMsg = ""; question = ""; reportSummary = ""
@@ -187,7 +244,7 @@ Item {
             if (e.kind === "clarification") {
                 root.question = e.msg || "Pode dar mais detalhes?"
                 root.status = "clarify"
-                composer.text = root.task
+                composer.text = ""
                 composer.focusInput()
             } else if (e.kind === "limitation") {
                 // O Maestro decidiu nao cumprir como pedido (ex.: obra protegida)
@@ -199,6 +256,38 @@ Item {
                 root.status = "failed"
             }
             root.scrollSoon()
+        }
+        function onResolved(json) {
+            const r = JSON.parse(json)
+            if (r.said === root.task && r.task !== r.said) root.resolvedText = r.task
+        }
+        function onVoiceState(json) {
+            const v = JSON.parse(json)
+            if (v.state === "recording" && composer.voiceState !== "recording")
+                composer.recStartedAt = Date.now()
+            composer.voiceState = v.state || "idle"
+            composer.liveOn = !!v.live
+            composer.queued = v.queued || 0
+            if (v.hotkey) composer.voiceHotkey = v.hotkey.split("+").map(k =>
+                k === "space" ? "Espaço" : k.charAt(0).toUpperCase() + k.slice(1)).join("+")
+        }
+        function onVoiceLevel(json) { composer.voiceLevel = JSON.parse(json).level || 0 }
+        function onVoiceReply(json) {
+            // O que o agente falou em voz alta aparece na conversa
+            const t = JSON.parse(json).text || ""
+            if (t && !root.idle) { replyModel.append({ text: t }); root.scrollSoon() }
+        }
+        function onAssistantMessage(json) {
+            const m = JSON.parse(json)
+            if (m.said === root.task) { root.assistantText = m.text || ""; root.scrollSoon() }
+        }
+        function onVoiceChat(json) {
+            const c = JSON.parse(json)
+            root.addChat(c.heard || "", c.reply || "")
+        }
+        function onAnswerReady(json) {
+            // Pergunta sobre algo ja feito: respondida pela conversa, sem acao
+            root.reportSummary = JSON.parse(json).msg || ""
         }
         function onHistoryChanged(json) {
             // Registro final: sucesso real, metricas desta execucao, artefatos.
@@ -223,7 +312,7 @@ Item {
     // ══ Estado inicial: saudacao ════════════════════════════════════
     ColumnLayout {
         id: hero
-        visible: root.idle
+        visible: root.idle && !root.hasConversation
         width: composer.width
         x: composer.x
         y: Math.max(C.Theme.sp6, composer.y - implicitHeight - 28)
@@ -252,7 +341,7 @@ Item {
 
     Flow {
         id: suggestions
-        visible: root.idle
+        visible: root.idle && !root.hasConversation
         x: composer.x
         width: composer.width
         y: composer.y + composer.height + 16
@@ -298,7 +387,7 @@ Item {
     // ══ Execucao: transcricao ═══════════════════════════════════════
     C.ScrollPage {
         id: transcript
-        visible: !root.idle
+        visible: !root.idle || root.hasConversation
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -308,8 +397,20 @@ Item {
         bottomPadding: 16
         spacing: 20
 
+        // Pedidos anteriores da conversa (compactos)
+        Repeater {
+            model: turnsModel
+            delegate: PastTurn {
+                Layout.fillWidth: true
+                said: model.said
+                status: model.status
+                summary: model.summary
+            }
+        }
+
         // Pedido do usuario
         Rectangle {
+            visible: !root.idle
             Layout.alignment: Qt.AlignRight
             Layout.maximumWidth: parent.width * 0.8
             implicitWidth: Math.min(taskText.implicitWidth + 32, parent.width * 0.8)
@@ -330,8 +431,56 @@ Item {
             }
         }
 
+        // O que o microfone ouviu (pedido por voz)
+        Text {
+            visible: root.heardText !== ""
+            Layout.alignment: Qt.AlignRight
+            Layout.maximumWidth: parent.width * 0.8
+            Layout.topMargin: -12
+            text: "Ouvi: “" + root.heardText + "”"
+            color: C.Theme.textTertiary
+            font.family: C.Theme.fontSans
+            font.pixelSize: C.Theme.sizeSm
+            font.italic: true
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignRight
+        }
+
+        // Falas do agente (modo voz)
+        Repeater {
+            model: replyModel
+            delegate: RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                C.Icon { glyph: ""; size: 12; color: C.Theme.textTertiary; Layout.alignment: Qt.AlignTop; Layout.topMargin: 2 }
+                Text {
+                    Layout.fillWidth: true
+                    text: model.text
+                    color: C.Theme.textSecondary
+                    font.family: C.Theme.fontSans
+                    font.pixelSize: C.Theme.sizeMd
+                    wrapMode: Text.Wrap
+                }
+            }
+        }
+
+        // Como o pedido foi entendido (continuacao da conversa)
+        Text {
+            visible: root.resolvedText !== ""
+            Layout.alignment: Qt.AlignRight
+            Layout.maximumWidth: parent.width * 0.8
+            Layout.topMargin: -12
+            text: "Entendi: " + root.resolvedText
+            color: C.Theme.textTertiary
+            font.family: C.Theme.fontSans
+            font.pixelSize: C.Theme.sizeSm
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignRight
+        }
+
         // Status da execucao
         ColumnLayout {
+            visible: !root.idle
             Layout.fillWidth: true
             spacing: 10
 
@@ -409,7 +558,7 @@ Item {
                 anchors.fill: parent
                 anchors.margins: 14
                 text: root.question + (root.status === "clarify"
-                      ? "\n\nEdite o pedido abaixo com o detalhe que falta e envie de novo."
+                      ? "\n\nResponda abaixo — eu continuo o mesmo pedido."
                       : "\n\nVocê pode reformular o pedido abaixo.")
                 color: C.Theme.textPrimary
                 font.family: C.Theme.fontSans
@@ -486,7 +635,7 @@ Item {
 
         // Resultado
         ColumnLayout {
-            visible: !root.running && root.status !== "clarify"
+            visible: !root.idle && !root.running && root.status !== "clarify"
             Layout.fillWidth: true
             spacing: 12
 
@@ -500,6 +649,17 @@ Item {
                 wrapMode: Text.Wrap
                 maximumLineCount: 6
                 elide: Text.ElideRight
+            }
+
+            Text {
+                visible: root.assistantText !== ""
+                Layout.fillWidth: true
+                text: root.assistantText
+                color: C.Theme.textPrimary
+                font.family: C.Theme.fontSans
+                font.pixelSize: C.Theme.sizeMd + 1
+                lineHeight: 1.3
+                wrapMode: Text.Wrap
             }
 
             Text {
@@ -538,7 +698,7 @@ Item {
                     onClicked: root.start(root.task)
                 }
                 C.Button {
-                    text: "Nova tarefa"
+                    text: "Nova conversa"
                     icon: ""
                     variant: "ghost"
                     compact: true
@@ -553,13 +713,16 @@ Item {
         id: composer
         width: Math.min(C.Theme.contentMax, root.width - 48)
         x: (root.width - width) / 2
-        y: root.idle ? Math.round(root.height * 0.42) : root.height - height - 20
+        y: (root.idle && !root.hasConversation) ? Math.round(root.height * 0.42) : root.height - height - 20
         running: root.running
-        placeholder: root.idle ? "Ex.: crie uma planilha de vendas do trimestre e abra no Excel"
+        placeholder: (root.idle && !root.hasConversation) ? "Ex.: crie uma planilha de vendas do trimestre e abra no Excel"
                    : root.running ? "Executando... pressione Esc para parar"
-                   : "Enviar outra tarefa..."
+                   : "Continue a conversa (ex.: agora abra o segundo vídeo)..."
         onSubmitted: (t) => root.start(t)
         onStopRequested: Bridge.forceStop()
+        onMicClicked: Bridge.voiceRecordToggle()
+        onRecordCancel: Bridge.voiceRecordCancel()
+        onLiveSwitched: (on) => Bridge.setLiveConversation(on)
         Behavior on y { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
         Component.onCompleted: focusInput()
     }
@@ -572,6 +735,65 @@ Item {
         color: C.Theme.textTertiary
         font.family: C.Theme.fontSans
         font.pixelSize: C.Theme.sizeSm
+    }
+
+    // Pedido anterior da conversa: o que foi dito + resultado em uma linha
+    component PastTurn: ColumnLayout {
+        id: past
+        property string said: ""
+        property string status: ""
+        property string summary: ""
+        spacing: 6
+        opacity: 0.8
+
+        Rectangle {
+            Layout.alignment: Qt.AlignRight
+            Layout.maximumWidth: past.width * 0.8
+            implicitWidth: Math.min(pastSaid.implicitWidth + 28, past.width * 0.8)
+            implicitHeight: pastSaid.implicitHeight + 16
+            radius: 16
+            color: C.Theme.bgSurfaceHi
+            Text {
+                id: pastSaid
+                anchors.fill: parent
+                anchors.leftMargin: 14; anchors.rightMargin: 14
+                anchors.topMargin: 8; anchors.bottomMargin: 8
+                text: past.said
+                color: C.Theme.textPrimary
+                font.family: C.Theme.fontSans
+                font.pixelSize: C.Theme.sizeMd
+                wrapMode: Text.Wrap
+                textFormat: Text.PlainText
+            }
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            C.Icon {
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 2
+                size: 12
+                glyph: past.status === "done" ? ""
+                     : (past.status === "clarify" || past.status === "limited") ? ""
+                     : past.status === "cancelled" ? "" : ""
+                color: past.status === "done" ? C.Theme.success
+                     : (past.status === "clarify" || past.status === "limited") ? C.Theme.info
+                     : past.status === "cancelled" ? C.Theme.textSecondary : C.Theme.danger
+            }
+            Text {
+                Layout.fillWidth: true
+                text: past.summary !== "" ? past.summary
+                      : past.status === "done" ? "Concluído"
+                      : past.status === "cancelled" ? "Interrompido" : "Não concluído"
+                color: C.Theme.textSecondary
+                font.family: C.Theme.fontSans
+                font.pixelSize: C.Theme.sizeSm + 1
+                wrapMode: Text.Wrap
+                maximumLineCount: 3
+                elide: Text.ElideRight
+            }
+        }
+        Rectangle { Layout.fillWidth: true; Layout.topMargin: 6; implicitHeight: 1; color: C.Theme.hairline }
     }
 
     component StepRow: ColumnLayout {

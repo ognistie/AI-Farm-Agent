@@ -29,6 +29,13 @@ _CREATIVE = re.compile(
     re.IGNORECASE,
 )
 _SEARCH_VERB = re.compile(r"\b(pesquis\w*|procur\w*|busc\w*|busqu\w*)\b", re.IGNORECASE)
+_CLICK_INTENT = re.compile(r"\b(clic\w*|clique|selecion\w*|aperte|aperta)\b")
+
+
+def _plain(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", (s or "").lower())
+    return "".join(c for c in s if not unicodedata.combining(c))
 _PLACEHOLDER = re.compile(r"\{output_\w+?_(\d+)\}")
 _TEXT_APPS = {"notepad", "bloco de notas", "word", "microsoft word", "teams", "microsoft teams",
               "whatsapp", "whats", "zap", "outlook"}
@@ -169,8 +176,20 @@ def validate_steps(agent: str, subtask: dict, steps: list, task: str) -> Validat
         if (fu["click"] or fu["first"]) and not clicks and not fu["site"]:
             v.add("POL-007", "o pedido manda clicar, mas nenhum passo clica")
 
-    if agent == "DESKTOP" and (params.get("text") or params.get("message")):
-        typed = any(a in ("app_type", "type_text", "vision_type", "uia_type") for a in actions)
+    # POL-007 no Desktop: pedido de CLICAR precisa de um passo que clique. "Clica em
+    # Sistema" saia "concluida" depois de so reabrir uma pagina das Configuracoes.
+    if agent == "DESKTOP" and _CLICK_INTENT.search(_plain(subtask.get("task", "") + " " + task)):
+        clicks = any(a in ("app_task", "vision_click", "uia_click", "click", "browser_click", "browser_task")
+                     for a in actions)
+        if not clicks:
+            v.add("POL-007", "o pedido manda clicar/selecionar, mas nenhum passo clica")
+
+    # So exige digitacao quando o pedido e de ESCREVER/ENVIAR. Abrir (pagina das
+    # Configuracoes, pasta) com um "text" de rotulo (ex.: "Bluetooth") nao e escrever.
+    opening = str(params.get("action_type", "")).lower() in ("open", "open_app", "open_settings", "navigate") \
+        or (actions and all(a in ("open_path", "wait") for a in actions))
+    if agent == "DESKTOP" and (params.get("text") or params.get("message")) and not opening:
+        typed = any(a in ("app_type", "type_text", "vision_type", "uia_type", "app_task") for a in actions)
         if not typed:
             v.add("POL-001", "ha texto para escrever mas nenhum passo digita")
 

@@ -31,6 +31,15 @@ MIN_VISION_CONFIDENCE = 0.5
 USERNAME = getpass.getuser()
 BASE = f"C:/Users/{USERNAME}"
 
+def _brain_hints(agent: str, goal: str) -> str:
+    """Playbooks, licoes e termos do Obsidian para os pilotos (so referencia; falha nunca bloqueia)."""
+    try:
+        from core.brain import get_brain
+        return get_brain().context_for(agent, goal, compact=True)
+    except Exception:
+        return ""
+
+
 def expand(p):
     if not p: return p
     p = p.replace("~",BASE).replace("$HOME",BASE).replace("%USERPROFILE%",BASE)
@@ -48,6 +57,85 @@ def human_move(x, y):
 def is_our_browser(title):
     t = title.lower()
     return "127.0.0.1" in t or "ai farm" in t or "localhost:5000" in t
+
+_UNTITLED = ("sem título", "sem titulo", "untitled", "novo documento", "documento1", "new tab", "nova guia")
+
+
+def _is_untitled(title: str) -> bool:
+    t = (title or "").lstrip("*• ").lower()
+    return any(t.startswith(u) for u in _UNTITLED)
+
+
+def _window_title(hwnd) -> str:
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        n = u.GetWindowTextLengthW(int(hwnd))
+        buf = ctypes.create_unicode_buffer(n + 1)
+        u.GetWindowTextW(int(hwnd), buf, n + 1)
+        return buf.value
+    except Exception:
+        return ""
+
+
+def _norm_name(name: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", (name or "").lower())
+    return "".join(c for c in s if not unicodedata.combining(c)).strip()
+
+
+# Nome falado -> programa (abre direto, sem digitar no menu Iniciar)
+_KNOWN_EXE = {
+    "bloco de notas": "notepad.exe", "notepad": "notepad.exe",
+    "calculadora": "calc.exe", "calculator": "calc.exe",
+    "paint": "mspaint.exe", "explorador de arquivos": "explorer.exe", "explorer": "explorer.exe",
+    "excel": "excel", "microsoft excel": "excel", "word": "winword", "microsoft word": "winword",
+    "powerpoint": "powerpnt", "outlook": "outlook",
+    "visual studio code": "code", "vs code": "code", "vscode": "code",
+    "configuracoes": "ms-settings:", "configuracoes do windows": "ms-settings:", "settings": "ms-settings:",
+    "prompt de comando": "cmd.exe", "terminal": "wt.exe", "gerenciador de tarefas": "taskmgr.exe",
+}
+
+
+# Nome de app digitado na busca do Iniciar: caminho, argumento ("cmd /c", "-Command") ou
+# simbolo de shell transformaria a busca num comando.
+_UNSAFE_APP_NAME = re.compile(r"[\\/:*?\"<>|&^%;`$]|\s[-/]\w|\.(?:exe|bat|cmd|ps1|vbs|js|msi|lnk)\b", re.I)
+
+
+def _is_blank_doc(title: str) -> bool:
+    """Documento novo E sem alteracoes: '*Sem titulo' e texto nao salvo do usuario."""
+    return _is_untitled(title) and not (title or "").lstrip().startswith("*")
+
+
+def _same_doc(a: str, b: str) -> bool:
+    """Mesmo documento? Ignora o '*' de nao salvo e o sufixo do app."""
+    norm = lambda s: (s or "").lstrip("*• ").split(" - ")[0].strip().lower()
+    return bool(norm(a)) and norm(a) == norm(b)
+
+
+def _activate_hwnd(hwnd):
+    """Traz para frente a janela guardada na conversa. Devolve o titulo ou None (fechou)."""
+    if not hwnd:
+        return None
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        h = int(hwnd)
+        if not u.IsWindow(h):
+            return None
+        if u.IsIconic(h):
+            u.ShowWindow(h, 9)   # SW_RESTORE
+        w = next((x for x in gw.getAllWindows() if x._hWnd == h), None)
+        try:
+            if w: w.activate()
+            else: u.SetForegroundWindow(h)
+        except Exception:
+            u.SetForegroundWindow(h)
+        time.sleep(0.4)
+        return (w.title if w else "") or "janela"
+    except Exception:
+        return None
+
 
 def focus_away():
     try:
@@ -188,7 +276,9 @@ class AutomationEngine:
             # Novas acoes v2
             "uia_click":self._uia_click,"uia_type":self._uia_type,
             "wait_for_window":self._wait_for_window,"wait_for_element":self._wait_for_element,
-            "browser_click":self._browser_click,"browser_read":self._browser_read,"browser_task":self._browser_task,"open_path":self._open_path,
+            "browser_click":self._browser_click,"browser_read":self._browser_read,"browser_task":self._browser_task,
+            "edit_project":self._edit_project,"revert_project":self._revert_project,
+            "blank_document":self._blank_document,"app_task":self._app_task,"open_path":self._open_path,
         }
         handler = MAP.get(action)
         if not handler:
@@ -391,11 +481,23 @@ class AutomationEngine:
 
     def _app_search(self, p):
         name = p.get("name","") or p.get("app_name","")
-        if self.dry_run: return f"[SIM] {name}"
         if not name: return "❌ Nome vazio"
+        # Apps conhecidos abrem pelo programa (rapido e sem depender do menu Iniciar)
+        exe = _KNOWN_EXE.get(_norm_name(name)) or _KNOWN_EXE.get(_norm_name(name).removesuffix(".exe"))
+        if not exe and _UNSAFE_APP_NAME.search(name):
+            # a busca do Iniciar + Enter EXECUTA o que for digitado: so nome de app, nunca comando/caminho
+            return f"⛔ '{name[:40]}' não parece nome de aplicativo (tem caminho, argumento ou símbolo de comando)."
+        if self.dry_run: return f"[SIM] {name}"
+        if exe:
+            try:
+                subprocess.Popen(["cmd", "/c", "start", "", exe], creationflags=0x08000000)
+                time.sleep(2.0)
+                return f"✅ {name}"
+            except Exception:
+                pass                     # cai na busca do menu Iniciar
         pyautogui.press("win"); time.sleep(0.8)
         try:
-            import pyperclip; pyperclip.copy(name); pyautogui.hotkey("ctrl","v")
+            from core.clipboard import paste_text; paste_text(name)
         except: pyautogui.typewrite(name, interval=0.04) if name.isascii() else pyautogui.write(name)
         time.sleep(1.5); pyautogui.press("enter"); time.sleep(2)
         return f"✅ {name}"
@@ -403,11 +505,33 @@ class AutomationEngine:
     def _app_type(self, p):
         title, text = p.get("window_title",""), p.get("text","")
         if self.dry_run: return f"[SIM] Digitar em '{title}'"
+        # Janela da conversa (handle): o titulo muda ("*Sem titulo"), o handle nao
+        got = _activate_hwnd(p.get("hwnd"))
+        if got:
+            # Mesma janela, mas a ABA ativa pode ser outro documento do usuario
+            expect = p.get("expect_title")
+            if expect and not _same_doc(got, expect):
+                return (f"⛔ A aba ativa mudou para '{got[:40]}' (a conversa usava '{expect[:40]}'). "
+                        "Não vou escrever no documento errado.")
+            try: from core.clipboard import paste_text; paste_text(text)
+            except: pyautogui.write(text)
+            return f"✅ '{got[:25]}': {text[:40]}"
+        # Documento em branco garantido por blank_document: digita NELE
+        doc = getattr(self, "_doc_hwnd", None)
+        if p.get("require_untitled") and doc:
+            got = _activate_hwnd(doc)
+            if got and _is_untitled(got):
+                from core.clipboard import paste_text
+                paste_text(text)
+                self._doc_hwnd = None
+                return f"✅ '{got[:25]}': {text[:40]}"
         search = title.lower()
         for _ in range(8):
             try:
                 for w in gw.getAllWindows():
                     if search in w.title.lower() and w.visible and w.title and not is_our_browser(w.title):
+                        if p.get("require_untitled") and not _is_blank_doc(w.title):
+                            continue   # nunca digitar num documento que o usuario ja tinha aberto
                         try:
                             if w.isMinimized: w.restore()
                             w.activate()
@@ -415,17 +539,53 @@ class AutomationEngine:
                             try: import ctypes; ctypes.windll.user32.SetForegroundWindow(w._hWnd)
                             except: pass
                         time.sleep(0.4)
-                        try: import pyperclip; pyperclip.copy(text); pyautogui.hotkey("ctrl","v")
+                        try: from core.clipboard import paste_text; paste_text(text)
                         except: pyautogui.write(text)
                         return f"✅ '{title[:25]}': {text[:40]}"
             except: pass
             time.sleep(0.4)
         return f"❌ Janela: '{title}'"
 
+    def _blank_document(self, p):
+        """Garante um documento NOVO e sem alteracoes NA JANELA DO APP antes de digitar.
+        O Bloco de Notas do Win11 (com abas) reabre o ultimo documento; e a janela da
+        frente logo apos abrir pode nem ser o app. Por isso: acha a janela pelo titulo,
+        traz para frente e, se a aba ativa nao for nova, abre uma (Ctrl+N)."""
+        if self.dry_run: return "[SIM] Documento em branco"
+        from core.observer import _app_window
+        key = p.get("app", "notepad")
+        found = None
+        for _ in range(12):
+            found = _app_window(key)
+            if found:
+                break
+            time.sleep(0.5)
+        if not found:
+            return f"❌ A janela do {key} não abriu"
+        hwnd = found[0]
+        title = _activate_hwnd(hwnd) or found[1]
+        if not _is_blank_doc(title):
+            pyautogui.hotkey("ctrl", "n")
+            time.sleep(1.0)
+            # Win11: aba nova na mesma janela; versoes antigas: janela nova
+            title = _window_title(hwnd)
+            if not _is_blank_doc(title):
+                again = _app_window(key)
+                if again and _is_blank_doc(again[1]):
+                    hwnd, title = again
+                    _activate_hwnd(hwnd)
+        if not _is_blank_doc(title):
+            return (f"⛔ Não consegui um documento em branco (ativo: '{title[:40]}'). "
+                    "Não vou digitar em documento existente.")
+        self._doc_hwnd = hwnd
+        return f"✅ Documento em branco: {title[:40]}"
+
     # === FOCUS ===
     def _focus_window(self, p):
         title = p.get("title","")
         if self.dry_run: return f"[SIM] {title}"
+        got = _activate_hwnd(p.get("hwnd"))
+        if got: return f"🎯 {got[:40]}"
         for _ in range(6):
             try:
                 for w in gw.getAllWindows():
@@ -530,17 +690,35 @@ class AutomationEngine:
             from core.browser_pilot import BrowserPilot, format_result
         except Exception as e:
             return f"⚠️ Piloto do navegador indisponível: {e}"
-        hints = ""
-        try:
-            from core.brain import get_brain
-            refs = get_brain().find_references(goal, k=2)
-            hints = "\n".join(f"- {r['title']}: {r['path'][:300]}" for r in refs if r.get("path"))
-        except Exception:
-            pass
+        hints = _brain_hints("WEB", goal)
         pilot = BrowserPilot(vision_click=self._vision_click,
                              should_stop=getattr(self, "should_stop", None),
                              on_progress=getattr(self, "on_progress", None))
-        return format_result(pilot.run(goal, p.get("start_url", ""), hints))
+        return format_result(pilot.run(goal, p.get("start_url", ""), hints, resume=p.get("resume")))
+
+    def _app_task(self, p):
+        """Objetivo livre dentro de uma janela de app ja aberta (piloto de apps)."""
+        goal = p.get("goal", "")
+        if self.dry_run: return f"[SIM] Piloto do app: {goal}"
+        if not goal: return "❌ Objetivo vazio"
+        from core.app_pilot import AppPilot
+        from core.browser_pilot import format_result
+        hwnd, title = p.get("hwnd"), p.get("title", "")
+        if not hwnd and p.get("app"):
+            # App recem-aberto pela rotina: acha a janela pelo titulo esperado
+            from core.observer import _app_window
+            for _ in range(12):
+                found = _app_window(p["app"])
+                if found:
+                    hwnd, title = found
+                    break
+                time.sleep(0.5)
+            if not hwnd:
+                return f"❌ Não achei a janela do {p['app']} para continuar"
+        pilot = AppPilot(vision_click=self._vision_click,
+                         should_stop=getattr(self, "should_stop", None),
+                         on_progress=getattr(self, "on_progress", None))
+        return format_result(pilot.run(goal, hwnd, title, hints=_brain_hints("DESKTOP", goal)))
 
     def _browser_read(self, p):
         """Le titulo, URL, texto e links da pagina aberta no navegador do usuario."""
@@ -559,13 +737,21 @@ class AutomationEngine:
 
     def _open_path(self, p):
         """Abre pasta/arquivo direto (sem digitar no menu Iniciar). Nunca executa programas."""
-        from core.paths import resolve_path, EXECUTABLE_EXT
+        from core.paths import resolve_path, is_network_path, EXECUTABLE_EXT
         raw = p.get("path", "")
+        if re.match(r"^ms-settings:[\w-]*$", raw.strip()):
+            # Paginas das Configuracoes do Windows (esquema fixo e seguro)
+            if self.dry_run: return f"[SIM] Abrir {raw}"
+            os.startfile(raw.strip()); time.sleep(1.2)
+            return f"⚙️ Configurações do Windows abertas ({raw.strip()})"
         if re.match(r"^https?://", raw.strip()):
             if self.dry_run: return f"[SIM] Abrir {raw}"
             import webbrowser; webbrowser.open(raw.strip()); return f"🌐 {raw.strip()}"
         path = resolve_path(raw)
         if not path: return "❌ Caminho vazio"
+        if is_network_path(raw) or is_network_path(path):
+            # antes de os.path.exists: so consultar o caminho ja autentica no servidor remoto
+            return "⛔ Não abro caminhos de rede (\\\\servidor\\...) por aqui."
         if not os.path.exists(path): return f"❌ Caminho não existe: {path}"
         if os.path.isfile(path) and os.path.splitext(path)[1].lower() in EXECUTABLE_EXT:
             return f"⛔ Não abro executáveis/scripts por aqui: {os.path.basename(path)}"
@@ -610,9 +796,8 @@ class AutomationEngine:
 
             # Digita via clipboard (mais confiável)
             try:
-                import pyperclip
-                pyperclip.copy(text)
-                pyautogui.hotkey("ctrl", "v")
+                from core.clipboard import paste_text
+                paste_text(text)
             except:
                 # Fallback: digita caractere por caractere
                 for ch in text:
@@ -687,9 +872,42 @@ class AutomationEngine:
 
     def _write_file(self, p):
         path, content = expand(p.get("path","")), p.get("content","")
+        if self.dry_run: return f"[SIM] Gravar {path} ({len(content)} chars)"
         if os.path.dirname(path): os.makedirs(os.path.dirname(path),exist_ok=True)
         with open(path,"w",encoding="utf-8") as f: f.write(content)
         return f"✅ {path} ({len(content)} chars)"
+
+    # === PROJETO EXISTENTE (continuacao da conversa) ===
+    def _edit_project(self, p):
+        """Grava as alteracoes de um projeto guardando ANTES a versao anterior
+        (projeto/.ai_versions/<data>/), para 'desfaz' voltar."""
+        from core.project_versions import apply_edit
+        folder, files = p.get("folder", ""), p.get("files") or []
+        if self.dry_run:
+            return f"[SIM] Editaria {len(files)} arquivo(s) em {folder}: " + \
+                   ", ".join(f.get("path", "") for f in files)[:200]
+        r = apply_edit(folder, files)
+        if not r["ok"]:
+            return f"❌ {r['error']}"
+        if p.get("open"):
+            target = os.path.join(folder, p["open"])
+            if os.path.exists(target):
+                import webbrowser; webbrowser.open("file:///" + target.replace("\\", "/"))
+        return (f"✅ {p.get('summary', 'Projeto alterado')}\nArquivos: {', '.join(r['changed'])}\n"
+                f"Pasta: {folder}\nVersão anterior guardada (diga \"desfaz\" para voltar).")
+
+    def _revert_project(self, p):
+        from core.project_versions import revert_last
+        folder = p.get("folder", "")
+        if self.dry_run: return f"[SIM] Voltar a versão anterior de {folder}"
+        r = revert_last(folder)
+        if not r["ok"]:
+            return f"❌ {r['error']}"
+        if p.get("open"):
+            target = os.path.join(folder, p["open"])
+            if os.path.exists(target):
+                import webbrowser; webbrowser.open("file:///" + target.replace("\\", "/"))
+        return f"↩️ Versão anterior restaurada ({', '.join(r['restored'])})\nPasta: {folder}"
 
     def _find_files(self, p):
         path, pat = expand(p.get("path",".")), p.get("pattern","*")
@@ -713,7 +931,7 @@ class AutomationEngine:
     def _type_text(self, p):
         text = p.get("text","")
         focus_away(); time.sleep(0.15)
-        try: import pyperclip; pyperclip.copy(text); pyautogui.hotkey("ctrl","v")
+        try: from core.clipboard import paste_text; paste_text(text)
         except: pyautogui.write(text)
         return f"Digitado: {text[:60]}"
 

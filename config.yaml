@@ -20,6 +20,7 @@ agent_models:
   desktop: strong
   file: fast
   memory: fast
+  resolver: fast
 
 # Esforco de raciocinio (output_config.effort) por agente. Sonnet 5 usa
 # adaptive thinking por padrao; effort e a principal alavanca de custo.
@@ -36,6 +37,7 @@ agent_effort:
   desktop: medium
   file: medium
   json_repair: low
+  resolver: low
 
 limits:
   max_task_length: 2000
@@ -94,3 +96,15 @@ security:
 brain:
   enabled: true
   vault_path: "../AI-Farm-agents"
+
+# Modo voz: atalho global, transcricao local (faster-whisper), entendimento com o dicionario do vault e voz neural local (Piper)
+voice:
+  hotkey: "ctrl+alt+v"     # se estiver em uso, tenta ctrl+alt+m e ctrl+f9
+  model: "small"          # tiny | base | small | medium (maior = mais preciso e mais lento)
+  compute_type: "int8"
+  tts: "piper"             # piper (voz neural local) | sapi (voz do Windows)
+  tts_voice: "cadu"        # cadu | faber | jeff (vozes pt-BR do Piper)
+  tts_rate: 1.05           # velocidade da fala
+  live_pause_s: 0.8        # pausa que encerra uma fala na conversa ao vivo
+  progress_after_s: 12     # aviso falado de progresso em pedido demorado (0 = nunca)
+  start_on_launch: true    # atalho global ativo desde a abertura do app

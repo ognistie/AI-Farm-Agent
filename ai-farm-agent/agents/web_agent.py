@@ -482,6 +482,16 @@ class WebAgent(BaseAgent):
         if traces[0].data["intent"] == "search" and not traces[0].ok:
             return {"steps": [], "agent": "WEB", "attempt": attempt, "subagents": traces,
                     "error": "Pesquisa sem termo de busca: diga o que pesquisar."}
+        # Continuacao da conversa: o piloto retoma a MESMA aba do pedido anterior
+        cont = params.get("continue") or {}
+        if cont.get("type") == "web":
+            resume = {k: cont.get(k) for k in ("hwnd", "url", "title")}
+            steps = [_s(1, "browser_task", {"goal": task_text, "start_url": "", "resume": resume},
+                        f"Continuar na aba: {task_text[:60]}")]
+            traces.append(Navigator().trace(True, f"continuar na aba \"{(cont.get('title') or '')[:50]}\"",
+                                            steps=steps))
+            return {"steps": steps, "agent": "WEB", "attempt": attempt, "subagents": traces}
+
         if not is_simple_web(task_text):
             steps = pilot_steps(task_text, params)
             traces.append(Navigator().trace(
@@ -506,7 +516,7 @@ class WebAgent(BaseAgent):
         if params:
             ctx += "\nPARAMS DO MAESTRO: " + json.dumps(params, ensure_ascii=False)
         from agents.base_agent import brain_guide
-        ctx += brain_guide("WEB")
+        ctx += brain_guide("WEB", task_text)
         retry_note = ""
         if attempt >= 2:
             retry_note = (

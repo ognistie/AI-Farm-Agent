@@ -10,7 +10,8 @@ import "views" as V
 
 ApplicationWindow {
     id: win
-    visible: true
+    // A janela so aparece depois que o QML terminou de carregar.
+    visible: false
     width: 1280
     height: 820
     minimumWidth: 900
@@ -20,20 +21,23 @@ ApplicationWindow {
 
     // 0 = tarefa, 1 = historico, 2 = sobre
     property int page: 0
-    property var recents: []
+    // Conversas salvas (barra lateral): clicar reabre a conversa com o contexto
+    property var conversations: []
+    property string currentConversation: ""
 
     function reloadRecents() {
-        const data = JSON.parse(Bridge.loadHistory())
-        const seen = []
-        const out = []
-        for (const it of (data.items || [])) {
-            const t = (it.task || "").trim()
-            if (!t || seen.indexOf(t) >= 0) continue
-            seen.push(t)
-            out.push(t)
-            if (out.length >= 8) break
-        }
-        recents = out
+        const data = JSON.parse(Bridge.loadConversations())
+        conversations = data.items || []
+        currentConversation = data.current || ""
+    }
+
+    function openConversation(id) {
+        if (taskView.running) return
+        const data = JSON.parse(Bridge.openConversation(id))
+        if (!data.id) return
+        page = 0
+        taskView.showConversation(data)
+        currentConversation = data.id
     }
 
     function openTask(text) {
@@ -42,19 +46,22 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        const s = Screen
-        if (s && s.desktopAvailableWidth > 0) {
-            width = Math.max(minimumWidth, Math.min(1440, Math.round(s.desktopAvailableWidth * 0.85)))
-            height = Math.max(minimumHeight, Math.min(960, Math.round(s.desktopAvailableHeight * 0.88)))
-            x = Math.round((s.desktopAvailableWidth - width) / 2)
-            y = Math.round((s.desktopAvailableHeight - height) / 2)
-        }
         reloadRecents()
     }
 
     Connections {
         target: Bridge
         function onHistoryChanged(json) { win.reloadRecents() }
+        function onConversationsChanged(json) { win.reloadRecents() }
+        function onSessionReset(json) { win.currentConversation = JSON.parse(json).session || "" }
+        // Fala transcrita entra na conversa como se tivesse sido digitada
+        function onVoiceCommand(json) {
+            const v = JSON.parse(json)
+            const t = v.text || ""
+            if (!t || taskView.running) return
+            win.page = 0
+            taskView.start(t, v.heard || "")
+        }
     }
 
     Shortcut { sequence: "Ctrl+N"; onActivated: { win.page = 0; taskView.newTask() } }
@@ -105,9 +112,9 @@ ApplicationWindow {
 
                 C.NavItem {
                     Layout.fillWidth: true
-                    label: "Nova tarefa"
+                    label: "Nova conversa"
                     icon: ""
-                    active: win.page === 0 && taskView.idle
+                    active: win.page === 0 && taskView.idle && !taskView.hasConversation
                     onClicked: { win.page = 0; taskView.newTask() }
                 }
                 C.NavItem {
@@ -135,11 +142,11 @@ ApplicationWindow {
 
                 // Recentes
                 Text {
-                    visible: win.recents.length > 0
+                    visible: win.conversations.length > 0
                     Layout.topMargin: 22
                     Layout.leftMargin: 10
                     Layout.bottomMargin: 4
-                    text: "Recentes"
+                    text: "Conversas"
                     color: C.Theme.textTertiary
                     font.family: C.Theme.fontSans
                     font.pixelSize: C.Theme.sizeSm
@@ -149,21 +156,25 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    model: win.recents
+                    model: win.conversations
                     spacing: 1
                     boundsBehavior: Flickable.StopAtBounds
                     delegate: C.NavItem {
                         width: ListView.view.width
-                        label: modelData
-                        muted: true
-                        onClicked: win.openTask(modelData)
-                        C.ToolTipHint { text: modelData; shown: hovered && modelData.length > 34 }
+                        label: modelData.title
+                        muted: modelData.id !== win.currentConversation
+                        active: modelData.id === win.currentConversation && win.page === 0
+                        onClicked: win.openConversation(modelData.id)
+                        C.ToolTipHint {
+                            text: modelData.title + "  ·  " + modelData.turns + (modelData.turns === 1 ? " pedido" : " pedidos")
+                            shown: hovered
+                        }
                         property bool hovered: false
                         HoverHandler { onHoveredChanged: parent.hovered = hovered }
                     }
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded; width: 6 }
                 }
-                Item { visible: win.recents.length === 0; Layout.fillHeight: true }
+                Item { visible: win.conversations.length === 0; Layout.fillHeight: true }
 
                 // Rodape: modelo em uso
                 Rectangle {

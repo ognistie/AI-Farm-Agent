@@ -304,7 +304,7 @@ class FileAgent(BaseAgent):
     def _call_and_validate(self, user_input: str,
                            retry_feedback: Optional[str]) -> dict:
         from agents.base_agent import brain_guide
-        message = f"TAREFA: {user_input}{brain_guide('FILE')}\nJSON puro."
+        message = f"TAREFA: {user_input}{brain_guide('FILE', user_input)}\nJSON puro."
         if retry_feedback:
             message = (
                 f"TAREFA: {user_input}\n\n"

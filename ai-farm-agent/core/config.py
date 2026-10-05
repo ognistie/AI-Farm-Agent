@@ -85,6 +85,7 @@ DEFAULTS = {
         "desktop": "strong",
         "file": "fast",
         "memory": "fast",
+        "resolver": "fast",
     },
 
     # Agentes → esforco de raciocinio (output_config.effort)
@@ -100,6 +101,7 @@ DEFAULTS = {
         "desktop": "medium",
         "file": "medium",
         "json_repair": "low",
+        "resolver": "low",
     },
 
     # Segurança

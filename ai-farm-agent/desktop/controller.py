@@ -13,6 +13,7 @@ Mantem 1-pra-1 os eventos esperados pelo antigo frontend, mais 2 novos:
 
 from __future__ import annotations
 
+import os
 import threading
 import time
 import traceback
@@ -32,9 +33,11 @@ NO_SCREENSHOT = {
     "vision_click", "vision_type", "uia_click", "uia_type", "run_python",
     "run_command", "write_file", "create_folder", "read_file", "list_files",
     "move_file", "copy_file", "delete_file", "find_files", "pip_install",
-    "excel_write", "wait_for_window", "wait_for_element", "browser_read", "open_path", "browser_task",
+    "excel_write", "wait_for_window", "wait_for_element", "browser_read", "open_path", "browser_task", "app_task", "edit_project",
+    "revert_project", "blank_document",
 }
 RETRY_ACTIONS = {"vision_click", "vision_type", "uia_click", "uia_type", "browser_click"}
+
 
 MAX_TASK_LENGTH = 2000
 TASK_TIMEOUT_S = 120
@@ -92,6 +95,13 @@ class Controller:
         except Exception as e:
             print(f"  [memoria] limpeza falhou (nao critico): {e}")
 
+        # Conversa: o que foi feito e o que ficou aberto, entre pedidos
+        from core.session import Session
+        self.session = Session()
+        # Pedido falado ja entendido COM a conversa (continua em qual alvo?): evita
+        # a 2a chamada do resolvedor. Chave = texto do pedido; validado em followup.from_hint.
+        self._voice_hints: Dict[str, dict] = {}
+
         self.state = {"running": False}
         self._lock = threading.Lock()
         # Cada execucao recebe um id. Uma thread cancelada que ainda esteja
@@ -127,6 +137,71 @@ class Controller:
             target=self._run, args=(task, dry_run, generate_report, run_id),
             daemon=True,
         ).start()
+
+    def voice_hint(self, text: str, hint: dict) -> None:
+        """A voz avisa como o pedido foi entendido (kind/target) antes de envia-lo a tela."""
+        self._voice_hints = {**dict(list(self._voice_hints.items())[-4:]), (text or "").strip(): hint}
+
+    def new_session(self) -> None:
+        """Nova conversa: esquece pedidos anteriores e o que estava aberto."""
+        with self._lock:
+            if self.state["running"]:
+                return
+        self.session.reset()
+        bus.emit("session_reset", {"session": self.session.id})
+
+    # ── conversas salvas ─────────────────────────────────────────────
+    def list_conversations(self) -> list:
+        from core.session import Session
+        return Session.list_saved()
+
+    def open_conversation(self, sid: str) -> Optional[dict]:
+        """Retoma uma conversa salva: o historico volta para a tela e o contexto
+        (pedidos, respostas, o que ainda estiver aberto) volta para o agente."""
+        with self._lock:
+            if self.state["running"]:
+                return None
+        from core.session import Session
+        data = Session.read_saved(sid)
+        if not data:
+            return None
+        self.session.load(data)
+        bus.emit("session_reset", {"session": self.session.id, "loaded": True})
+        return data
+
+    def _after_turn(self, said: str, task: str, turn: dict, entry: dict) -> None:
+        """Depois de cada pedido: a resposta do assistente (natural, como numa conversa)
+        + gravar a conversa. Em segundo plano: nao atrasa o proximo pedido."""
+        err = str(entry.get("error") or "")
+        kind = turn.get("kind")
+
+        def work():
+            reply, speak = "", False
+            try:
+                if kind == "question":
+                    reply = turn.get("summary", "")
+                elif err.startswith("clarification"):
+                    reply = (self.session.pending or {}).get("question", "")
+                elif err.startswith("limitation"):
+                    reply = err.split(":", 1)[-1].strip()
+                elif kind != "cancel":
+                    from core.reply import compose
+                    recent = [t.reply for t in self.session.turns[-4:] if t.reply]
+                    r = compose(said, task, turn.get("summary", ""), bool(entry.get("success")), err, recent)
+                    reply, speak = r["text"], r["speak"]
+                    bus.emit("assistant_message", {"said": said, "text": reply, "speak": speak,
+                                                   "success": bool(entry.get("success"))})
+                if reply:
+                    self.session.set_last_reply(reply)
+            except Exception as e:
+                print(f"  [Resposta] falhou: {e}")
+            finally:
+                try:
+                    self.session.save()
+                    bus.emit("conversations_changed", {"id": self.session.id})
+                except Exception as e:
+                    print(f"  [Sessao] nao gravou: {e}")
+        threading.Thread(target=work, daemon=True, name="assistant-reply").start()
 
     def force_stop(self) -> None:
         """Cancela execucao em andamento."""
@@ -211,6 +286,27 @@ class Controller:
             "truncated": d("truncated"),
         }
 
+    def _run_undo(self, dry_run: bool, turn: dict) -> bool:
+        """"desfaz": volta a versao anterior do projeto de codigo da conversa."""
+        code = self.session.code or {}
+        folder = code.get("folder", "")
+        turn["agents"].append("CODE")
+        self._emit("plan_ready", {"plan": {
+            "task_summary": "desfazer a ultima alteracao",
+            "steps": [{"step": 1, "description": "[CODE] Voltar a versao anterior do projeto",
+                       "action": "CODE"}],
+            "skills": []}})
+        self._emit("step_start", {"step": 1, "total": 1, "action": "revert_project",
+                                  "desc": "[CODE] Voltar a versao anterior", "progress": 0})
+        open_t = "index.html" if os.path.exists(os.path.join(folder, "index.html")) else ""
+        r = self.engine.execute("revert_project", {"folder": folder, "open": open_t}, dry_run=dry_run)
+        self._emit("step_done", {"step": 1, "total": 1, "ok": r.get("success", False),
+                                 "result": r.get("result", ""), "action": "revert_project",
+                                 "desc": "[CODE] Voltar a versao anterior", "progress": 100})
+        turn["summary"] = str(r.get("result", ""))[:300]
+        self._emit("task_done", {"msg": "Concluido.", "steps": 1, "dry_run": dry_run})
+        return bool(r.get("success"))
+
     def _run(self, task: str, dry_run: bool, gen_report: bool,
              run_id: int = 0) -> None:
         self._tls.run_id = run_id or self._run_id
@@ -220,23 +316,67 @@ class Controller:
         entry = history_store.new_execution(task, dry_run=dry_run)
         brain_plan = None
         all_records: list = []
+        said = task
+        turn = {"kind": "new", "agents": [], "summary": "", "recorded": False}
+        entry["session_id"] = self.session.id
 
         try:
-            self._emit("phase", {"phase": "maestro", "msg": "Analisando intencao..."})
+            self._emit("phase", {"phase": "maestro", "msg": "Entendendo o pedido..."})
             self._log("INFO", "MAESTRO", f"Recebida tarefa: {task[:80]}")
 
+            # Conversa: "agora abra esse segundo video" vira um pedido
+            # completo, apontando para o que ficou aberto antes.
+            from core.followup import from_hint, resolve
+            res = from_hint(said, self.session, self._voice_hints.pop(said.strip(), None)) \
+                or resolve(said, self.session)
+            self._emit_usage()
+            kind, target = res["kind"], res.get("target")
+            turn["kind"] = kind
+            if res.get("via") == "pending":
+                self.session.clear_pending()
+            if res["task"] != said or kind != "new":
+                self._emit("resolved", {"said": said, "task": res["task"], "kind": kind,
+                                        "target": target or ""})
+                self._log("INFO", "MAESTRO", f"Entendido ({kind}): {res['task'][:120]}")
+            task = res["task"]
+            entry["resolved"] = task
+
+            if kind == "cancel":
+                self._emit("answer", {"msg": "Nada em execução para parar."})
+                entry["success"] = True
+                turn["recorded"] = True     # nao entra na conversa
+                return
+            if kind == "question":
+                self._emit("answer", {"msg": res["answer"]})
+                turn["summary"] = res["answer"]
+                entry["success"] = True
+                return
+            if kind == "clarify":
+                self.session.set_pending(res["question"], task, target)
+                self._emit("error", {"msg": res["question"], "kind": "clarification"})
+                entry["error"] = "clarification_required"
+                turn["recorded"] = True     # a resposta continua o pedido (pending)
+                return
+            if kind == "undo":
+                ok = self._run_undo(dry_run, turn)
+                entry["success"] = ok
+                return
+
+            self._emit("phase", {"phase": "maestro", "msg": "Analisando intencao..."})
             # Memoria: o Maestro consulta rotas parecidas e as usa como
             # referencia no prompt (nunca como atalho).
-            plan = self.maestro.analyze(task)
+            conversation = "" if self.session.empty else self.session.context_block()
+            plan = self.maestro.analyze(task, conversation=conversation,
+                                        continue_in=target or "")
             self._emit_usage()
 
             if plan.get("needs_clarification"):
-                self._emit("error", {
-                    "msg": plan.get("question",
-                                    "Tarefa ambigua — pode dar mais detalhes?"),
-                    "kind": "clarification",
-                })
+                question = plan.get("question", "Tarefa ambigua — pode dar mais detalhes?")
+                # A resposta do usuario continua ESTE pedido (sem redigitar tudo)
+                self.session.set_pending(question, task, target)
+                self._emit("error", {"msg": question, "kind": "clarification"})
                 entry["error"] = "clarification_required"
+                turn["recorded"] = True     # a resposta continua o pedido (pending)
                 return
 
             if plan.get("limitation"):
@@ -281,6 +421,8 @@ class Controller:
             all_records = []
             step_n = 0
             ctx_mgr = self._ContextManager()
+            cont_target = self.session.target(target)
+            cont_used = False
 
             for si, subtask in enumerate(subtasks):
                 if not self._alive():
@@ -297,7 +439,17 @@ class Controller:
                               f"Agente desconhecido: {agent_name}")
                     continue
 
-                subtask_params = subtask.get("params", {}) or {}
+                subtask_params = dict(subtask.get("params", {}) or {})
+                # Continuacao: entrega ao agente o alvo ja aberto (aba, janela, projeto)
+                from core.routing import continue_target_for
+                tgt, why = continue_target_for(self.session, agent_name, subtask_params, target,
+                                               task, cont_used)
+                if tgt:
+                    subtask_params["continue"] = tgt
+                    subtask["params"] = subtask_params
+                    cont_used = cont_used or why == "resolver"
+                    self._log("INFO", agent_name, f"Continuando em: {tgt.get('key') or tgt['type']} ({why})")
+                turn["agents"].append(agent_name)
                 agent_task = subtask.get("task", "")
                 # Versao original (do usuario) — usada por agentes que precisam
                 # do tema puro (CodeAgent: topic + theme leak). O Maestro
@@ -483,6 +635,13 @@ class Controller:
                             entry["artifacts"]["files"] = extracted.get("files", [])
                         if extracted.get("url"):
                             entry["artifacts"]["url"] = extracted.get("url")
+                    # O que ficou aberto vira contexto do proximo pedido
+                    from core.observer import observe
+                    seen = observe(agent_name, subtask_params, extracted, self.session)
+                    if seen:
+                        self._log("INFO", agent_name, f"Sessao: {seen}")
+                    if extracted.get("summary") or extracted.get("text"):
+                        turn["summary"] = extracted.get("summary") or extracted.get("text", "")[:400]
 
             # Restaura browser SO no final
             if getattr(self.engine, "vision", None):
@@ -536,6 +695,14 @@ class Controller:
             with self._lock:
                 if self._is_current():
                     self.state["running"] = False
+            # Conversa: este pedido vira contexto do proximo (mesmo se falhou)
+            if not turn["recorded"]:
+                try:
+                    self.session.add_turn(said, task, turn["kind"], turn["agents"],
+                                          entry.get("success"), turn["summary"]
+                                          or entry.get("error") or "")
+                except Exception as sess_err:
+                    print(f"  [Sessao] Falhou ao registrar: {sess_err}")
             entry["ended_at"] = datetime.now().isoformat(timespec="seconds")
             entry["duration_ms"] = int((time.time() - task_start) * 1000)
             # Metricas REAIS desta execucao (delta do AIClient)
@@ -553,3 +720,5 @@ class Controller:
                     self._brain.finish(brain_plan, entry, all_records)
                 except Exception as brain_err:
                     print(f"  [Brain] Falhou ao registrar: {brain_err}")
+            if not turn["recorded"]:
+                self._after_turn(said, task, turn, entry)

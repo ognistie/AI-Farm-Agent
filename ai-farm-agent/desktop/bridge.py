@@ -45,6 +45,20 @@ class Bridge(QObject):
     errorRaised        = Signal(str)
     logEntry           = Signal(str)
     historyChanged     = Signal(str)
+    # Conversa: como a fala foi entendida, resposta sem acao, nova conversa
+    resolved           = Signal(str)
+    answerReady        = Signal(str)
+    sessionReset       = Signal(str)
+    # Modo voz
+    voiceState         = Signal(str)
+    voiceLevel         = Signal(str)
+    voiceHeard         = Signal(str)
+    voiceCommand       = Signal(str)
+    voiceReply         = Signal(str)
+    voiceChat          = Signal(str)
+    # Conversa: resposta do assistente ao fim de cada pedido; lista de conversas mudou
+    assistantMessage   = Signal(str)
+    conversationsChanged = Signal(str)
     # Estado de running (UI bloqueia botao executar)
     runningChanged     = Signal(bool)
 
@@ -52,7 +66,16 @@ class Bridge(QObject):
         super().__init__()
         self._controller = Controller()
         self._running = False
+        self._voice = None
         self._wire_bus()
+        # Voz pronta desde o inicio: atalho global ativo e voz aquecida em segundo
+        # plano. O reconhecimento (modelo) so carrega na primeira fala.
+        try:
+            from core.config import get_config
+            if (get_config().get("voice", {}) or {}).get("start_on_launch", True):
+                self._voice_ctl().start_hotkey()
+        except Exception as e:
+            print(f"  [voz] indisponivel: {e}")
 
     # ── Listeners do bus → emit signals Qt ────────────────────────────
 
@@ -70,6 +93,17 @@ class Bridge(QObject):
             "error":              self._on_error,
             "log":                lambda p: self.logEntry.emit(_to_json(p)),
             "history_changed":    lambda p: self.historyChanged.emit(_to_json(p)),
+            "resolved":           lambda p: self.resolved.emit(_to_json(p)),
+            "answer":             self._on_answer,
+            "session_reset":      lambda p: self.sessionReset.emit(_to_json(p)),
+            "voice_state":        lambda p: self.voiceState.emit(_to_json(p)),
+            "voice_level":        lambda p: self.voiceLevel.emit(_to_json(p)),
+            "voice_heard":        lambda p: self.voiceHeard.emit(_to_json(p)),
+            "voice_command":      lambda p: self.voiceCommand.emit(_to_json(p)),
+            "voice_reply":        lambda p: self.voiceReply.emit(_to_json(p)),
+            "voice_chat":         lambda p: self.voiceChat.emit(_to_json(p)),
+            "assistant_message":  lambda p: self.assistantMessage.emit(_to_json(p)),
+            "conversations_changed": lambda p: self.conversationsChanged.emit(_to_json(p)),
         }
         for ev, cb in m.items():
             bus.on(ev, cb)
@@ -83,6 +117,12 @@ class Bridge(QObject):
 
     def _on_task_done(self, payload: dict) -> None:
         self.taskDone.emit(_to_json(payload))
+        if self._running:
+            self._running = False
+            self.runningChanged.emit(False)
+
+    def _on_answer(self, payload: dict) -> None:
+        self.answerReady.emit(_to_json(payload))
         if self._running:
             self._running = False
             self.runningChanged.emit(False)
@@ -106,9 +146,46 @@ class Bridge(QObject):
         self._controller.execute_task(task, dry_run=dry_run,
                                       generate_report=generate_report)
 
+    def _voice_ctl(self):
+        if self._voice is None:
+            from core.config import get_config
+            from desktop.voice import VoiceController
+            self._voice = VoiceController(self._controller, get_config().get("voice", {}) or {})
+        return self._voice
+
+    @Slot()
+    def voiceRecordToggle(self) -> None:
+        """Microfone: 1o clique grava, 2o envia (como mensagem de audio)."""
+        self._voice_ctl().record_toggle()
+
+    @Slot()
+    def voiceRecordCancel(self) -> None:
+        self._voice_ctl().record_cancel()
+
+    @Slot(bool)
+    def setLiveConversation(self, on: bool) -> None:
+        """Conversa ao vivo: microfone aberto, cada fala vira pedido e executa em fila."""
+        self._voice_ctl().set_live(on)
+
+    @Slot()
+    def newSession(self) -> None:
+        self._controller.new_session()
+
     @Slot()
     def forceStop(self) -> None:
         self._controller.force_stop()
+
+    @Slot(result=str)
+    def loadConversations(self) -> str:
+        """Conversas salvas (mais recente primeiro) para a barra lateral."""
+        return _to_json({"items": self._controller.list_conversations(),
+                         "current": self._controller.session.id})
+
+    @Slot(str, result=str)
+    def openConversation(self, sid: str) -> str:
+        """Retoma uma conversa: devolve os pedidos/respostas para a tela."""
+        data = self._controller.open_conversation(sid)
+        return _to_json(data or {})
 
     @Slot(result=str)
     def loadHistory(self) -> str:

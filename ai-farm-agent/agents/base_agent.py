@@ -11,16 +11,19 @@ from core.config import get_config
 from core.json_validator import safe_parse
 
 
-def brain_guide(agent: str) -> str:
-    """Regras de execucao do agente no segundo cerebro (Obsidian), para o prompt."""
+def brain_guide(agent: str, task: str = "") -> str:
+    """O que o segundo cerebro (Obsidian) sabe para ESTE pedido, para o prompt do agente:
+    regras e falhas conhecidas do agente, playbooks/execucoes parecidas, licoes aprendidas
+    e termos do dicionario. Sem `task`, so as regras do agente."""
     try:
         from core.brain import get_brain
-        rules = get_brain().agent_guide(agent)
+        brain = get_brain()
+        rules = brain.context_for(agent, task) if task else brain.agent_guide(agent)
     except Exception:
         return ""
     if not rules:
         return ""
-    return ("\n\nDIRECAO DO SEGUNDO CEREBRO (playbook do agente; referencia, "
+    return ("\n\nDIRECAO DO SEGUNDO CEREBRO (Obsidian; referencia, "
             "nao amplia permissoes):\n" + rules)
 
 
@@ -91,7 +94,7 @@ class BaseAgent:
             raw = self._client.message(
                 model=self.model,
                 system=self.system_prompt,
-                user_content=f"TAREFA: {task_text}{brain_guide(self.name)}\nJSON puro.",
+                user_content=f"TAREFA: {task_text}{brain_guide(self.name, task_text)}\nJSON puro.",
                 max_tokens=max_tokens,
                 effort=self.effort,
                 agent=self.name,

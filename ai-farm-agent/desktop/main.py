@@ -11,10 +11,12 @@ Uso:
 
 from __future__ import annotations
 
+import ctypes
 import os
 import sys
 from pathlib import Path
 
+import PySide6
 from PySide6.QtCore import QUrl, Qt
 from PySide6.QtGui import QGuiApplication, QFont, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
@@ -40,6 +42,30 @@ def _setup_fonts(app: QGuiApplication) -> None:
     app.setFont(default)
 
 
+def _style_title_bar(window) -> None:
+    """Usa a barra nativa escura sem perder os controles da janela."""
+    if sys.platform != "win32":
+        return
+
+    try:
+        handle = ctypes.c_void_p(int(window.winId()))
+        set_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
+        set_attribute.argtypes = [ctypes.c_void_p, ctypes.c_uint,
+                                  ctypes.c_void_p, ctypes.c_uint]
+        set_attribute.restype = ctypes.c_long
+
+        def apply(attribute: int, value: int) -> None:
+            data = ctypes.c_uint(value)
+            set_attribute(handle, attribute, ctypes.byref(data),
+                          ctypes.sizeof(data))
+
+        apply(20, 1)           # DWMWA_USE_IMMERSIVE_DARK_MODE
+        apply(35, 0x00171717)  # DWMWA_CAPTION_COLOR (#171717)
+        apply(36, 0x00ECECEC)  # DWMWA_TEXT_COLOR (#ECECEC)
+    except (AttributeError, OSError, TypeError, ValueError) as exc:
+        print(f"[desktop] barra de titulo nativa sem personalizacao: {exc}")
+
+
 def run() -> int:
     # Estilo "Basic": o estilo nativo do Windows ignora parte da
     # customizacao (fundo de TextArea, ScrollBar) e gera avisos no console.
@@ -56,6 +82,12 @@ def run() -> int:
 
     _setup_fonts(app)
 
+    # Python 3.14 no Windows pode nao localizar as DLLs usadas pelos plugins
+    # QML apenas com o import do PySide6. O handle precisa viver ate o fim.
+    if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+        app._qt_dll_directory = os.add_dll_directory(  # type: ignore[attr-defined]
+            str(Path(PySide6.__file__).parent))
+
     bridge = Bridge()
 
     engine = QQmlApplicationEngine()
@@ -66,6 +98,10 @@ def run() -> int:
     if not engine.rootObjects():
         print("[desktop] falha ao carregar QML raiz:", QML_ROOT)
         return 2
+
+    window = engine.rootObjects()[0]
+    window.showMaximized()
+    _style_title_bar(window)
 
     # Manter referencias vivas
     app._bridge_ref = bridge  # type: ignore[attr-defined]

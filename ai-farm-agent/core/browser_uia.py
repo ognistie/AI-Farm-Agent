@@ -171,6 +171,22 @@ def browser_window():
     return None
 
 
+def window_from_handle(hwnd):
+    """Janela de navegador pelo handle guardado na sessao; None se fechou."""
+    if not hwnd:
+        return None
+    try:
+        import ctypes
+        if not ctypes.windll.user32.IsWindow(int(hwnd)):
+            return None
+        w = _desktop().window(handle=int(hwnd)).wrapper_object()
+        if w.is_minimized():
+            w.restore()
+        return w if is_browser_title(w.window_text()) else None
+    except Exception:
+        return None
+
+
 def _wake(win) -> None:
     """Chrome so monta a arvore completa quando um leitor de tela pede."""
     try:
@@ -416,15 +432,20 @@ def wrap(raw_elem):
     return UIAWrapper(UIAElementInfo(raw_elem))
 
 
-def snapshot(win=None, max_elems: int = 160, text_chars: int = 1500) -> Optional[Snapshot]:
+def snapshot(win=None, max_elems: int = 160, text_chars: int = 1500,
+             app: bool = False) -> Optional[Snapshot]:
     """Retrato numerado da pagina: o que da para clicar/digitar + trecho do texto.
-    Os ids valem so para ESTE retrato (a pagina muda a cada acao)."""
-    win = win or browser_window()
+    Os ids valem so para ESTE retrato (a pagina muda a cada acao).
+    app=True: a janela inteira de um aplicativo (Calculadora, Spotify...) e a raiz."""
+    win = win or (None if app else browser_window())
     if win is None:
         return None
-    doc = _document(win)
-    url = current_url(win)
-    title = page_title(win)
+    if app:
+        doc, url, title = win, "", win.window_text()
+    else:
+        doc = _document(win)
+        url = current_url(win)
+        title = page_title(win)
     if doc is None:
         return Snapshot(title, url, [], "", 0, blocked_reason(url, title), win)
     r = doc.rectangle()

@@ -94,9 +94,11 @@ def _notepad(text):
     steps = [
         _s(1, "app_search", {"name": "Bloco de Notas"}, "Abrir Notepad"),
         _s(2, "wait", {"seconds": 3}, "Aguardar Notepad abrir"),
+        _s(3, "blank_document", {"app": "notepad"}, "Garantir documento em branco"),
     ]
     if text and text.strip():
-        steps.append(_s(3, "app_type", {"window_title": "Notas", "text": text}, "Digitar texto"))
+        steps.append(_s(4, "app_type", {"window_title": "Notas", "text": text, "require_untitled": True},
+                        "Digitar texto"))
     return steps
 
 
