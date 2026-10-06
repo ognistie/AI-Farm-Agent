@@ -204,7 +204,9 @@ class CodeAgent(BaseAgent):
             body += "\n\n(arquivos nao mostrados: " + ", ".join(proj["skipped"][:30]) + ")"
         size = sum(len(t) for t in proj["files"].values())
         max_tokens = min(32000, int(size / 3 * 1.3) + 6000 + THINKING_HEADROOM)
-        user = f"PEDIDO: {task_text}\n\nPROJETO: {folder}\n\n{body}\n\nJSON puro."
+        from agents.base_agent import brain_guide
+        # Edicao tambem consulta o cerebro (regras, skills de revisao/visual, licoes)
+        user = f"PEDIDO: {task_text}\n\nPROJETO: {folder}\n\n{body}{brain_guide('CODE', task_text)}\n\nJSON puro."
         feedback = ""
         for attempt in (1, 2):
             try:

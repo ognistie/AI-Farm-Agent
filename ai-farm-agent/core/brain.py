@@ -41,7 +41,7 @@ AGENT_FOLDERS = {
 
 GUIDE_MAX_CHARS = 1200
 REFERENCE_MAX_CHARS = 450
-CONTEXT_MAX_CHARS = 3200
+CONTEXT_MAX_CHARS = 4400
 LESSONS_DIR = "60 Aprendizados"
 # Notas do dicionario que ajudam a EXECUTAR (nao so a entender a fala)
 AGENT_DICT = ("Termos de computador", "Atalhos de teclado", "Configuracoes do Windows", "Formas de pedir",
@@ -121,6 +121,7 @@ class Brain:
         self._lock = threading.Lock()
         self._cache: dict[str, tuple[float, str]] = {}
         self.last_sources: dict[str, list] = {}     # agente -> notas usadas no ultimo prompt
+        self.last_skills: dict[str, list] = {}      # agente -> skills aplicadas no ultimo prompt
         if not self.enabled:
             logger.info(f"Segundo cerebro indisponivel em {root}")
 
@@ -242,40 +243,56 @@ class Brain:
 
     def context_for(self, agent: str, task: str, compact: bool = False) -> str:
         """O que o Obsidian sabe sobre ESTE pedido, para o prompt do agente:
-        regras/falhas do agente, playbooks e execucoes parecidas, licoes aprendidas e
-        termos do dicionario (atalhos, paginas das Configuracoes, jeitos de pedir).
+        regras/falhas do agente, skills do catalogo que se aplicam (core/skills.py), playbooks e
+        execucoes parecidas, licoes aprendidas e termos do dicionario (atalhos, paginas das
+        Configuracoes, jeitos de pedir).
         Tudo e referencia — nunca amplia permissoes. Guarda as notas usadas em last_sources."""
         if not self.enabled:
             return ""
         agent = (agent or "").upper()
-        blocks, sources = [], []
+        blocks: list[tuple[str, list]] = []          # (texto, notas de origem), por importancia
         notes = "" if compact else self.agent_notes(agent)
         if notes:
-            blocks.append(notes)
-            sources.append(AGENT_FOLDERS.get(agent, (None, agent))[1])
+            blocks.append((notes, [AGENT_FOLDERS.get(agent, (None, agent))[1]]))
+        # Skills do catalogo (30 Skills): como ESTE agente aplica as mais relevantes ao pedido
+        from core.skills import skills_for
+        sk_text, sk_names = skills_for(agent, task, compact=compact)
+        if sk_text:
+            blocks.append(("Skills (catálogo AIWorkbench — aplique neste pedido):\n" + sk_text, sk_names))
         refs = [r for r in self.find_references(task, k=2) if r.get("path")]
         if refs:
-            blocks.append("Playbooks e execuções parecidas:\n" + "\n".join(
-                f"- {r['title']}: {r['path'][:300 if compact else REFERENCE_MAX_CHARS]}" for r in refs))
-            sources += [r["title"] for r in refs]
+            blocks.append(("Playbooks e execuções parecidas:\n" + "\n".join(
+                f"- {r['title']}: {r['path'][:300 if compact else REFERENCE_MAX_CHARS]}" for r in refs),
+                [r["title"] for r in refs]))
         lessons = self.find_lessons(task, k=2 if compact else 3)
         if lessons:
-            blocks.append("Lições aprendidas (falhas reais que viraram regra):\n" + "\n".join(
-                f"- {l['title']}: {l['rule']}" for l in lessons))
-            sources += sorted({l["note"] for l in lessons})
+            blocks.append(("Lições aprendidas (falhas reais que viraram regra):\n" + "\n".join(
+                f"- {l['title']}: {l['rule']}" for l in lessons), sorted({l["note"] for l in lessons})))
         try:
             from core.lexicon import get_lexicon
             terms = [t for t in get_lexicon().relevant(task, limit=40) if any(f"[{n}]" in t for n in AGENT_DICT)]
         except Exception:
             terms = []
         if terms:
-            blocks.append("Dicionário (termos citados no pedido):\n" + "\n".join(terms[:4 if compact else 6]))
-            sources.append("Dicionario de voz")
+            blocks.append(("Dicionário (termos citados no pedido):\n" + "\n".join(terms[:4 if compact else 6]),
+                           ["Dicionario de voz"]))
+        # Orcamento por BLOCO inteiro (na ordem de importancia): nada cortado no meio da frase,
+        # e so conta como consultado o que de fato foi para o prompt
+        cap = CONTEXT_MAX_CHARS // (2 if compact else 1)
+        kept, sources, size = [], [], 0
+        for text, names in blocks:
+            if size + len(text) > cap:
+                if kept:
+                    continue
+                text = text[:cap].rsplit("\n", 1)[0]
+            kept.append(text)
+            sources += names
+            size += len(text) + 2
         self.last_sources[agent] = sources
+        self.last_skills[agent] = [n for n in sk_names if n in sources]
         if sources:
             logger.info(f"[{agent}] segundo cerebro: {', '.join(sources)}")
-        text = "\n\n".join(blocks)
-        return text[:CONTEXT_MAX_CHARS // (2 if compact else 1)]
+        return "\n\n".join(kept)
 
     # ── Escrita: planos e execucoes ───────────────────────────────────
     def write_plan(self, task: str, plan: dict) -> Optional[str]:

@@ -7,7 +7,7 @@ cssclasses: [agent-maestro]
 
 ← [[Conversa continua]] · [[Modo voz]] · [[Roteiro de testes]]
 
-> [!info] Última rodada: 2026-10-05 — 28/28 cenários ok, US$ 0.139
+> [!info] Última rodada: 2026-10-05 — 28/28 cenários ok, US$ 0.165
 > Gerado por `scripts/eval_conversations.py --vault` (sem executar nada no PC).
 
 | | Cenário | Fala | Entendeu | Alvo | Agentes | Ações | Problema |

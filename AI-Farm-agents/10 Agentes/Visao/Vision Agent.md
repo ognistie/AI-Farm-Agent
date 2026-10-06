@@ -23,5 +23,6 @@ cor: "#F87171"
 - Clique no navegador por visão é conferido: se título/URL não mudam, o passo falha.
 
 ## Skills
-- [[ai-agent-engineer]] — Menor autonomia que resolve o problema; ferramentas com contrato; schema e autorização fora do modelo; retries limitados; memória só quando medida.
-- [[performance-and-reliability-engineer]] — Latência, custo, resiliência e capacidade guiados por medição.
+Referência de engenharia (este agente não recebe prompt com skills):
+- [[performance-and-reliability-engineer]] — quando o pedido fala de lento, rapido, demora, pesado, travando, muitos arquivos… _(só documentação: este agente não planeja com o modelo)_
+

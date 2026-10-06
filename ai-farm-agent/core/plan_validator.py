@@ -76,6 +76,12 @@ def _literal_text(task: str) -> str:
     """
     m = re.search(r"\b(?:escrev\w*|digit\w*|frase|texto|mensagem|dizendo|diga)\s*:?\s*"
                   r"[\"“']([^\"”']{1,500})[\"”']", task or "", re.IGNORECASE)
+    if m:
+        return m.group(1).strip()
+    # Ditado com dois-pontos, o jeito comum na fala: "escreve embaixo: comprar pao tambem",
+    # "anota ai: reuniao as tres". Tudo depois dos dois-pontos e o texto literal.
+    m = re.search(r"\b(?:escrev\w*|digit\w*|anot\w*|coloc\w*|bot[ae]|p[oõ]e)\b[^:\"“'\n]{0,40}:\s*(.{1,500})$",
+                  (task or "").strip(), re.IGNORECASE)
     return m.group(1).strip() if m else ""
 
 

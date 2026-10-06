@@ -19,11 +19,12 @@ cssclasses: [agent-maestro]
 ## Como os agentes usam
 Todo agente que precisa do modelo (Data, Web, Code, Desktop, File, piloto do navegador e piloto de apps) recebe, **para aquele pedido**:
 1. **Regras de execução**, **Como navegar e executar** e **Falhas conhecidas** da nota do agente;
-2. [[Tarefas de referencia]], playbooks e execuções com sucesso parecidas (seção **Caminho**) — playbook curado vale mais que execução registrada;
-3. [[Licoes aprendidas]] que tocam no pedido (cada falha real virou regra);
-4. linhas do [[Dicionario de voz]] citadas no pedido: [[Termos de computador]], [[Formas de pedir]], [[Configuracoes do Windows]], [[Atalhos de teclado]], [[Apps e sites]].
+2. **Skills** do catálogo AIWorkbench que se aplicam ao pedido ([[Skills]]): o que fazer e o que conferir antes de concluir;
+3. [[Tarefas de referencia]], playbooks e execuções com sucesso parecidas (seção **Caminho**) — playbook curado vale mais que execução registrada;
+4. [[Licoes aprendidas]] que tocam no pedido (cada falha real virou regra);
+5. linhas do [[Dicionario de voz]] citadas no pedido: [[Termos de computador]], [[Formas de pedir]], [[Configuracoes do Windows]], [[Atalhos de teclado]], [[Apps e sites]].
 
-O [[Maestro]] recebe referências e lições; a voz usa o dicionário e a [[Persona do assistente]]. Cada plano em `40 Execucoes/Planos` mostra **Consultou:** com as notas usadas.
+O [[Maestro]] recebe referências e lições; a voz usa o dicionário e a [[Persona do assistente]]. Cada plano em `40 Execucoes/Planos` mostra **Consultou:** com as notas e skills usadas, e o log do app mostra "Skills aplicadas".
 Tudo é **referência**: nada no vault amplia permissões (as políticas vivem em código).
 - Cada execução cria um plano em `40 Execucoes/Planos` e uma nota em `Sucesso` ou `Falhas`.
 

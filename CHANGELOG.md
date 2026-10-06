@@ -52,6 +52,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - Code: `CodeAgent.plan_edit` returns only the changed files. A new `edit_project` action saves the previous version to `<project>/.ai_versions/`, and `revert_project` restores it ("desfaz").
   - Answering a clarification question continues the original request and its target instead of starting over.
   - The UI shows the conversation: earlier requests stay above in compact form, each request shows "Entendi: …", and "Nova tarefa" became "Nova conversa".
+- App pilot: calculators and numeric input are typed in one action (`write "128*47\n"`) and the result is read from the display. The pilot also switches strategy (keyboard first) when the window does not react. Before, it clicked digit buttons one by one, mis-entered them and hit the 12-turn limit (12 model calls, task failed); now it takes 2 calls.
+- `scripts/bench_cost.py`: cost benchmark on the same tasks for AI Farm Agent (measured), Claude Cowork and ChatGPT Work (estimated):
+  - **AI Farm side:** every task runs for real through the voice path. Each model call is recorded (input, output and cache tokens, cost), along with each executed action and the size of each text screen read.
+  - **Competitor side:** API-equivalent cost of a screenshot agent that takes the same number of steps we needed, priced at each provider's public API rates, in a "lean" scenario (favorable to them) and a "typical" one. All assumptions are written into the report.
+  - The report breaks down where the savings come from and compares monthly subscriptions. It is written to `00 Maestro/Benchmark de custo.md`.
+- Skills from the AIWorkbench catalog now reach the agents (`core/skills.py`):
+  - The 15 notes in `30 Skills/` were rewritten as usage manuals. Each note has:
+    - what the skill does;
+    - when it activates (`ativa_quando` request words, and `sempre_para` agents that always get it);
+    - how each agent applies it, as concrete lines such as "Code Agent: semantic HTML and keyboard-usable controls";
+    - the catalog rules, what to check before finishing, and the catalog workflow.
+  - On every request, an agent gets its 1–3 most relevant skills (Maestro up to 2, browser/app pilots 1 short), and only the lines meant for that agent. Lines are kept whole within a size budget.
+  - Code project edits (`plan_edit`) now also consult the vault and skills.
+  - Applied skills are logged ("Skills aplicadas"), stored in the history entry (`agent_skills`) and listed in the plan note. Context blocks are budgeted as whole blocks, and only what reached the prompt counts as consulted.
+  - Each agent note lists its skills and when they activate. Skills are reference only and never widen permissions.
+  - `scripts/eval_skills.py` runs the same Code Agent requests with and without skills and grades the generated code by rule:
+    - result: 28/28 criteria with skills vs 27/28 without, over 2 trials × 2 tasks;
+    - the Code Agent was already near the ceiling on these checks, so this is no regression rather than a proven large gain.
+  - `eval_conversations.py` stays at 28/28.
 - Security hardening before the round 4 commit (negative tests in `test_security_guards_round4`):
   - `open_path` refuses network paths (`\\server\share`, `//host/x`, `file:`) before touching them. Merely checking such a path makes Windows authenticate to the remote host and send the NTLM hash.
   - The list of blocked executable types now includes `.msc`, `.jar`, `.url`, `.chm`, `.appinstaller`, `.settingcontent-ms`, disk images, `.dll` and others that run code when opened.

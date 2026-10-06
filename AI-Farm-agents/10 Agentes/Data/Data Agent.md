@@ -36,9 +36,10 @@ skills: 3
 - [[Playbook - Lista e cadastro]]
 
 ## Skills
-- [[senior-software-engineer]] — Código de produção com design coerente com o repositório, testes e erros explícitos.
-- [[ai-product-strategist]] — Problema, resultado, métricas e riscos antes de construir com IA.
-- [[ux-product-designer]] — Fluxos, arquitetura de informação e validação de usabilidade para reduzir atrito.
+Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[Skills]]):
+- [[senior-software-engineer]] — **sempre**
+- [[ux-product-designer]] — quando o pedido fala de planilha, tabela, cadastro, formulario, controle, organizar…
+- [[ai-product-strategist]] — quando o pedido fala de ideia, negocio, startup, produto, estrategia, plano de negocio…
 
 ## Falhas conhecidas (e correção)
 - Planilhas saíam sempre com o mesmo visual (cor #1F4E79 fixa). Agora a cor segue o tema.

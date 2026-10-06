@@ -52,7 +52,12 @@ REGRAS:
 6. Em done.result escreva só o que leu na tela. Termine assim que cumprir o objetivo.
 7. Planilha (Excel): clique na célula inicial (ex.: A1) e use write com \\t e \\n para preencher de uma vez.
    Documento (Word/Bloco de Notas): clique no corpo e use write.
-8. O app já está aberto: NÃO reabra nem crie outro arquivo, a menos que o objetivo peça."""
+8. O app já está aberto: NÃO reabra nem crie outro arquivo, a menos que o objetivo peça.
+9. Calculadora e entrada de números: digite a conta INTEIRA de uma vez com write (ex.: "128*47\\n";
+   * multiplica, / divide, \\n = igual) em vez de clicar botão por botão; depois leia o visor
+   ("A exibição é ...") e termine com done.
+10. Teclado antes de clique: se dá para digitar ou usar atalho, digite. Se a janela não mudou depois de
+   2 ações, mude de estratégia (teclado, outro elemento) em vez de insistir."""
 
 
 def window_from_handle(hwnd):

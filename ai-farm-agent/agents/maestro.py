@@ -312,6 +312,12 @@ class Maestro:
             if lessons:
                 hint += ("\n" if hint else "") + "LICOES APRENDIDAS (segundo cerebro):\n"
                 hint += "\n".join(f"- {l['title']}: {l['rule']}" for l in lessons)
+            # Skills do catalogo que o Maestro aplica ao planejar (tech-lead, seguranca, ...)
+            from core.skills import skills_for
+            sk_text, sk_names = skills_for("MAESTRO", task, limit=2)
+            get_brain().last_skills["MAESTRO"] = sk_names
+            if sk_text:
+                hint += ("\n" if hint else "") + "SKILLS PARA PLANEJAR (catalogo; referencia):\n" + sk_text
         except Exception as brain_err:
             print(f"[Maestro] segundo cerebro indisponivel: {brain_err}")
 

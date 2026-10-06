@@ -13,5 +13,7 @@ cor: "#94A3B8"
 ← [[Maestro]]
 
 ## Skills
-- [[rag-knowledge-engineer]] — Ingestão, busca, reranking, citações e controle de acesso para respostas fundamentadas.
-- [[ai-evaluation-engineer]] — Tarefas de avaliação, graders, traces e suítes de regressão para medir comportamento de IA.
+Referência de engenharia (este agente não recebe prompt com skills):
+- [[rag-knowledge-engineer]] — quando o pedido fala de pesquisa, procura, busca, le, ler, resume… _(só documentação: este agente não planeja com o modelo)_
+- [[ai-evaluation-engineer]] — quando o pedido fala de teste, testes, testar, validar, avaliar, conferir… _(só documentação: este agente não planeja com o modelo)_
+

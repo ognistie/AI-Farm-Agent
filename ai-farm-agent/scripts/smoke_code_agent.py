@@ -2284,6 +2284,105 @@ def test_voice_round4():
     return passed == total
 
 
+def test_skills_catalog():
+    """Skills do catalogo AIWorkbench (30 Skills) chegam aos agentes, certas para cada pedido."""
+    print("\n=== Skills do catalogo nos agentes ===")
+    import tempfile
+    from pathlib import Path
+    from core.brain import Brain, get_brain
+    from core.skills import SkillBook, parse_skill, skills_for, MAX_CHARS_PER_SKILL
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    book = SkillBook()
+    allsk = book.all()
+    check("15 skills do catalogo lidas do Obsidian", len(allsk) == 15)
+    planners = {"MAESTRO", "WEB", "DESKTOP", "CODE", "DATA", "FILE"}
+    gaps = [(s.name, a) for s in allsk for a in s.agents if a in planners and not s.apply.get(a)]
+    check("toda skill tem 'o que faz', regras e o que conferir", all(s.purpose and s.rules and s.check for s in allsk))
+    check("todo agente listado numa skill tem linhas de 'como aplicar'", not gaps)
+    pick = lambda a, t: [s.name for s in book.pick(a, t)]
+    check("site -> frontend + premium-ui + senior", set(pick("CODE", "faz um site de cafeteria com html css e js"))
+          == {"frontend-experience-engineer", "premium-ui-designer", "senior-software-engineer"})
+    check("mudar projeto existente -> code-review primeiro",
+          pick("CODE", "troca a cor do título pra azul no site")[0] == "code-review-and-refactoring-expert")
+    check("api com login -> full-stack + seguranca", {"full-stack-architect", "security-and-guardrails-engineer"}
+          <= set(pick("CODE", "cria uma api com login e banco de dados")))
+    check("apagar arquivos -> seguranca em primeiro",
+          pick("FILE", "apaga os arquivos temporários da pasta downloads")[0] == "security-and-guardrails-engineer")
+    check("pesquisa de preço -> rag (resposta com evidencia)",
+          pick("WEB", "pesquisa o preço do iphone e me fala o mais barato")[0] == "rag-knowledge-engineer")
+    check("mandar mensagem -> seguranca no Desktop",
+          "security-and-guardrails-engineer" in pick("DESKTOP", "manda uma mensagem no whatsapp pro joão"))
+    check("pedido com etapas -> tech-lead no Maestro",
+          pick("MAESTRO", "abre o excel e depois cria um site e manda pro joão")[0] == "tech-lead")
+    check("no maximo 3 skills por pedido", all(len(book.pick(a, "site api login apaga pesquisa teste lento planilha")) <= 3
+                                               for a in planners))
+    check("agente sem linhas proprias (Visao) nao recebe skill", not book.pick("VISION", "lento travando"))
+    txt, names = skills_for("CODE", "faz um site de cafeteria com html css e js")
+    blocks = txt.split("\n\n")
+    check("cada skill cabe no orcamento e so com linhas inteiras",
+          all(len(b) <= MAX_CHARS_PER_SKILL + 200 for b in blocks)
+          and all(l.startswith(("[", "- ", "Conferir")) for l in txt.splitlines() if l))
+    check("so as linhas DESTE agente vao para o prompt", "Data Agent" not in txt and "planilha que se usa" not in txt)
+    txt_c, names_c = skills_for("WEB", "pesquisa o preço do iphone", compact=True)
+    check("pilotos recebem 1 skill curta", len(names_c) == 1 and len(txt_c) < 700)
+
+    with tempfile.TemporaryDirectory() as vault:
+        Path(vault, "30 Skills").mkdir()
+        Path(vault, "30 Skills", "minha-skill.md").write_text(
+            "---\ntipo: skill\nagentes: [CODE]\nsempre_para: []\nativa_quando: churrasco\n---\n# minha-skill\n"
+            "> [!skill] O que faz\n> Testa.\n\n## Como o agente aplica\n- **Code Agent:** Use carvão.\n\n"
+            "## Regras\n- r\n\n## Conferir antes de concluir\n- c\n", encoding="utf-8")
+        tb = SkillBook(Brain(vault))
+        check("skill ensinada no Obsidian ativa pelas palavras do pedido",
+              [s.name for s in tb.pick("CODE", "site de churrascaria do churrasco")] == ["minha-skill"]
+              and not tb.pick("CODE", "site de pizzaria"))
+    check("nota que nao e skill e ignorada", parse_skill("x", "---\ntipo: indice\n---\n# x") is None)
+
+    brain = get_brain()
+    ctx = brain.context_for("FILE", "apaga os arquivos temporários da pasta downloads")
+    check("contexto do agente traz o bloco de skills", "Skills (catálogo AIWorkbench" in ctx
+          and "Lixeira" in ctx)
+    check("skills usadas ficam registradas (plano e log)", brain.last_skills.get("FILE", [])[:1]
+          == ["security-and-guardrails-engineer"] and "security-and-guardrails-engineer" in brain.last_sources["FILE"])
+    ctx = brain.context_for("CODE", "faz um site de cafeteria com html css e js")
+    check("contexto respeita o teto sem cortar no meio da frase",
+          len(ctx) <= 4400 and not ctx.rstrip().endswith((",", " e", " de")))
+
+    from agents.maestro import Maestro
+    seen = {}
+    m = Maestro()
+    m._ask = lambda task, hint, feedback=None: (seen.setdefault("hint", hint), {"needs_clarification": True,
+                                                                                  "question": "?"})[1]
+    m.analyze("abre o excel e depois cria um site e manda pro joão")
+    check("Maestro planeja com as skills dele (tech-lead)", "SKILLS PARA PLANEJAR" in seen.get("hint", "")
+          and "tech-lead" in seen.get("hint", ""))
+    from core.plan_validator import validate_plan
+    dictated = {"subtasks": [{"agent": "DESKTOP", "task": "escrever embaixo",
+                              "params": {"app": "notepad", "text": "comprar pão também", "action_type": "write_text"}}]}
+    check("ditado com dois-pontos ('escreve embaixo: X') nao e barrado como eco (achado no benchmark)",
+          validate_plan("No Bloco de Notas já aberto, escrever embaixo: comprar pão também", dictated).approved)
+    echo = {"subtasks": [{"agent": "DESKTOP", "task": "escrever poema",
+                          "params": {"app": "notepad", "text": "poema sobre café", "action_type": "write_text"}}]}
+    check("pedido de conteudo que so repete o pedido continua barrado (POL-002)",
+          not validate_plan("escreve um poema sobre café no bloco de notas", echo).approved)
+    from core.app_pilot import SYSTEM as PILOT_SYSTEM
+    check("piloto de apps digita a conta inteira na calculadora (achado no benchmark)",
+          "conta INTEIRA" in PILOT_SYSTEM and "Teclado antes de clique" in PILOT_SYSTEM)
+    root = Path(__file__).resolve().parent.parent
+    check("edicao de projeto (Code) tambem consulta o cerebro e as skills",
+          "brain_guide('CODE', task_text)" in (root / "agents/code_agent.py").read_text(encoding="utf-8").split(
+              "def plan_edit")[1][:3000])
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 def test_security_guards_round4():
     """Testes NEGATIVOS das travas (modo simulado: nada e executado no PC)."""
     print("\n=== Travas de seguranca (rodada 4) ===")
@@ -2354,7 +2453,8 @@ if __name__ == "__main__":
     ok32 = test_root_causes_round3()
     ok33 = test_voice_round4()
     ok34 = test_security_guards_round4()
+    ok35 = test_skills_catalog()
     sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8,
                        ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16,
                        ok17, ok18, ok19, ok20, ok21, ok22, ok23, ok24,
-                       ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34]) else 1)
+                       ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34, ok35]) else 1)

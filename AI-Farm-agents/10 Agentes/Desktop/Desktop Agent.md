@@ -45,9 +45,11 @@ skills: 3
 - [[Playbook - Utilitarios do Windows]]
 
 ## Skills
-- [[ux-product-designer]] — Fluxos, arquitetura de informação e validação de usabilidade para reduzir atrito.
-- [[ai-agent-engineer]] — Menor autonomia que resolve o problema; ferramentas com contrato; schema e autorização fora do modelo; retries limitados; memória só quando medida.
-- [[performance-and-reliability-engineer]] — Latência, custo, resiliência e capacidade guiados por medição.
+Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[Skills]]):
+- [[ux-product-designer]] — **sempre**
+- [[ai-agent-engineer]] — **sempre**
+- [[performance-and-reliability-engineer]] — quando o pedido fala de lento, rapido, demora, pesado, travando, muitos arquivos…
+- [[security-and-guardrails-engineer]] — quando o pedido fala de apaga, deleta, exclui, remove, limpa, envia…
 
 ## Falhas conhecidas (e correção)
 - **Escreveu só o título da música** — o Maestro não gerou conteúdo e colocou o próprio pedido no texto. Agora a política [[POL-002]] reprova eco do pedido.

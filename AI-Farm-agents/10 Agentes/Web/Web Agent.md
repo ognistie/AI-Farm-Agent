@@ -47,9 +47,11 @@ skills: 3
 - [[Playbook - Ler e resumir pagina]]
 
 ## Skills
-- [[rag-knowledge-engineer]] — Ingestão, busca, reranking, citações e controle de acesso para respostas fundamentadas.
-- [[security-and-guardrails-engineer]] — Fronteiras de confiança, autorização, segredos, prompt injection e segurança de ferramentas.
-- [[context-and-prompt-engineer]] — Prompts, contexto, saídas estruturadas e descrições de ferramentas confiáveis, com avaliação.
+Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[Skills]]):
+- [[ai-agent-engineer]] — **sempre**
+- [[security-and-guardrails-engineer]] — **sempre**
+- [[rag-knowledge-engineer]] — quando o pedido fala de pesquisa, procura, busca, le, ler, resume…
+- [[context-and-prompt-engineer]] — quando o pedido fala de resume, explica, escreve, texto, redige, email…
 
 ## Falhas conhecidas (e correção)
 - **Só abria o Google sem pesquisar** — a rotina 'abrir google' era testada antes da busca. Corrigido: busca tem prioridade e vira URL.

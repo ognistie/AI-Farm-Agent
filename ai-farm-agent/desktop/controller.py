@@ -369,6 +369,10 @@ class Controller:
             plan = self.maestro.analyze(task, conversation=conversation,
                                         continue_in=target or "")
             self._emit_usage()
+            maestro_skills = self._brain.last_skills.pop("MAESTRO", [])
+            if maestro_skills:
+                self._log("INFO", "MAESTRO", "Skills aplicadas: " + ", ".join(maestro_skills))
+                entry.setdefault("agent_skills", {})["MAESTRO"] = maestro_skills
 
             if plan.get("needs_clarification"):
                 question = plan.get("question", "Tarefa ambigua — pode dar mais detalhes?")
@@ -513,6 +517,10 @@ class Controller:
                 # politicas antes de qualquer acao no computador.
                 from core.plan_validator import validate_steps
                 step_check = validate_steps(agent_name, subtask, agent_steps, task)
+                used_skills = self._brain.last_skills.pop(agent_name, [])
+                if used_skills:
+                    self._log("INFO", agent_name, "Skills aplicadas: " + ", ".join(used_skills))
+                    entry.setdefault("agent_skills", {})[agent_name] = used_skills
                 self._brain.append_agent_plan(brain_plan, agent_name, subtask,
                                               agent_steps, step_check, sub_traces)
                 if not step_check.approved:

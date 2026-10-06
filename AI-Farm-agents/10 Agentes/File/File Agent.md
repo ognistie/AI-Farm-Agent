@@ -37,9 +37,10 @@ skills: 3
 - [[Playbook - Backup e compactacao]]
 
 ## Skills
-- [[security-and-guardrails-engineer]] — Fronteiras de confiança, autorização, segredos, prompt injection e segurança de ferramentas.
-- [[senior-software-engineer]] — Código de produção com design coerente com o repositório, testes e erros explícitos.
-- [[performance-and-reliability-engineer]] — Latência, custo, resiliência e capacidade guiados por medição.
+Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[Skills]]):
+- [[senior-software-engineer]] — **sempre**
+- [[performance-and-reliability-engineer]] — quando o pedido fala de lento, rapido, demora, pesado, travando, muitos arquivos…
+- [[security-and-guardrails-engineer]] — **sempre**
 
 ## Subagentes
 Três ajudantes executam junto com o agente — entender, montar, conferir:

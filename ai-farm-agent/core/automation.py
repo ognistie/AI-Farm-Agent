@@ -563,8 +563,24 @@ class AutomationEngine:
         if not found:
             return f"❌ A janela do {key} não abriu"
         hwnd = found[0]
-        title = _activate_hwnd(hwnd) or found[1]
-        if not _is_blank_doc(title):
+        if not _is_blank_doc(found[1]):
+            # Ja existe uma janela DESTE app em branco? usa ela (nada de Ctrl+N a mais)
+            suffix = found[1].rsplit(" - ", 1)[-1].strip().lower()
+            try:
+                blank = next((w for w in gw.getAllWindows()
+                              if w.title.rsplit(" - ", 1)[-1].strip().lower() == suffix
+                              and _is_blank_doc(w.title)), None)
+            except Exception:
+                blank = None
+            if blank is not None:
+                hwnd = blank._hWnd
+        title = _activate_hwnd(hwnd) or _window_title(hwnd) or found[1]
+        for attempt in range(2):
+            if _is_blank_doc(title):
+                break
+            # O Windows pode negar o foco (outro app na frente): reativa antes de cada Ctrl+N
+            _activate_hwnd(hwnd)
+            time.sleep(0.3)
             pyautogui.hotkey("ctrl", "n")
             time.sleep(1.0)
             # Win11: aba nova na mesma janela; versoes antigas: janela nova

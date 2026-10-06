@@ -34,7 +34,7 @@ aliases: [Orquestrador, Cérebro]
 - [[Roteamento]] — qual agente para cada pedido
 - [[Fonte de verdade e precedencia]]
 - [[Como usar o cerebro]]
-- Skills do Maestro: [[ai-agent-engineer]] · [[tech-lead]] · [[context-and-prompt-engineer]] · [[security-and-guardrails-engineer]] · [[ai-evaluation-engineer]]
+- Skills do Maestro (aplicadas ao planejar, até 2 por pedido): [[ai-agent-engineer]] · [[security-and-guardrails-engineer]] · [[rag-knowledge-engineer]] · [[context-and-prompt-engineer]] · [[ai-evaluation-engineer]] · [[tech-lead]] · [[ai-product-strategist]]
 
 > [!tip] Conversa
 > O Maestro recebe o contexto da conversa e, quando é continuação, o alvo já aberto. Ver [[Conversa continua]].
