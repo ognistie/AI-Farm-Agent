@@ -1,208 +1,234 @@
 # AI Farm Agent
 
-A Windows desktop agent system for natural-language task execution, combining LLM planning, deterministic validation, native UI automation and an editable knowledge base.
+**A Windows multi-agent assistant that turns natural language — typed or spoken — into verified actions on your desktop.**
 
-[Architecture](#architecture) · [Second brain](#second-brain) · [Getting started](#getting-started) · [Evaluation](#evaluation) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0A84FF)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
+![Model: Claude Sonnet 5](https://img.shields.io/badge/model-Claude%20Sonnet%205-D97757)
+[![CI](https://github.com/ognistie/AI-Farm-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ognistie/AI-Farm-Agent/actions/workflows/ci.yml)
+
+[Highlights](#highlights) · [Architecture](#architecture) · [Second brain](#second-brain) · [Voice](#voice-and-conversation) · [Benchmark](#cost-benchmark) · [Getting started](#getting-started) · [Evaluation](#evaluation) · [Security](#security-and-privacy) · [Contributing](CONTRIBUTING.md)
 
 ![AI Farm Agent desktop interface](docs/images/desktop-interface.png)
 
 ## Overview
 
-AI Farm Agent translates a user goal into a sequence of actions on a Windows workstation. A central orchestrator, **Maestro**, decomposes requests and delegates them to domain agents. The application executes their validated plans, passes results between dependent subtasks and records outcomes for later inspection.
+AI Farm Agent turns a request such as *"abre o Excel e preenche a primeira linha com Produto, Preço e Quantidade"* into a plan, validates it, executes it on the Windows desktop and checks the result on screen. A central orchestrator, **Maestro**, delegates to domain agents (Web, Desktop, Code, Data, File). Every agent reads an editable **Obsidian knowledge vault** before acting and writes the outcome back.
 
-The project explores **agentic desktop automation**, **hierarchical orchestration**, **structured planning**, **retrieval-augmented context** and **human-supervised execution**. It is an experimental implementation under active development. There is no published benchmark establishing general task success, latency or cost.
+The design principle is **intelligence only where it is needed**:
 
-Typical tasks include creating spreadsheets, generating software projects, navigating websites, interacting with desktop applications and organizing files. The interface is in Brazilian Portuguese; example requests below reflect that language.
+1. Use a deterministic routine when one exists, with no model call.
+2. Otherwise, read the screen as text through Windows UI Automation.
+3. Fall back to vision only as a last resort.
 
-## Capabilities
+Policies written in Python, not in prompts, decide whether a plan may run.
 
-| Agent | Responsibility | Implementation approach |
-| --- | --- | --- |
-| Maestro | Intent analysis, ambiguity detection, decomposition and routing | LLM-generated JSON plans, reference retrieval and deterministic acceptance policies |
-| Web | Search, navigation and page reading | Fixed routines for simple requests; an observation–action loop for complex browser goals |
-| Desktop | Application launch, text entry and window interaction | Application routines, Windows UI Automation and screenshot-based targeting |
-| Code | Generate scripts, websites and multi-file projects | Task classification, optional architecture planning, code generation and static validation |
-| Data | Generate Excel workbooks, formulas and charts | Python generation with workbook-oriented validation |
-| File | Locate, organize and manipulate files | Path resolution, operation classification and destructive-operation checks |
-| Memory | Suggest previously useful execution routes | Local JSON route store with similarity matching and outcome counters |
+> **Status:** experimental and under active development. The interface and voice understanding are in Brazilian Portuguese. Run it in a dedicated environment; see [Security and privacy](#security-and-privacy).
 
-Supporting modules provide screenshot capture, OCR, retries, conditional waits, context propagation, action logging and report generation. Domain agents use named helpers for interpretation, preparation and review; these helpers are primarily deterministic components, with model calls in selected planning and generation paths.
+## Highlights
+
+| | |
+| --- | --- |
+| **Continuous conversation** | Follow-ups act on what is already open. *"Abre o YouTube"* → *"agora toca o segundo vídeo"* continues in the same tab; *"muda a cor do título"* edits the project just created, with a backup to undo. Conversations are saved and can be reopened. |
+| **Local voice** | Speech recognition (faster-whisper) and the assistant's voice (Piper) run on the machine; audio never leaves it. Two modes: record-and-send, or live conversation that executes while you talk. |
+| **Multi-agent orchestration** | Maestro plans and routes; each domain agent has three helper sub-agents (understand · build · review). |
+| **Deterministic guardrails** | Acceptance policies (`POL-001`–`POL-007`) validate plans before dispatch. A rejected plan is replanned once with the literal reason. Sensitive actions (send, delete, pay, credentials) stay with the user. |
+| **Second brain** | The Obsidian vault provides the agent's rules, known failures, playbooks, lessons learned, a ~2,600-variant Brazilian speech dictionary and the AIWorkbench engineering skills. Each request retrieves only what matches it. |
+| **Measured cost** | Each model call is metered. In a 30-task benchmark the average cost was **US$ 0.019 per task**. |
 
 ## Architecture
 
-The application uses a **controller-driven, sequential orchestration pipeline**. Agents propose actions; Python validators assess plans before the execution engine dispatches them. Dependencies carry extracted outputs, file paths and URLs into subsequent subtasks.
-
 ```mermaid
-flowchart TD
-    UI[PySide6 / QML desktop] --> C[Controller and event bus]
-    C --> M[Maestro: intent and structured plan]
-    R[Route memory] -. routing hints .-> M
-    B[Obsidian vault] -. rules and references .-> M
-    M --> V[Deterministic plan validation]
-    V --> A[Web / Desktop / Code / Data / File]
-    B -. execution guides .-> A
-    A --> S[Agent steps and step validation]
-    S --> E[Automation engine]
-    E --> P[Python / filesystem / subprocess]
-    E --> U[Windows UI Automation]
-    E --> I[Vision targeting and optional OCR]
-    E --> O[Results and extracted context]
-    O --> C
-    O --> H[History / logs / reports]
-    O --> R
+flowchart LR
+    IN[Text or voice] --> U[Understanding<br/>dictionary + persona]
+    U --> R[Conversation resolver<br/>continue or new]
+    R --> M[Maestro<br/>structured plan]
+    B[(Obsidian vault<br/>rules · skills · playbooks · lessons)] -. context .-> M
+    M --> V{Acceptance policies<br/>Python}
+    V -- rejected --> M
+    V -- approved --> A[Web · Desktop · Code · Data · File]
+    B -. context .-> A
+    A --> L1[1 · Routine / direct code]
+    L1 -. not enough .-> L2[2 · UI Automation text read]
+    L2 -. not enough .-> L3[3 · Vision]
+    L1 & L2 & L3 --> O[Observer<br/>verify on screen]
+    O --> RE[Reply · voice/text]
     O --> B
 ```
 
-### Planning and execution
+### Request lifecycle
 
-1. The desktop bridge submits a task to the controller, which starts a background worker and publishes progress events.
-2. Maestro detects common ambiguities, retrieves similar routes and reference tasks, and requests a structured plan from the model.
-3. `plan_validator.py` checks agent identifiers, required content, search terms and context dependencies. A rejected Maestro plan receives one replan attempt with explicit feedback.
-4. Each domain agent produces action steps. Additional validators inspect content, code syntax, project structure or operation safety, depending on the agent.
-5. The automation engine dispatches accepted actions. Selected visual failures receive retries; browser tasks run their own bounded loop.
-6. The controller records step outcomes, extracts artifacts, updates route statistics and writes execution notes.
+1. **Understand:** the dictionary fixes known transcription errors and slang. Simple requests ("open X", "search Y", time/date) are answered without a model call.
+2. **Resolve:** with something open, the resolver decides whether the request continues in that window/tab or starts a new task.
+3. **Plan:** Maestro decomposes the request with retrieved references and lessons, then `plan_validator.py` applies the acceptance policies.
+4. **Execute:** agents emit steps. The automation engine runs routines directly. Open-ended goals go to the **browser pilot** or the **app pilot**, which read the window as numbered UI elements, choose one action per turn and re-read to confirm.
+5. **Verify and record:** the observer checks the resulting window, tab or file. The reply is composed, and the plan, outcome and consulted notes are written to the vault.
 
-The distinction between **planning**, **validation** and **execution** makes failures inspectable. Validation coverage is finite: an accepted plan is not a proof of safety or complete task fulfillment.
+### Repository layout
 
-### Interaction backends
-
-Direct Python and filesystem operations handle tasks that can be expressed programmatically, such as generating workbooks or writing project files. Windows UI Automation exposes semantic controls for application interaction. Screenshot-based vision provides an alternative when accessible controls are insufficient; optional local OCR supports text discovery.
-
-For complex browser tasks, `BrowserPilot` repeatedly reads an accessibility snapshot, presents numbered elements and visible context to the model, executes one selected action and observes the new state. The loop supports navigation, clicking, typing and scrolling, with a configurable constructor turn limit. Simple open/search requests retain fixed routines. Playwright is an optional backend for supported web actions.
-
-### Model access and observability
-
-`AIClient` centralizes Anthropic API access, streaming, system-prompt caching, text-block extraction and usage accounting. Model tiers and per-agent reasoning effort are configured in `config.yaml`; `MODEL_FAST` and `MODEL_STRONG` can override tier identifiers through the environment.
-
-Token usage comes from API responses. Dollar costs are **estimates calculated from the pricing table in the source**, rather than billing records. Model availability, supported parameters and pricing must be checked against the provider before use.
+```text
+AI-Farm-Agent/
+├── ai-farm-agent/            Application
+│   ├── agents/               Maestro, domain agents, sub-agents, validators
+│   ├── core/                 LLM client, automation engine, pilots, brain, skills, session
+│   │   └── voice/            Recorder, STT, TTS, understanding, persona, hotkey
+│   ├── desktop/              PySide6/QML UI, controller, voice controller
+│   ├── memory/               Route memory
+│   ├── scripts/              Smoke tests, evaluations, benchmark
+│   ├── state_maps/           Application navigation maps
+│   └── main.py               Entry point
+├── AI-Farm-agents/           Obsidian vault (second brain)
+├── docs/                     Images and security review
+└── config.yaml               Models, effort per agent, voice settings
+```
 
 ## Second brain
 
 ![Obsidian graph of the AI Farm Agent second brain](docs/images/second-brain.png)
 
-The second brain is an **Obsidian-compatible Markdown vault**, stored in `AI-Farm-agents/`. Notes use YAML frontmatter, sections and wiki links to connect the orchestrator, domain agents, policies, playbooks and reference tasks. Obsidian visualizes those links as a graph; the runtime reads the files directly and does not require Obsidian to be running.
+The vault in `AI-Farm-agents/` is plain Markdown with frontmatter and wiki links. Obsidian is optional: the runtime reads the files directly through `core/brain.py`, and the application keeps working if the vault is missing.
 
-`core/brain.py` implements the integration:
+For each request, `Brain.context_for(agent, task)` assembles a bounded block. It is budgeted per whole block, so nothing is cut mid-sentence. It contains:
 
-- **Agent guidance:** extracts the `Regras de execução` section from an agent note and adds a bounded excerpt to the planning context.
-- **Reference retrieval:** tokenizes the request, normalizes accents, scores word-set overlap and selects relevant paths from curated tasks, playbooks and successful execution notes. This is lexical retrieval, without embeddings or a vector database.
-- **Execution provenance:** writes proposed plans, validation outcomes, helper traces and execution results to Markdown notes, with a daily operations index.
-- **Graceful degradation:** the application continues when the vault is absent or disabled.
+- **Agent notes:** execution rules, how-to and known failures of the agent.
+- **Skills:** the 1–3 most relevant [AIWorkbench](https://github.com/BielmFranco/AIWorkbench) skills for that agent and request, with only the lines written for that agent (`core/skills.py`).
+- **Playbooks and reference tasks:** curated entries rank above automatically recorded executions.
+- **Lessons learned:** every real failure that became a rule.
+- **Dictionary terms:** Windows settings pages, keyboard shortcuts and app launch targets cited in the request.
 
-The runtime applies pattern-based redaction to selected note content, but this is not comprehensive anonymization. Generated notes and daily journals are local operational data and are excluded from version control.
+The plan note records **"Consultou: …"** with every note and skill used. All of this is reference material: it never widens permissions, which live in Python.
 
 | Vault directory | Purpose |
 | --- | --- |
-| `00 Maestro/` | Orchestration, routing and validation guidance |
-| `10 Agentes/` | Agent notes, playbooks and helper descriptions |
-| `20 Politicas/` | Human-readable counterparts of acceptance policies |
-| `30 Skills/` | Curated skill references |
-| `30 Tarefas de referencia/` | Task examples with paths and acceptance criteria |
-| `40 Execucoes/` | Local proposed plans and success/failure records, alongside public index notes |
-| `50 Diario/` | Local daily execution journals and a public index |
-| `60 Aprendizados/` | Curated lessons |
-| `90 Sistema/` | Templates and Obsidian Bases definitions |
+| `00 Maestro/` | Orchestration, conversation, voice, persona, evaluations, benchmark |
+| `10 Agentes/` | Agent notes, playbooks and sub-agent descriptions |
+| `20 Politicas/` | Human-readable acceptance policies |
+| `30 Skills/` | AIWorkbench skills as usage manuals (when to activate, how each agent applies them, what to check) |
+| `30 Tarefas de referencia/` | ~265 reference tasks with paths and acceptance criteria |
+| `60 Aprendizados/` | Curated lessons learned |
+| `70 Dicionario/` | Brazilian speech dictionary, Windows settings pages, keyboard shortcuts |
+| `40 Execucoes/`, `50 Diario/` | Local execution records (generated notes are git-ignored) |
 
-To extend the knowledge base, add a reference note with `keywords` in its frontmatter and a `Caminho` section. Related requests can then retrieve it as a planning hint. Runtime blocking policies remain in Python; editing a note does not establish an execution permission boundary.
+## Voice and conversation
 
-### Route memory
+- **Pipeline:**
+  1. Microphone → local transcription (faster-whisper `small`, int8, CPU).
+  2. Dictionary correction. Only `auto` confusions are rewritten; `dica` entries are hints for the model.
+  3. One understanding call that returns the clean command, the continuation target and the immediate spoken reply.
+- **Instant answers:** time, date and simple open/search requests have no model latency. A cut-off request ("abre o…") gets a clarifying question instead of a guess.
+- **Persona:** one speaking style shared by voice, end-of-task replies and small talk. It is editable in `00 Maestro/Persona do assistente.md`, with ready-made lines that never repeat the last ones.
+- **Live mode:** speech is queued while a task runs. Long tasks give one progress update. Background conversation is ignored.
 
-Route memory is separate from the vault. Version 6 stores the agent sequence, routing fields, parameter names and dependency structure, together with task descriptions and success/failure counters. It omits task-specific parameter values from the stored route and always supplies hints for a fresh plan. Routes with more failures than successes are not suggested.
+## Cost benchmark
 
-This is retrieval and outcome tracking, not model training or automatic policy rewriting. Route files can still contain sensitive task descriptions and must remain local.
+![Cost benchmark: AI Farm Agent vs Claude Cowork and ChatGPT Work](docs/images/benchmark.png)
+
+`scripts/bench_cost.py` ran 30 real tasks through the voice path, twice each: apps, browser, code, files, spreadsheets and questions. It recorded every model call (tokens, cache, cost) and every action. The run took place in October 2026.
+
+| | AI Farm Agent (measured) | ChatGPT Work (estimated) | Claude Cowork (estimated) |
+| --- | --- | --- | --- |
+| Cost per task, typical scenario | **US$ 0.019** | US$ 0.025 | US$ 0.048 |
+| Monthly, 5 tasks/day | **≈ R$ 15** | R$ 99.90 (ChatGPT Plus) | R$ 107 (Claude Pro) |
+
+**Where the savings come from.** The same run would cost:
+- 1.5× more without prompt caching;
+- 1.3× more without deterministic routines;
+- 1.9× more on a larger model;
+- 3.5× more without all three.
+
+**Method and limits:**
+- **Competitors** were estimated as the API-equivalent cost of a screenshot agent using the same number of steps, at public prices. Their system prompt is assumed already cached.
+- **In a lean competitor scenario the cost is roughly equal.** The monthly advantage shrinks above ~30 tasks/day.
+- **Not compared:** quality and the real limits of the subscriptions.
+
+The full report, with per-task numbers and assumptions, is in `AI-Farm-agents/00 Maestro/Benchmark de custo.md`.
 
 ## Getting started
 
 ### Requirements
 
 - Windows 10 or 11 with an interactive desktop session.
-- Python 3.11 or later as the project target; dependency compatibility depends on the installed Python version.
-- An Anthropic API key and access to the model identifiers selected in the configuration.
-- Target applications installed when a task requires them. Excel is needed to open workbooks in Excel; workbook generation uses Python libraries.
+- Python 3.11 or later.
+- An Anthropic API key.
+- Optional: microphone and speakers for voice mode. The speech models (~0.5 GB) are downloaded on first use.
 
 ### Installation
-
-Run from PowerShell:
 
 ```powershell
 git clone https://github.com/ognistie/AI-Farm-Agent.git
 cd AI-Farm-Agent
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r .i-farm-agentequirements.txt
-Copy-Item .env.example .env
+.\.venv\Scripts\python.exe -m pip install -r ai-farm-agent\requirements.txt
+Copy-Item .env.example .env   # then set ANTHROPIC_API_KEY in .env
 ```
 
-Edit `.env` and set `ANTHROPIC_API_KEY` to your own key. Select provider-supported model identifiers in `config.yaml` or through `MODEL_FAST` / `MODEL_STRONG`. Configuration precedence is environment overrides, then YAML, then source defaults.
+### Run
 
-Start **from the repository root** so the root `config.yaml` is discovered:
+Start from the repository root so `config.yaml` is found:
 
 ```powershell
-.\.venv\Scripts\python.exe .i-farm-agent\main.py
+.\.venv\Scripts\python.exe ai-farm-agent\main.py
 ```
 
-The entry point launches a native Qt application. No Flask server or browser UI is required. Optional dependencies such as Playwright and EasyOCR are documented in `requirements.txt`; libraries imported by generated Python may also be installed automatically by the execution engine.
+The voice hotkey defaults to `Ctrl+Alt+V`. Models, per-agent reasoning effort and voice settings are in `config.yaml`; `MODEL_FAST` / `MODEL_STRONG` override the model tiers.
 
 ### Example requests
 
 ```text
-Crie uma planilha de gastos do mês com gráfico.
-Crie um site sobre uma cafeteria artesanal.
-Pesquise sobre um tema e anote um resumo no bloco de notas.
-Organize os arquivos da pasta Downloads por tipo.
-```
-
-Use **Simular** to inspect supported planned actions before execution. Simulation can still invoke the model and write local records; some generic filesystem handlers do not enforce the simulation flag, so it is not an isolation guarantee. **Esc** requests cancellation; it is cooperative and does not forcibly terminate code already running inside the process.
-
-## Repository layout
-
-```text
-AI-Farm-Agent/
-├── ai-farm-agent/
-│   ├── agents/             Domain agents, planners and validators
-│   ├── core/               LLM client, automation, browser pilot and vault integration
-│   ├── desktop/            Qt bridge, controller, QML views and local history
-│   ├── memory/             Route storage
-│   ├── scripts/            Smoke tests and evaluation utilities
-│   ├── state_maps/         Application navigation maps
-│   ├── main.py             Desktop entry point
-│   └── requirements.txt
-├── AI-Farm-agents/          Curated Obsidian knowledge vault
-├── docs/                   Images and security review
-├── config.yaml
-├── CONTRIBUTING.md
-├── SECURITY.md
-└── LICENSE
+Abre o YouTube e procura lofi pra estudar        →  agora toca o segundo vídeo
+Pesquisa o preço do fone JBL Tune 520 no Mercado Livre e me fala o mais barato
+Cria um site para a padaria Pão Dourado          →  muda a cor do título para roxo
+Abre as configurações do Windows                 →  clica em Sistema
+Faz uma planilha de gastos mensais com 5 categorias e o total
+Organiza a pasta Downloads por tipo
 ```
 
 ## Evaluation
 
-Run the deterministic smoke suite from the application directory:
+| Script | What it checks | Model calls |
+| --- | --- | --- |
+| `scripts/smoke_code_agent.py` | Deterministic regression suite (430+ checks): routing, policies, voice understanding, vault retrieval, skills, security guards | None (mocked) |
+| `scripts/eval_voice.py` | 50 hard utterances: misheard names, slang, self-correction, background talk | Yes (~US$ 0.17) |
+| `scripts/eval_conversations.py` | 28 multi-turn scenarios through resolver → Maestro → agent plans, without executing | Yes (~US$ 0.15) |
+| `scripts/eval_skills.py` | A/B of the Code agent with and without skills | Yes (~US$ 0.70) |
+| `scripts/bench_cost.py` | Cost benchmark; **executes real tasks on the desktop** | Yes (~US$ 1.20) |
 
 ```powershell
 cd ai-farm-agent
 ..\.venv\Scripts\python.exe -X utf8 scripts\smoke_code_agent.py
 ```
 
-The suite exercises routing heuristics, validation, route memory, parsing, context handling and browser-pilot behavior with mocked components. It makes no live API calls and does not establish end-to-end reliability on arbitrary Windows applications.
-
-Additional scripts (`run_evolution_suite.py`, `run_diverse_suite.py`, `run_creative_suite.py`) perform model-backed generation experiments. Review them before running: they use the configured API and may create local artifacts. The vault also contains a manual regression checklist at `00 Maestro/Roteiro de testes.md`.
-
-For reproducible experiments, record the commit, Windows/application versions, model identifiers, configuration, task dataset, artifact checks and API usage. No aggregate benchmark results are claimed here.
+Model-backed scripts write their reports to the vault (`--vault`). Review them before running: they spend API credits, and `bench_cost.py` opens and operates applications.
 
 ## Security and privacy
 
-The application runs with the permissions of the current Windows user. Generated Python executes in-process, shell actions can launch commands, and browser automation can interact with an authenticated session. **Use a dedicated test environment with non-sensitive files and accounts.**
+The application runs with the permissions of the current Windows user. Generated Python runs in-process, and browser automation can use your signed-in sessions. **Use a dedicated environment with non-sensitive files and accounts.**
 
-Prompts, retrieved content and screenshots can be sent to the configured model provider. Local histories, logs, reports and notes can retain request text or other personal data. Git exclusions limit accidental publication; they do not encrypt records or remove previously committed content from Git history.
+Implemented controls:
+- acceptance policies before execution;
+- `open_path` refuses executables, disk images and network/UNC paths;
+- the Start-menu fallback refuses names containing commands or paths;
+- page and window text in model context is treated as data, never as instructions;
+- writing goes only to a blank document, never to an open user file;
+- login, CAPTCHA, payments and sends are handed back to the user.
 
-The current implementation includes validation and selected blocking checks, but lacks an isolated execution sandbox and a universal authorization gate at dispatch time. Read [SECURITY.md](SECURITY.md) and the [repository security review](docs/security-review.md) before running tasks with sensitive data.
+There is **no isolated sandbox** and no universal action-level authorization gate yet. Read [SECURITY.md](SECURITY.md) and the [security review](docs/security-review.md) before using it with real data.
 
-## Development directions
+## Roadmap
 
-Current engineering priorities are isolated execution, action-level authorization, stronger secret redaction, reproducible end-to-end evaluations and dependency integrity. These are development directions, not implemented guarantees or delivery commitments.
+- Isolated execution and action-level authorization.
+- Spoken confirmation for irreversible actions.
+- A thinner fixed layer per request, with direct routing for simple tasks.
+- Packaged installer.
+- Reproducible end-to-end evaluation on a clean VM.
 
-Contributions to documentation, regression cases, reproducibility and execution safety are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [CHANGELOG.md](CHANGELOG.md) for implementation history.
+These are development directions, not commitments.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md) and the [CHANGELOG](CHANGELOG.md).
 
 ## License
 
-Project code and documentation are licensed under the [MIT License](LICENSE). Bundled third-party assets retain their original notices and license terms, including the Obsidian Minimal theme.
+[MIT](LICENSE). Bundled third-party assets keep their own licenses, including the Obsidian Minimal theme.

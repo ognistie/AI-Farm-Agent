@@ -41,3 +41,20 @@ This is a bounded source review, not penetration testing or a guarantee that eve
 5. Establish dependency locking, integrity checks and repeatable vulnerability scans.
 
 The MIT text is based on the [Open Source Initiative license reference](https://opensource.org/license/mit). Security references and reporting guidance are in [SECURITY.md](../SECURITY.md).
+
+## Update — 2026-10-07
+
+Re-checked at commit `84bd85d` plus the repository cleanup that followed.
+
+- **Still open (High):** the two historical `.env` blobs still contain Anthropic key formats in reachable history. The key currently configured locally is **not** one of them. The historical keys must be revoked in the Anthropic console; rewriting history is optional and needs coordination with collaborators, because forks and caches keep copies.
+- **Fixed since the baseline:**
+  - `open_path` refuses network/UNC and `file:` paths before touching them, which prevents NTLM hash leakage.
+  - The executable-extension blocklist was expanded (`.msc`, `.jar`, `.url`, `.chm`, `.appinstaller`, `.settingcontent-ms`, disk images, `.dll`).
+  - The Start-menu fallback refuses names containing paths, arguments or shell symbols.
+  - Voice understanding and conversation resolution treat page/window text as data.
+
+  Negative tests: `test_security_guards_round4` in the smoke suite.
+- **Hygiene:**
+  - Empty vault notes and IDE settings were removed from version control.
+  - Local marketing material is ignored.
+  - CI fails if a `.env`, `.pem` or `.key` file is tracked.

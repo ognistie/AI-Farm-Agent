@@ -6,6 +6,8 @@ AI Farm Agent welcomes contributions under the [MIT License](LICENSE). By submit
 
 Useful contributions include bug fixes, reproducible regression cases, agent evaluation, execution safety, documentation and improvements to the curated knowledge vault. For substantial architectural changes, discuss the problem and proposed approach in an issue before implementation. Small fixes can be submitted directly.
 
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Workflow
 
 1. Fork the repository and create a focused branch.

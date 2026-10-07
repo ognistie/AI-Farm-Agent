@@ -1,0 +1,30 @@
+name: Bug report
+description: Something did not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The request you made (typed or spoken), what the agent did and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic data only. Never paste API keys, personal files or account details.
+  - type: input
+    id: version
+    attributes:
+      label: Commit / version
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Windows version, Python version, apps involved (e.g. Excel 2024)
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      render: text
