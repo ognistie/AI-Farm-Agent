@@ -67,7 +67,10 @@ class Bridge(QObject):
         self._controller = Controller()
         self._running = False
         self._voice = None
+        self._window_mode = None
+        self._stop_hotkey = None
         self._wire_bus()
+        self.runningChanged.connect(self._on_running_changed)
         # Voz pronta desde o inicio: atalho global ativo e voz aquecida em segundo
         # plano. O reconhecimento (modelo) so carrega na primeira fala.
         try:
@@ -76,6 +79,81 @@ class Bridge(QObject):
                 self._voice_ctl().start_hotkey()
         except Exception as e:
             print(f"  [voz] indisponivel: {e}")
+        self._start_stop_hotkey()
+
+    # ── Interface: abertura, mini chat e atalho de parar ─────────────
+
+    @staticmethod
+    def _ui_cfg() -> Dict[str, Any]:
+        try:
+            from core.config import get_config
+            return dict(get_config().get("ui", {}) or {})
+        except Exception:
+            return {}
+
+    def _start_stop_hotkey(self) -> None:
+        """Atalho global para parar: o mini chat nao recebe cliques enquanto
+        o agente trabalha, entao parar precisa funcionar de qualquer janela."""
+        combo = self._ui_cfg().get("stop_hotkey", "ctrl+alt+x")
+        if not combo:
+            return
+        try:
+            from core.voice.hotkey import GlobalHotkey
+            hk = GlobalHotkey(combo, self._stop_from_hotkey)
+            if hk.start_and_wait():
+                self._stop_hotkey = hk
+            else:
+                print(f"  [ui] atalho de parar {combo} indisponivel (em uso por outro programa)")
+        except Exception as e:
+            print(f"  [ui] atalho de parar indisponivel: {e}")
+
+    def _stop_from_hotkey(self) -> None:
+        if self._running:
+            self._controller.force_stop()
+
+    def attach_windows(self, main_window, mini_window) -> None:
+        """Chamado pelo main.py depois de carregar o QML."""
+        from desktop.window_mode import WindowMode
+        cfg = self._ui_cfg()
+        self._window_mode = WindowMode(
+            main_window, mini_window,
+            enabled=cfg.get("mini_chat", True) is not False,
+            hide_from_capture=bool(cfg.get("mini_hide_from_capture", False)))
+
+    @Slot(bool)
+    def _on_running_changed(self, running: bool) -> None:
+        if self._window_mode:
+            self._window_mode.set_running(running)
+
+    def splash_enabled(self) -> bool:
+        return self._ui_cfg().get("splash", True) is not False
+
+    @Slot(result=str)
+    def uiSettings(self) -> str:
+        cfg = self._ui_cfg()
+        # So anuncia o atalho de parar se ele foi registrado de fato
+        combo = self._stop_hotkey.combo if self._stop_hotkey else ""
+        label = "+".join(k.capitalize() for k in combo.split("+")) if combo else ""
+        return _to_json({
+            "splash": self.splash_enabled(),
+            "mini_chat": cfg.get("mini_chat", True) is not False,
+            "stop_hotkey_label": label,
+        })
+
+    @Slot()
+    def restoreMain(self) -> None:
+        if self._window_mode:
+            self._window_mode.restore()
+
+    @Slot()
+    def closeMini(self) -> None:
+        if self._window_mode:
+            self._window_mode.close_mini()
+
+    @Slot()
+    def mainActivated(self) -> None:
+        if self._window_mode:
+            self._window_mode.main_activated()
 
     # ── Listeners do bus → emit signals Qt ────────────────────────────
 

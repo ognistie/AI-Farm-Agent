@@ -31,6 +31,7 @@ Policies written in Python, not in prompts, decide whether a plan may run.
 | | |
 | --- | --- |
 | **Continuous conversation** | Follow-ups act on what is already open. *"Abre o YouTube"* → *"agora toca o segundo vídeo"* continues in the same tab; *"muda a cor do título"* edits the project just created, with a backup to undo. Conversations are saved and can be reopened. |
+| **Stays out of the way** | When the agent moves to another app, the main window steps aside and the conversation continues in a mini chat in the bottom-right corner. While a task runs, the mini chat takes no focus or clicks, so it never interferes with what the agent types; `Ctrl+Alt+X` stops the task from anywhere. |
 | **Local voice** | Speech recognition (faster-whisper) and the assistant's voice (Piper) run on the machine; audio never leaves it. Two modes: record-and-send, or live conversation that executes while you talk. |
 | **Multi-agent orchestration** | Maestro plans and routes; each domain agent has three helper sub-agents (understand · build · review). |
 | **Deterministic guardrails** | Acceptance policies (`POL-001`–`POL-007`) validate plans before dispatch. A rejected plan is replanned once with the literal reason. Sensitive actions (send, delete, pay, credentials) stay with the user. |
@@ -171,7 +172,7 @@ Start from the repository root so `config.yaml` is found:
 .\.venv\Scripts\python.exe ai-farm-agent\main.py
 ```
 
-The voice hotkey defaults to `Ctrl+Alt+V`. Models, per-agent reasoning effort and voice settings are in `config.yaml`; `MODEL_FAST` / `MODEL_STRONG` override the model tiers.
+The app opens on a short intro screen; press any key or click to enter (`ui.splash: false` skips it). The voice hotkey defaults to `Ctrl+Alt+V` and the stop hotkey to `Ctrl+Alt+X`. The `ui` section of `config.yaml` also turns the mini chat on or off (`mini_chat`) and can hide it from screen captures (`mini_hide_from_capture`). Models, per-agent reasoning effort and voice settings are in `config.yaml`; `MODEL_FAST` / `MODEL_STRONG` override the model tiers.
 
 ### Example requests
 

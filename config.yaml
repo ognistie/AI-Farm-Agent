@@ -108,3 +108,10 @@ voice:
   live_pause_s: 0.8        # pausa que encerra uma fala na conversa ao vivo
   progress_after_s: 12     # aviso falado de progresso em pedido demorado (0 = nunca)
   start_on_launch: true    # atalho global ativo desde a abertura do app
+
+# Interface desktop
+ui:
+  splash: true                 # tela de abertura ("pressione qualquer tecla para entrar")
+  mini_chat: true              # quando o agente vai para outra janela, a conversa fica num mini chat no canto
+  stop_hotkey: "ctrl+alt+x"    # atalho global para parar a execucao (o mini chat nao recebe cliques enquanto o agente trabalha)
+  mini_hide_from_capture: false  # true = o mini chat nao aparece em prints/gravacoes de tela (nem nos prints do agente)

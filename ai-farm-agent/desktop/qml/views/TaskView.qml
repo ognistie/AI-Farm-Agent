@@ -40,6 +40,12 @@ Item {
     ListModel { id: replyModel }  // falas do agente (modo voz) neste pedido
     ListModel { id: stepModel }   // { n, agent, desc, state, result, kind }
 
+    // O mini chat (canto da tela) mostra a mesma conversa
+    property alias turns: turnsModel
+    property alias replies: replyModel
+    property alias steps: stepModel
+    property alias composer: composer
+
     // ── API usada pelo Main ──────────────────────────────────────────
     // Nova conversa: esquece o contexto (o que foi feito e o que ficou aberto)
     function newTask() {
@@ -321,7 +327,7 @@ Item {
         Text {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
-            text: "O que você quer que eu faça?"
+            text: "Como posso ajudar?"
             color: C.Theme.textPrimary
             font.family: C.Theme.fontDisplay
             font.pixelSize: C.Theme.sizeHero
@@ -331,7 +337,7 @@ Item {
         Text {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
-            text: "Descreva em linguagem natural. O Maestro escolhe o agente certo e executa no seu computador."
+            text: "Digite ou fale um pedido. O Maestro escolhe o agente certo e executa no seu computador."
             color: C.Theme.textSecondary
             font.family: C.Theme.fontSans
             font.pixelSize: C.Theme.sizeMd
@@ -489,15 +495,10 @@ Item {
                 spacing: 10
 
                 C.Spinner { visible: root.running; size: 14 }
-                C.Icon {
+                C.StatusDot {
                     visible: !root.running
-                    size: 14
-                    glyph: root.status === "done" ? ""
-                         : (root.status === "clarify" || root.status === "limited") ? ""
-                         : root.status === "cancelled" ? "" : ""
-                    color: root.status === "done" ? C.Theme.success
-                         : (root.status === "clarify" || root.status === "limited") ? C.Theme.info
-                         : root.status === "cancelled" ? C.Theme.textSecondary : C.Theme.danger
+                    size: 16
+                    status: root.status
                 }
                 Text {
                     Layout.fillWidth: true
@@ -769,16 +770,11 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-            C.Icon {
+            C.StatusDot {
                 Layout.alignment: Qt.AlignTop
                 Layout.topMargin: 2
-                size: 12
-                glyph: past.status === "done" ? ""
-                     : (past.status === "clarify" || past.status === "limited") ? ""
-                     : past.status === "cancelled" ? "" : ""
-                color: past.status === "done" ? C.Theme.success
-                     : (past.status === "clarify" || past.status === "limited") ? C.Theme.info
-                     : past.status === "cancelled" ? C.Theme.textSecondary : C.Theme.danger
+                size: 15
+                status: past.status
             }
             Text {
                 Layout.fillWidth: true
@@ -815,13 +811,11 @@ Item {
                 Layout.preferredWidth: 16
                 Layout.preferredHeight: 16
                 C.Spinner { anchors.centerIn: parent; visible: row.status === "running"; size: 13 }
-                C.Icon {
+                C.StatusDot {
                     anchors.centerIn: parent
                     visible: row.status !== "running"
-                    size: 12
-                    glyph: row.status === "ok" ? "" : row.status === "warn" ? "" : ""
-                    color: row.status === "ok" ? C.Theme.success
-                         : row.status === "warn" ? C.Theme.warning : C.Theme.danger
+                    size: 15
+                    status: row.status
                 }
             }
             Text {

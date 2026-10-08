@@ -1,4 +1,5 @@
-// Janela raiz: sidebar (navegacao + recentes) e area de conteudo.
+// Janela raiz: sidebar (navegacao + recentes) e area de conteudo, a
+// abertura (Splash) por cima e o mini chat (janela propria no canto).
 // As telas ficam num StackLayout para manter o estado ao trocar de aba —
 // uma tarefa em execucao continua visivel ao voltar para ela.
 import QtQuick
@@ -24,6 +25,13 @@ ApplicationWindow {
     // Conversas salvas (barra lateral): clicar reabre a conversa com o contexto
     property var conversations: []
     property string currentConversation: ""
+    // Abertura em cena: nada da janela principal reage (hover, dicas, cliques)
+    property bool splashActive: ui.splash !== false
+    // Preferencias da interface (config.yaml > ui)
+    readonly property var ui: JSON.parse(Bridge.uiSettings())
+
+    // Ao voltar para a janela completa, o mini chat sai de cena
+    onActiveChanged: if (active) Bridge.mainActivated()
 
     function reloadRecents() {
         const data = JSON.parse(Bridge.loadConversations())
@@ -71,6 +79,8 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         spacing: 0
+        // Atras da abertura nada reage (hover, dicas, cliques)
+        enabled: !win.splashActive
 
         // ═══ Sidebar ════════════════════════════════════════════════
         Rectangle {
@@ -90,17 +100,7 @@ ApplicationWindow {
                     Layout.leftMargin: 8
                     Layout.bottomMargin: 14
                     spacing: 10
-                    Rectangle {
-                        Layout.preferredWidth: 26
-                        Layout.preferredHeight: 26
-                        radius: 7
-                        color: C.Theme.primary
-                        C.HexLogo {
-                            anchors.centerIn: parent
-                            sizePx: 15
-                            tone: C.Theme.textInverse
-                        }
-                    }
+                    C.BrandMark { sizePx: 18 }
                     Text {
                         text: "AI Farm Agent"
                         color: C.Theme.textPrimary
@@ -223,5 +223,29 @@ ApplicationWindow {
             V.HistoryView { onReuseRequested: (t) => win.openTask(t) }
             V.AboutView {}
         }
+    }
+
+    // ═══ Abertura ═══════════════════════════════════════════════════
+    // Janela propria em tela cheia por cima do app, que ja esta maximizado e
+    // pronto embaixo. Ao entrar, so a abertura some (fade da janela): nada
+    // muda de tamanho, entao nao ha quebra de imagem. O Python a mostra.
+    C.SplashWindow {
+        id: splashWindow
+        active: win.splashActive
+        onFinished: {
+            win.splashActive = false
+            win.raise()
+            win.requestActivate()
+            taskView.composer.focusInput()
+        }
+    }
+
+    // ═══ Mini chat (canto inferior direito, fora da janela) ═════════
+    C.MiniChat {
+        id: miniChat
+        view: taskView
+        stopHotkey: win.ui.stop_hotkey_label || ""
+        onExpandRequested: Bridge.restoreMain()
+        onCloseRequested: Bridge.closeMini()
     }
 }

@@ -8,4 +8,8 @@ TogglePill 1.0 TogglePill.qml
 ToolTipHint 1.0 ToolTipHint.qml
 ScrollPage 1.0 ScrollPage.qml
 Composer 1.0 Composer.qml
-HexLogo 1.0 HexLogo.qml
+BrandMark 1.0 BrandMark.qml
+Splash 1.0 Splash.qml
+MiniChat 1.0 MiniChat.qml
+StatusDot 1.0 StatusDot.qml
+SplashWindow 1.0 SplashWindow.qml

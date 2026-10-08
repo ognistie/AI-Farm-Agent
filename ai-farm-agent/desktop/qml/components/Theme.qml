@@ -1,31 +1,39 @@
-// Tokens visuais. Neutros escuros, um unico destaque (branco para acoes
-// primarias) e cores de status do sistema. Mude aqui e a UI inteira segue.
+// Tokens visuais. Tema claro (como o filme de lancamento): superficies
+// brancas, cinzas neutros, preto para a acao primaria e um azul de destaque
+// (o mesmo do logo). Mude aqui e a UI inteira segue.
 pragma Singleton
 import QtQuick
 
 QtObject {
     // ─── Superficies ────────────────────────────────────────────────
-    readonly property color bgSidebar:   "#171717"
-    readonly property color bgBase:      "#1E1E1F"
-    readonly property color bgSurface:   "#262628"
-    readonly property color bgSurfaceHi: "#2F2F32"
-    readonly property color bgHover:     Qt.rgba(1, 1, 1, 0.05)
-    readonly property color bgPressed:   Qt.rgba(1, 1, 1, 0.09)
-    readonly property color hairline:    Qt.rgba(1, 1, 1, 0.08)
-    readonly property color hairlineHi:  Qt.rgba(1, 1, 1, 0.16)
+    readonly property color bgSidebar:   "#F7F7F8"
+    readonly property color bgBase:      "#FFFFFF"
+    readonly property color bgSurface:   "#FFFFFF"
+    readonly property color bgSurfaceHi: "#F1F1F3"
+    readonly property color bgHover:     Qt.rgba(0, 0, 0, 0.04)
+    readonly property color bgPressed:   Qt.rgba(0, 0, 0, 0.07)
+    readonly property color hairline:    Qt.rgba(0, 0, 0, 0.08)
+    readonly property color hairlineHi:  Qt.rgba(0, 0, 0, 0.16)
 
-    // ─── Texto ──────────────────────────────────────────────────────
-    readonly property color textPrimary:   "#ECECEC"
-    readonly property color textSecondary: "#A1A1A6"
-    readonly property color textTertiary:  "#6E6E73"
-    readonly property color textInverse:   "#111112"
+    // ─── Texto (contraste AA sobre branco: 16.8 / 5.1 / 4.5) ────────
+    readonly property color textPrimary:   "#1D1D1F"
+    readonly property color textSecondary: "#6E6E73"
+    readonly property color textTertiary:  "#76767B"
+    readonly property color textInverse:   "#FFFFFF"
 
-    // ─── Acao primaria e status ─────────────────────────────────────
-    readonly property color primary:   "#ECECEC"
-    readonly property color success:   "#30D158"
-    readonly property color danger:    "#FF453A"
-    readonly property color warning:   "#FF9F0A"
-    readonly property color info:      "#64D2FF"
+    // ─── Acao primaria, destaque e status ───────────────────────────
+    readonly property color primary:   "#111112"
+    readonly property color accent:    "#0A7CFF"
+    readonly property color success:   "#28A745"
+    readonly property color danger:    "#E5372B"
+    readonly property color warning:   "#D97706"
+    readonly property color info:      "#0A7CFF"
+
+    // ─── Abertura (degrade do filme: pessego, laranja, lilas) ───────
+    readonly property color splashBase:   "#FBF7F4"
+    readonly property color splashPeach:  "#F8C3AE"
+    readonly property color splashOrange: "#F9D29A"
+    readonly property color splashLilac:  "#D7C6F4"
 
     // ─── Espacamento e raios ────────────────────────────────────────
     readonly property int sp1: 4
@@ -53,10 +61,11 @@ QtObject {
     readonly property int sizeMd:   14
     readonly property int sizeLg:   16
     readonly property int sizeXl:   20
-    readonly property int sizeHero: 28
+    readonly property int sizeHero: 34
 
     readonly property int durFast: 120
     readonly property int durNormal: 200
+    readonly property int durSlow: 600
 
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 

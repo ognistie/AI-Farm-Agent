@@ -21,6 +21,8 @@ Rectangle {
     property int queued: 0
     property double recStartedAt: 0
     property string voiceHotkey: "Ctrl+Alt+V"
+    // Versao do mini chat: sem as opcoes Simular/Relatorio
+    property bool compact: false
     readonly property bool recording: voiceState === "recording"
 
     signal submitted(string task)
@@ -48,9 +50,20 @@ Rectangle {
     radius: Theme.rLg
     color: Theme.bgSurface
     border.width: 1
-    border.color: root.recording ? Theme.alpha(Theme.danger, 0.5)
-                : input.activeFocus ? Theme.hairlineHi : Theme.hairline
+    border.color: (root.recording || input.activeFocus) ? Theme.alpha(Theme.accent, 0.45) : Theme.hairline
     Behavior on border.color { ColorAnimation { duration: Theme.durFast } }
+
+    // Halo azul suave quando a caixa esta em foco ou gravando
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -4
+        radius: parent.radius + 4
+        color: "transparent"
+        border.width: 4
+        border.color: Theme.alpha(Theme.accent, 0.10)
+        opacity: (root.recording || input.activeFocus) ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durNormal } }
+    }
 
     ColumnLayout {
         id: body
@@ -103,7 +116,7 @@ Rectangle {
 
                 Rectangle {
                     width: 10; height: 10; radius: 5
-                    color: Theme.danger
+                    color: Theme.accent
                     SequentialAnimation on opacity {
                         running: root.recording; loops: Animation.Infinite
                         NumberAnimation { to: 0.25; duration: 600 }
@@ -127,14 +140,14 @@ Rectangle {
                             radius: 1.5
                             anchors.verticalCenter: parent.verticalCenter
                             height: 4 + 16 * Math.max(0, Math.min(1, root.voiceLevel * (0.55 + 0.45 * Math.abs(Math.sin(index * 1.7)))))
-                            color: Theme.alpha(Theme.danger, 0.75)
+                            color: Theme.alpha(Theme.accent, 0.8)
                             Behavior on height { NumberAnimation { duration: 80 } }
                         }
                     }
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: "Gravando — clique em enviar quando terminar"
+                    text: root.compact ? "Ouvindo..." : "Gravando — clique em enviar quando terminar"
                     color: Theme.textTertiary
                     font.family: Theme.fontSans
                     font.pixelSize: Theme.sizeSm
@@ -163,12 +176,14 @@ Rectangle {
 
             TogglePill {
                 id: simulatePill
+                visible: !root.compact
                 text: "Simular"
                 icon: ""
                 tooltip: "Mostra o plano sem executar nada no computador"
             }
             TogglePill {
                 id: reportPill
+                visible: !root.compact
                 text: "Relatório"
                 icon: ""
                 tooltip: "Gera um resumo da execução ao final (1 chamada extra de IA)"
@@ -195,9 +210,9 @@ Rectangle {
                     : root.voiceState === "speaking" ? "Falando..."
                     : root.liveOn && root.voiceState === "listening"
                       ? "Ouvindo" + (root.queued > 0 ? " · " + root.queued + " na fila" : "")
-                    : (!root.running && input.activeFocus && input.length > 0) ? "Shift+Enter nova linha"
+                    : (!root.compact && !root.running && input.activeFocus && input.length > 0) ? "Shift+Enter nova linha"
                     : ""
-                color: root.liveOn && root.voiceState === "listening" ? Theme.danger : Theme.textTertiary
+                color: root.liveOn && root.voiceState === "listening" ? Theme.accent : Theme.textTertiary
                 font.family: Theme.fontSans
                 font.pixelSize: Theme.sizeXs
                 Layout.rightMargin: 4
@@ -210,7 +225,7 @@ Rectangle {
                 Layout.preferredWidth: 34
                 Layout.preferredHeight: 34
                 radius: 17
-                color: root.recording ? Theme.danger
+                color: root.recording ? Theme.accent
                      : (micMouse.containsMouse ? Theme.bgHover : "transparent")
                 border.width: root.recording ? 0 : 1
                 border.color: Theme.hairline
@@ -223,7 +238,7 @@ Rectangle {
                     radius: width / 2
                     color: "transparent"
                     border.width: 2
-                    border.color: Theme.alpha(Theme.danger, 0.35)
+                    border.color: Theme.alpha(Theme.accent, 0.3)
                     Behavior on width { NumberAnimation { duration: 90 } }
                 }
                 Spinner {

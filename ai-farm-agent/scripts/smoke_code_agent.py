@@ -2198,6 +2198,7 @@ def test_voice_round4():
 
     # ── voz -> execucao sem 2a chamada ────────────────────────────
     s3 = Session()
+    s3.save = lambda *a, **k: None  # o VoiceController salva a conversa; o teste nao pode sujar a lista real
     s3.add_turn("abre o excel", "abrir o Excel", "new", ["DESKTOP"], True)
     s3.remember_app("excel", 0, "Pasta1 - Excel")
     r = from_hint("no Excel já aberto, colocar 100 na B2", s3, {"kind": "continue", "target": "app:excel"})
@@ -2418,6 +2419,103 @@ def test_security_guards_round4():
     return passed == total
 
 
+def test_window_mode():
+    """Janela completa <-> mini chat (janelas simuladas: nada aparece na tela)."""
+    print("\n=== Mini chat (troca de janela) ===")
+    from pathlib import Path
+    from PySide6.QtCore import QObject
+    from PySide6.QtCore import QCoreApplication
+    from PySide6.QtGui import QWindow
+    import desktop.window_mode as wm
+    _app = QCoreApplication.instance() or QCoreApplication([])  # timers precisam de um app Qt
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    class FakeWindow(QObject):
+        def __init__(self, maximized=True):
+            super().__init__()
+            self.calls, self.shown = [], False
+            self.max = maximized
+        def winId(self): return 0
+        def visibility(self):
+            return QWindow.Visibility.Maximized if self.max else QWindow.Visibility.Windowed
+        def screen(self): return None
+        def width(self): return 380
+        def height(self): return 560
+        def show(self): self.shown = True; self.calls.append("show")
+        def hide(self): self.shown = False; self.calls.append("hide")
+        def showMaximized(self): self.calls.append("showMaximized")
+        def showNormal(self): self.calls.append("showNormal")
+        def showMinimized(self): self.calls.append("showMinimized")
+        def raise_(self): self.calls.append("raise")
+        def requestActivate(self): self.calls.append("activate")
+        def setPosition(self, x, y): self.calls.append("pos")
+
+    main, mini = FakeWindow(), FakeWindow()
+    mode = wm.WindowMode(main, mini, enabled=True)
+    check("mini chat aparece sem roubar o foco do app do agente",
+          mini.property("_q_showWithoutActivating") is True)
+    mode.set_running(True)
+    check("tarefa rodando: passa a vigiar a janela em primeiro plano", mode._timer.isActive())
+    real = wm.foreign_foreground
+    try:
+        wm.foreign_foreground = lambda: False
+        mode._check()
+        check("a propria janela na frente: continua na janela completa", not mode.active and not mini.shown)
+        wm.foreign_foreground = lambda: True
+        mode._check()
+        check("outro app na frente: entra no mini chat", mode.active and mini.shown)
+        check("e para de vigiar (uma troca por tarefa)", not mode._timer.isActive())
+    finally:
+        wm.foreign_foreground = real
+    mode.enter()
+    check("entrar de novo nao duplica nada", mini.calls.count("show") == 1)
+    mode.set_running(True)
+    check("nova tarefa dentro do mini chat nao reinicia a vigia", not mode._timer.isActive())
+    mode.restore()
+    check("abrir a janela completa: mini some e a janela volta maximizada e ativa",
+          not mini.shown and not mode.active
+          and main.calls[-3:] == ["showMaximized", "raise", "activate"])
+    mode.enter(); mode.main_activated()
+    check("usuario volta pela barra de tarefas: mini chat sai de cena", not mini.shown and not mode.active)
+    mode.enter(); before = len(main.calls); mode.close_mini()
+    check("fechar o mini chat nao reabre a janela principal",
+          not mini.shown and main.calls[before:] == [])
+    off = wm.WindowMode(FakeWindow(), FakeWindow(), enabled=False)
+    off.set_running(True)
+    check("ui.mini_chat: false desliga a troca", not off._timer.isActive())
+    src = Path(wm.__file__).read_text(encoding="utf-8")
+    check("compara o processo da janela com o do app", "pid.value == os.getpid()" in src)
+    check("minimiza sem ativar outra janela (SW_SHOWMINNOACTIVE)", "SW_SHOWMINNOACTIVE = 7" in src)
+
+    qml = Path(wm.__file__).parent / "qml"
+    mini_qml = (qml / "components" / "MiniChat.qml").read_text(encoding="utf-8")
+    check("durante a tarefa o mini chat nao recebe cliques nem foco",
+          "passive ? (Qt.WindowTransparentForInput | Qt.WindowDoesNotAcceptFocus)" in mini_qml
+          and "readonly property bool passive: !!view && view.running" in mini_qml)
+    check("mini chat e janela independente (nao some quando a principal minimiza)",
+          "transientParent: null" in mini_qml)
+    comp = (qml / "components" / "Composer.qml").read_text(encoding="utf-8")
+    check("composer compacto esconde Simular/Relatorio", comp.count("visible: !root.compact") == 2)
+    splash = (qml / "components" / "Splash.qml").read_text(encoding="utf-8")
+    check("abertura sai com qualquer tecla ou clique",
+          "Keys.onPressed" in splash and "onClicked: root.dismiss()" in splash)
+    main_qml = (qml / "Main.qml").read_text(encoding="utf-8")
+    check("atras da abertura nada reage", "enabled: !win.splashActive" in main_qml)
+    main_py = (Path(wm.__file__).parent / "main.py").read_text(encoding="utf-8")
+    check("abertura em janela propria de tela cheia; o app nao muda de tamanho ao entrar",
+          "splash.setGeometry(screen.availableGeometry())" in main_py
+          and "fadeTarget: splashWindow" in (qml / "components" / "SplashWindow.qml").read_text(encoding="utf-8")
+          and "showFullScreen" not in main_py)
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 if __name__ == "__main__":
     ok1 = test_maestro_ambiguity_gate()
     ok2 = test_workflow_quarantine()
@@ -2454,7 +2552,9 @@ if __name__ == "__main__":
     ok33 = test_voice_round4()
     ok34 = test_security_guards_round4()
     ok35 = test_skills_catalog()
+    ok36 = test_window_mode()
     sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8,
                        ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16,
                        ok17, ok18, ok19, ok20, ok21, ok22, ok23, ok24,
-                       ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34, ok35]) else 1)
+                       ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34, ok35,
+                       ok36]) else 1)

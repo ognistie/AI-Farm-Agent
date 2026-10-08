@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-10-08
+
+### Added
+- Intro screen: the brand mark over a slow-moving peach, orange and lilac gradient, then "press any key or click to enter". It runs in its own window on top of the already-maximized app, covering exactly the maximized area (the screen minus the taskbar). On entering, only that window fades out, so nothing is resized and the image never breaks. It can be turned off with `ui.splash: false`.
+- Mini chat (`desktop/qml/components/MiniChat.qml` and `desktop/window_mode.py`):
+  - When a task is running and another app comes to the front, the main window minimizes without taking focus. The current conversation continues in a card in the bottom-right corner.
+  - While the agent works, the card takes no focus or clicks (`WindowTransparentForInput` and `WindowDoesNotAcceptFocus`). When the task ends it becomes interactive again, so you can keep the conversation going or reopen the full window.
+- Global stop hotkey `ui.stop_hotkey` (default `Ctrl+Alt+X`).
+- Smoke suite `test_window_mode` (18 checks).
+
+### Changed
+- The desktop UI moves to a light theme taken from the launch video:
+  - white surfaces and neutral greys;
+  - black primary action;
+  - one blue accent;
+  - green status circles;
+  - a new four-square brand mark, also used as the window and taskbar icon;
+  - a light native title bar.
+- The home screen now reads "Como posso ajudar?". The composer has a soft blue focus halo, and voice recording uses the accent color.
+
+---
+
 ## [Unreleased] — 2026-09-23
 
 ### Changed
