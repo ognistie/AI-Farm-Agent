@@ -133,10 +133,15 @@ voice:
     startup_timeout_s: 10
     close_timeout_s: 3
     conversation_idle_s: 60 # conversa parada: fecha a sessao paga
+    conversation_task_hold_s: 120 # com tarefa rodando, espera ate isso (no maximo ~US$ 0,10 por tarefa)
     wake_grace_s: 12        # reabriu por ruido e ninguem falou: fecha antes
     daily_max_s: 1800       # quota local de segundos/dia UTC (30 min ~ US$ 1,50); nao e teto de fatura
   start_on_launch: true    # atalho global ativo desde a abertura do app
   preload_on_launch: true  # carrega o reconhecimento de fala logo apos abrir (1a fala sem esperar o modelo)
+
+# Execucao das tarefas
+execution:
+  ledger: true             # registro duravel por tarefa em memory/tasks (so observa; false desliga)
 
 # Interface desktop
 ui:

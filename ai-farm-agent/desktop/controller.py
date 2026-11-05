@@ -130,6 +130,16 @@ class Controller:
         # a 2a chamada do resolvedor. Chave = texto do pedido; validado em followup.from_hint.
         self._voice_hints: Dict[str, dict] = {}
 
+        # Tarefa que ficou sem fim na ultima vez (o app caiu ou foi fechado no meio). Nada e repetido.
+        try:
+            from core.task_ledger import get_ledger
+            self.interrupted_tasks = get_ledger().recover()
+            for lost in self.interrupted_tasks:
+                print(f"  [tarefas] interrompida: {lost['id']} ({len(lost['steps_uncertain'])} passo(s) sem resultado conhecido)")
+        except Exception as e:
+            self.interrupted_tasks = []
+            print(f"  [tarefas] recuperacao falhou (nao critico): {type(e).__name__}")
+
         self.state = {"running": False}
         self._cancel_event = threading.Event()
         # Revisao do plano (opcao em Configuracoes): o pedido espera o "Executar" do usuario
@@ -299,6 +309,14 @@ class Controller:
     #  Loop interno (porta de ui/server.py:_run)
     # ──────────────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _ledger_call(method, *args, **kwargs) -> None:
+        """O registro de tarefas nunca pode derrubar a execucao que ele observa."""
+        try:
+            method(*args, **kwargs)
+        except Exception as error:
+            print(f"  [Registro de tarefas] falhou: {type(error).__name__}")
+
     def _is_current(self) -> bool:
         """True na thread da execucao ativa (ou fora de qualquer execucao)."""
         rid = getattr(self._tls, "run_id", None)
@@ -404,6 +422,12 @@ class Controller:
         task_start = time.time()
         metrics_before = self._ai_client.metrics
         entry = history_store.new_execution(task, dry_run=dry_run)
+        # Registro duravel: esta tarefa sobrevive a uma queda do app (core/task_ledger.py).
+        # So observa: falhar aqui nao muda o resultado da execucao.
+        from core.task_ledger import get_ledger
+        ledger, task_id = get_ledger(), entry["id"]
+        self._ledger_call(ledger.begin, task_id, task, source="voz" if task.strip() in self._voice_hints else "texto",
+                          dry_run=dry_run, session_id=self.session.id)
         brain_plan = None
         all_records: list = []
         said = task
@@ -584,6 +608,7 @@ class Controller:
                 "skills": plan.get("skills", []),
             }})
 
+            self._ledger_call(ledger.plan, task_id, [f"[{s['agent']}] {s['task']}" for s in subtasks])
             self.capture.clear_records()
             all_records = []
             step_n = 0
@@ -713,8 +738,11 @@ class Controller:
                 self.engine.should_stop = lambda: not self._alive()
                 self.engine.current_agent = agent_name
                 self.engine.authorized_task = said
-                self.engine.on_progress = (
-                    lambda msg, _a=agent_name: self._log("INFO", _a, msg))
+                def on_progress(msg, _a=agent_name):
+                    self._log("INFO", _a, msg)
+                    # O piloto age por dentro de um passo: e o rastro do que ele ja fez se o app cair
+                    self._ledger_call(ledger.progress, task_id, step_n, msg)
+                self.engine.on_progress = on_progress
 
                 for j, step in enumerate(agent_steps):
                     if not self._alive():
@@ -734,14 +762,17 @@ class Controller:
                         "progress": round(si / max(1, len(subtasks)) * 100),
                     })
 
+                    self._ledger_call(ledger.step_started, task_id, step_n, agent_name, action, params, desc)
                     result = self.engine.execute(action, params, dry_run=dry_run)
 
                     # Retry para acoes visuais
                     if (not result.get("success", True)
                             and action in RETRY_ACTIONS and not dry_run
                             and not str(result.get("result", "")).startswith("⛔")):
+                        self._ledger_call(ledger.step_retry, task_id, step_n, action)
                         time.sleep(2)
                         result = self.engine.execute(action, params, dry_run=dry_run)
+                    self._ledger_call(ledger.step_finished, task_id, step_n, action, result)
 
                     # frase final do piloto; so vale se ele foi o ULTIMO passo do pedido
                     turn["say"] = getattr(self.engine, "last_say", "") or ""
@@ -907,6 +938,10 @@ class Controller:
                         print(f"  [Sessao] Falhou ao registrar: {sess_err}")
                 entry["ended_at"] = datetime.now().isoformat(timespec="seconds")
                 entry["duration_ms"] = int((time.time() - task_start) * 1000)
+                self._ledger_call(ledger.finish, task_id,
+                                  "cancelled" if entry.get("status") == "cancelled"
+                                  else "completed" if entry.get("success") else "failed",
+                                  verified=entry["verified"], error=entry.get("error"))
                 # Metricas REAIS desta execucao (delta do AIClient)
                 entry["metrics"] = self._metrics_delta(
                     metrics_before, self._ai_client.metrics)

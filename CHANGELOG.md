@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-11-04 (desktop app, closing for real, faster voice)
 
 ### Added
+- **Durable task record** (`core/task_ledger.py`). Each task writes its events to `memory/tasks/` before and after every step, so a crash no longer erases it. On the next launch an unfinished task is marked as interrupted, and a step with no recorded end is listed as having an unknown outcome. Nothing is repeated automatically. `execution.ledger` in `config.yaml` turns it off.
+- `scripts/eval_live_turns.py` measures pauses, responses, delegation and interruptions on the real GPT-Live session, with a hard cap on accumulated spending.
 - **Desktop shortcut.** `scripts/install_shortcuts.py` creates "AI Farm Agent" on the Desktop and Start menu, with its own icon, no console window and the same identity as the window, so it can be pinned to the taskbar. `scripts/setup.ps1` runs it. Without a console, output goes to `logs/app.log` and startup errors appear in a message box.
 - **Only one instance.** Opening the app again brings the existing window forward instead of starting a second agent on the same microphone.
 - `python scripts/latency_report.py --voice` reports the time from the end of speech to each stage, from `memory/voice_latency.jsonl` (times only, never speech or transcripts).
@@ -19,7 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Speech with no response.** If the model stays silent, the app answers. A cut-off request runs when the app has a guess and the model also treated it as a request, instead of "deixa comigo" with nothing happening.
 
 ### Changed
-- Less waiting at the end of a sentence: 0.6 s instead of 1 s, or 0.25 s when the model already delegated. A request the screen refused is retried in 1.5 s instead of 5 s.
+- **GPT-Live decides when to speak.** The prompt follows OpenAI's template, with listening sounds allowed and patience during pauses. The app answers only after 6 s of silence on a complete sentence (it was 2.5 s, which spoke over pauses to think), and its promise correction only applies to things claimed as done.
+- The app waits for the end of the transcript before reading a turn: 1.1 s after the voice stops, or 0.3 s when the model already delegated. A shorter wait split sentences into pieces.
+- Talking over the agent on headphones silences it after about 400 ms. The paid session stays open while a task runs, up to 120 s without conversation.
+- A request the screen refused is retried in 1.5 s instead of 5 s.
 
 ---
 
