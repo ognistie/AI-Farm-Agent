@@ -58,6 +58,7 @@ class LiveConfig:
     daily_seconds: float = 1800.0
     idle_seconds: float = 60.0
     grace_seconds: float = 12.0
+    task_hold_seconds: float = 120.0
 
     @classmethod
     def from_dict(cls, cfg):
@@ -70,7 +71,8 @@ class LiveConfig:
                    _bounded(cfg.get('close_timeout_s'), 3, 1, 15),
                    _bounded(cfg.get('daily_max_s'), 1800, 0, 28800),
                    _bounded(cfg.get('conversation_idle_s'), 60, 0.1, 600),
-                   _bounded(cfg.get('wake_grace_s'), 12, 0.1, 60))
+                   _bounded(cfg.get('wake_grace_s'), 12, 0.1, 60),
+                   _bounded(cfg.get('conversation_task_hold_s'), 120, 0, 600))
 
     @property
     def reservation(self):

@@ -55,16 +55,27 @@ A fala do modelo é livre: ele pode parafrasear um resultado. Na conversa, o tex
   fone Bluetooth adormece e engole o início da fala seguinte. `PlaybackBuffer` guarda 200 ms antes de tocar e
   preserva o trecho baixo que antecede a voz.
 - **Fone não é filtrado.** Nos primeiros ~600 ms de fala do agente, o app mede se o microfone o ouve. Se não
-  ouve (fone), o áudio segue direto o tempo todo: silenciar só engolia o começo do que a pessoa dizia.
+  ouve (fone), o áudio segue direto o tempo todo: silenciar só engolia o começo do que a pessoa dizia. Falar por
+  cima por ~400 ms descarta o áudio que ainda está chegando.
 - **Caixa de som: interrupção em dois passos.** A voz da pessoa é comparada com o eco esperado para o volume tocado
   naquele momento. Primeiro ela chega ao modelo, que para por conta própria; só insistindo por ~720 ms o áudio local é
   descartado. Não há cancelamento de eco de verdade: em caixa de som, falar por cima é menos sensível que no fone.
-- **Fim da fala.** Silêncio na transcrição não basta: ela chega em rajadas. O turno espera a voz local parar por
-  0,45 s e a transcrição por 0,6 s (0,25 s se o modelo já delegou), e aguarda mais quando a frase termina em palavra
-  aberta ("com o mouse em").
-- **Toda fala tem resposta.** Sem fala do modelo em 2,5 s, o app responde com o que entendeu. Ruído não é respondido.
+- **Quem decide a hora de falar é o modelo.** O prompt segue o modelo oficial da OpenAI, com paciência nas pausas e sinais
+  de escuta. O app não fala por cima de uma pausa: só responde após 6 s de silêncio em uma frase completa.
+- **Quando o app lê a fala.** Isso só decide o que vira tarefa. A transcrição termina ~1 s depois da voz, então o turno
+  espera 1,1 s sem voz local e 0,6 s sem transcrição (0,3 s e 0,25 s se o modelo já delegou), e mais se a frase
+  termina em palavra aberta ("com o mouse em").
 - `memory/voice_conversation.jsonl` guarda só contagens por sessão (interrupções, falta de áudio, quedas),
   nunca fala nem transcrição, para investigar cortes com evidência.
+
+### Como medir
+
+`scripts/eval_live_turns.py --allow-live` manda fala sintética para a sessão real, sem tocar som nem executar tarefas, e
+soma o gasto em `memory/eval/live_spend.jsonl` com um teto acumulado. Resultado de 2026-11-05 (12 sessões em cada
+variante; a interrupção do candidato vem de 2): interrompeu a pausa 3/4 → 2/4; respondeu 12/12 nas duas; delegação
+correta 6/6 nas duas; primeira voz 1,21 s → 1,27 s; pedaços por fala 1,29 → 1,12; parar ao ser interrompido 1,64 s →
+0,53 s. A amostra é pequena e a fala é sintética: só a parada e os pedaços mudaram de forma clara. As interrupções
+restantes foram no "deixa eu pensar", em que o modelo diz algo como "claro, fica à vontade".
 
 ### Onde vai o tempo
 

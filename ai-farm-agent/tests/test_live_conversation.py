@@ -207,6 +207,37 @@ class ConversationTests(unittest.TestCase):
         self.assertTrue(self.real_audio(socket))
         self.assertEqual(self.player.cleared, 0)
 
+    def test_insisting_over_headphones_silences_what_is_still_arriving(self):
+        # Sem threads: quadro a quadro, para o tempo nao decidir o resultado
+        self.conv = LiveConversation({**FAST}, budget=self.budget, connect=Mock(), mic=lambda: self.mic, player=self.player,
+                                     stats_path=Path(self.tmp.name) / 'stats.jsonl')
+        self.player.speaking, self.player.volume = True, 0.2
+        for _ in range(ECHO_LEARN + 5):
+            self.conv._gate_echo(QUIET, 0.0)      # o microfone nao ouve o agente: e fone
+        self.assertEqual(self.player.cleared, 0)
+        for _ in range(8):
+            self.assertEqual(self.conv._gate_echo(LOUD, 0.36), LOUD)     # a voz sempre passa
+        self.assertEqual(self.player.cleared, 0)  # "uhum" curto nao corta
+        for _ in range(8):
+            self.conv._gate_echo(QUIET, 0.0)      # a virgula nao zera a contagem
+        for _ in range(5):
+            self.conv._gate_echo(LOUD, 0.36)
+        self.assertEqual(self.player.cleared, 1)
+        self.assertEqual(self.conv.stats['barge_cut'], 1)
+
+    def test_short_sounds_far_apart_never_add_up_to_a_cut(self):
+        self.conv = LiveConversation({**FAST}, budget=self.budget, connect=Mock(), mic=lambda: self.mic, player=self.player,
+                                     stats_path=Path(self.tmp.name) / 'stats.jsonl')
+        self.player.speaking, self.player.volume = True, 0.2
+        for _ in range(ECHO_LEARN + 5):
+            self.conv._gate_echo(QUIET, 0.0)
+        for _ in range(4):
+            for _ in range(5):
+                self.conv._gate_echo(LOUD, 0.36)
+            for _ in range(20):
+                self.conv._gate_echo(QUIET, 0.0)
+        self.assertEqual(self.player.cleared, 0)
+
     def test_voice_above_a_low_speaker_echo_counts_as_interruption(self):
         socket = Socket([{'type': 'session.started'}])
         self.agent_speaking(socket)
@@ -244,10 +275,52 @@ class ConversationTests(unittest.TestCase):
         socket = Socket([{'type': 'session.started'},
                          {'type': 'session.input_transcript.delta', 'delta': 'abre a calculadora'}])
         self.start(socket, cfg={'conversation_idle_s': 9})
-        self.mic.speak(LOUD, 300)          # ~1 s de voz local depois da transcricao
-        time.sleep(0.8)
+        self.mic.speak(LOUD, 150)          # ~0,5 s de voz local depois da transcricao
+        time.sleep(1.2)                    # calou ha pouco: o fim da transcricao ainda pode chegar
         self.assertEqual(self.turns, [])
         self.assertTrue(wait_for(lambda: self.turns, 3.5))
+
+    def test_transcript_tail_arriving_late_stays_in_the_same_turn(self):
+        # Medido na API real: "Eu queria que voce me" + "explicasse" viravam dois pedidos
+        socket = Socket([{'type': 'session.started'},
+                         {'type': 'session.input_transcript.delta', 'delta': 'Eu queria que voce me'}])
+        self.start(socket, cfg={'conversation_idle_s': 9})
+        self.mic.speak(LOUD, 100)
+        time.sleep(0.8)
+        socket.events.append({'type': 'session.input_transcript.delta', 'delta': ' explicasse'})
+        self.assertTrue(wait_for(lambda: self.turns, 3))
+        self.assertEqual(self.turns, ['Eu queria que voce me explicasse'])
+
+    def test_session_stays_open_while_a_task_runs_and_closes_after(self):
+        socket = Socket([{'type': 'session.started'}])
+        busy = [True]
+        self.connect = Mock(side_effect=[socket])
+        self.conv = LiveConversation({**FAST, 'conversation_task_hold_s': 30}, budget=self.budget, connect=self.connect,
+                                     stats_path=Path(self.tmp.name) / 'stats.jsonl', mic=lambda: self.mic,
+                                     player=self.player, keep_open=lambda: busy[0])
+        self.conv.start('')
+        time.sleep(0.6)                    # passou do prazo de quem nao falou
+        self.assertNotIn('session.close', socket.types())
+        busy[0] = False
+        self.assertTrue(wait_for(lambda: 'session.close' in socket.types()))
+
+    def test_task_hold_has_a_limit(self):
+        socket = Socket([{'type': 'session.started'}])
+        self.connect = Mock(side_effect=[socket])
+        self.conv = LiveConversation({**FAST, 'conversation_task_hold_s': 0.3}, budget=self.budget, connect=self.connect,
+                                     stats_path=Path(self.tmp.name) / 'stats.jsonl', mic=lambda: self.mic,
+                                     player=self.player, keep_open=lambda: True)
+        self.conv.start('')
+        self.assertTrue(wait_for(lambda: 'session.close' in socket.types()))
+
+    def test_prompt_uses_the_official_policies_and_lets_the_person_think(self):
+        from core.voice.live_session import _instructions
+        text = _instructions()
+        for label in ('Backchannel policy:', 'Interruption policy:', 'Delegation policy:'):
+            self.assertIn(label, text)
+        self.assertIn('Keep listening while the user pauses to think', text)
+        self.assertNotIn('Do not produce backchannels', text)
+        self.conv = Mock()                 # este teste nao abre conversa
 
     def test_cut_beginning_marks_are_removed_from_the_turn(self):
         socket = Socket([{'type': 'session.started'},
@@ -645,6 +718,37 @@ class ControllerTests(unittest.TestCase):
         v._conv_delegated('item_7')
         v._conv_turn('pode ser', self.understood('unclear', guess='', reply='Não vou mexer nas Configurações.'))
         v._enqueue.assert_not_called()
+
+    def test_listening_sound_from_the_model_is_not_a_message_or_an_answer(self):
+        v = self.voice()
+        with patch('desktop.voice.bus') as bus:
+            turn = {'heard': 'eu queria', 'kind': None, 'reply': ''}
+            v._conv_turn_now = turn
+            for sound in ('Aham.', 'uhum', 'Certo!'):
+                v._conv_agent_turn(sound, False)
+        bus.emit.assert_not_called()
+        self.assertEqual(turn['reply'], '')
+        self.assertEqual(v._conv_last_agent, '')
+
+    def test_app_never_speaks_over_a_cut_sentence(self):
+        v = self.voice()
+        turn = {'heard': 'eu queria abrir o', 'kind': 'chat', 'reply': ''}
+        v._conv_turn_now = turn
+        v._conv_ensure_reply(turn, v.conv, 'Oi?')
+        v.conv.say.assert_not_called()
+
+    def test_app_waits_long_enough_for_a_pause_to_think(self):
+        import desktop.voice as module
+        self.assertGreaterEqual(module.REPLY_WINDOW_S, 5.0)
+
+    def test_promise_is_not_corrected_aloud_but_stays_out_of_the_context(self):
+        v = self.voice()
+        v._say = Mock()
+        with patch('desktop.voice.bus'):
+            v._conv_turn_now = {'heard': 'abre aquilo', 'kind': 'chat', 'reply': ''}
+            v._conv_agent_turn('Deixa comigo.', False)
+        v._say.assert_not_called()
+        v.ctrl.session.set_last_reply.assert_not_called()
 
     def test_silent_model_gets_a_reply_from_the_app(self):
         v = self.voice()

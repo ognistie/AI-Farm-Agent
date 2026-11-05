@@ -44,12 +44,15 @@ STOP_LISTENING = re.compile(r"\b(?:para|pare|pode parar|parar) de (?:ouvir|escut
 
 
 VOICE_LATENCY_PATH = Path(__file__).resolve().parent.parent / "memory" / "voice_latency.jsonl"
-REPLY_WINDOW_S = 2.5     # fala sem resposta do modelo por esse tempo: o app responde
+REPLY_WINDOW_S = 6.0     # fala completa sem resposta por esse tempo: o app responde. Antes disso e pausa para pensar
 DISPATCH_RETRY_S = 1.5   # a tela pode ter recusado o pedido (ainda fechando o anterior): tenta de novo
 
-# O modelo disse que fez ou esta fazendo algo no PC
-_CLAIMS_ACTION = re.compile(r"\b(?:deixa comigo|vou (?:abrir|clicar|fazer|fechar|entrar|tentar)|abrindo|clicando|cliquei|abri|fechei|"
-                            r"fechando|entrei|pronto|ja abri|ta aberto|esta aberto)\b")
+# O modelo disse que fez ou esta fazendo algo no PC (sem tarefa rodando, e falso)
+_CLAIMS_DONE = re.compile(r"\b(?:abrindo|clicando|cliquei|abri|fechei|fechando|entrei|pronto|ja abri|ta aberto|esta aberto)\b")
+# ... ou prometeu fazer. Prometer esta certo; so nao pode virar fato no contexto
+_CLAIMS_ACTION = re.compile(_CLAIMS_DONE.pattern[:-3] + r"|deixa comigo|vou (?:abrir|clicar|fazer|fechar|entrar|tentar))\b")
+# Sinal de escuta do modelo, feito para nao virar mensagem
+_BACKCHANNEL = re.compile(r"^(?:mhm+|hm+|aham|uhum|sim|certo|entendi|ok|okay|ta|claro|sei|isso)[\s.!,…]*$")
 
 _WHERE = {"WEB": " no navegador", "DESKTOP": " no app", "CODE": " no código", "FILE": " nos arquivos",
           "DATA": " na planilha"}
@@ -258,6 +261,7 @@ class VoiceController:
                 self.live_cfg, barge_in=self.barge_in, context=self._conv_context, extra_instructions=self._conv_extra,
                 on_user_turn=self._conv_heard_turn, on_agent_turn=self._conv_agent_turn,
                 on_delegation=self._conv_delegated, on_state=self._conv_state, on_level=self._level,
+                keep_open=lambda: bool(self._inflight or self._cmd_q or self.ctrl.state.get("running")),
                 on_failed=self._conv_failed)
             self.conv.start(self.line("listening_on"))
         except Exception as e:
@@ -343,7 +347,7 @@ class VoiceController:
     def _conv_agent_turn(self, text: str, from_result: bool) -> None:
         """Mostra o que o agente falou. Resultado de tarefa ja aparece pelo controller. A resposta
         pode chegar antes de o app decidir o que a fala era: nesse caso espera a decisao."""
-        if from_result or not text:
+        if from_result or not text or _BACKCHANNEL.match(_norm(text)):
             return
         self._recent = (self._recent + [text])[-6:]
         self._conv_last_agent = text
@@ -385,14 +389,18 @@ class VoiceController:
         except Exception:
             pass
         busy = self._inflight or self.ctrl.state.get("running")
-        if claimed and not busy and self.conv is not None and time.monotonic() - self._conv_corrected_at > 20:
+        if (_CLAIMS_DONE.search(_norm(reply)) and not busy and self.conv is not None
+                and time.monotonic() - self._conv_corrected_at > 20):
             # O modelo disse que ia agir, mas nada foi pedido ao PC: a pessoa precisa saber
             self._conv_corrected_at = time.monotonic()
             self._say("Na verdade, ainda não fiz nada no computador. O que você quer que eu faça?", purpose='reply')
 
     def _conv_ensure_reply(self, turn: dict, conv, text: str) -> None:
-        """Toda fala tem resposta: o modelo as vezes fica calado, e ai o app responde."""
-        if self.conv is not conv or conv is None or turn["reply"] or conv.speaking or self._conv_turn_now is not turn:
+        """Fala completa nao fica sem resposta: se o modelo seguiu calado por muito tempo, o app responde.
+        Frase cortada e pausa para pensar, e nesse caso o certo e continuar esperando."""
+        from core.voice.live_session import open_ending
+        if (self.conv is not conv or conv is None or turn["reply"] or conv.speaking or self._conv_turn_now is not turn
+                or open_ending(turn["heard"])):
             return
         self._conv_turn_now = None
         text = text or "Não entendi. Pode repetir?"

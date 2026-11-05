@@ -51,13 +51,17 @@ ECHO_LEARN = 20               # ~600 ms ouvindo o proprio agente antes de aceita
 ECHO_MARGIN = 3.0             # quantas vezes acima do eco esperado para ser voz da pessoa
 BARGE_HOLD = 6                # brecha entre silabas (~180 ms) nao zera a interrupcao
 CUT_BLOCKS = 24               # ~720 ms de voz por cima: cala de vez
+HEADPHONE_CUT_BLOCKS = 13     # no fone o microfone so ouve a pessoa: ~400 ms bastam ("uhum" e mais curto)
+HEADPHONE_HOLD = 12           # a virgula de "espera, para um pouco" nao zera a contagem
 ECHO_FLOOR_RATIO = 2.5        # com o agente falando, o microfone so passa disso se ouvir a caixa de som
 ECHO_AUDIBLE_MIN = 0.006
-USER_PAUSE_S = 0.6            # sem transcricao e sem voz local por esse tempo: a fala terminou
+# Decidem so quando o app le a fala para ver se e tarefa. Quando falar e decisao do modelo.
+USER_PAUSE_S = 0.6            # sem transcricao por esse tempo
 USER_PAUSE_DELEGATED_S = 0.25 # o modelo ja entendeu como pedido
 USER_PAUSE_OPEN_S = 1.6       # terminou em "mouse em": a frase provavelmente continua
 USER_PAUSE_MAX_S = 3.0        # microfone ruidoso nao segura o pedido para sempre
-LOCAL_QUIET_S = 0.45
+LOCAL_QUIET_S = 1.1           # o fim da transcricao chega ~1 s depois do fim da fala: antes disso a frase sai em pedacos
+LOCAL_QUIET_DELEGATED_S = 0.3
 AGENT_PAUSE_S = 1.2
 AGENT_PAUSE_MAX_S = 6.0
 OUTBOX_MAX = 16
@@ -67,22 +71,24 @@ _OPEN_ENDING = re.compile(r"(?:^|\s)(?:em|no|na|nos|nas|de|do|da|dos|das|o|a|os|
 
 
 def _instructions(extra: str = "") -> str:
+    """Modelo oficial de prompt do GPT-Live: comportamento, sem roteiro. Quem decide a hora de falar e
+    o modelo, que ouve o audio; o procedimento das tarefas e as permissoes ficam no app."""
     now = time.strftime("%d/%m/%Y %H:%M")
     return ("Voce e a voz do AI Farm Agent, assistente que opera este computador Windows. "
-            "Fale portugues do Brasil, de forma curta e natural, como numa conversa.\n"
-            "Voce nao tem acesso ao computador: quem executa e o sistema.\n"
-            "Delegation policy: quando a pessoa pedir qualquer acao no computador, em arquivos, no navegador "
-            "ou em planilhas, ou um dado atual da internet, generate <|SpawnThinking|> e diga so algo curto como "
-            "\"deixa comigo\". Nao descreva cliques nem passos: voce nao ve a tela nem o mouse.\n"
-            "Nunca diga que algo foi feito, aberto ou clicado, nem que esta fazendo, antes de receber o resultado "
-            "do sistema, e nunca invente resultados. Ao receber um resultado, conte fielmente, sem alterar nomes ou "
-            "numeros. Enquanto uma tarefa roda, continue a conversa normalmente.\n"
-            "A pessoa faz pausas para pensar: se parar no meio da frase, aguarde um instante e, se nada vier, "
-            "pergunte o que ela quis dizer. Nunca deixe uma fala sem resposta. "
-            "Se estiver so conversando, responda normalmente. Se nao entender o pedido, pergunte; nao adivinhe.\n"
-            "Acoes como enviar, comprar ou excluir sao confirmadas pelo sistema; nao prometa.\n"
-            "Backchannel policy: Do not produce backchannels.\n"
-            "Interruption policy: Stop if interrupted.\n"
+            "Fale portugues do Brasil, de forma curta e natural. "
+            "Voce nao ve a tela nem o mouse; quem age no computador e o sistema.\n"
+            "Backchannel policy: Use few, brief backchannels while the user is speaking.\n"
+            "Interruption policy: When the user interrupts, stop speaking right away, even in the middle of a "
+            "sentence. Listen to what they say. Respond to the user's latest request. "
+            "Don't resume an answer they've replaced.\n"
+            "Pacing: Keep listening while the user pauses to think. Do not fill a hesitation or finish their "
+            "sentence. Do not treat a cough, music, or nearby conversation as a new request.\n"
+            "Delegation policy: Generate <|SpawnThinking|> before answering when the user asks for any action on "
+            "the computer, in files, in the browser or in spreadsheets, or for current information from the "
+            "internet. Do not generate <|SpawnThinking|> for greetings or small talk.\n"
+            "Say only something brief like \"deixa comigo\" and do not guess the result while waiting. Never say "
+            "something was done, opened or clicked before the system's result arrives. When it arrives, report "
+            "it faithfully, without changing names or numbers. Keep talking normally while a task runs.\n"
             f"Agora: {now}." + (f"\n{extra}" if extra else ""))
 
 
@@ -232,6 +238,11 @@ def _has_voice(raw: bytes) -> bool:
     return bool(samples.size and np.abs(samples.astype(np.int32)).max() >= VOICE_PEAK)
 
 
+def open_ending(text: str) -> bool:
+    """A frase termina em palavra que pede continuacao ("com o mouse em")."""
+    return bool(_OPEN_ENDING.search(text or ""))
+
+
 def same_message(spoken: str, sent: str) -> bool:
     """O modelo pode parafrasear: basta a maior parte das palavras do que foi enviado."""
     said, wanted = set(_words(spoken)), set(_words(sent))
@@ -243,6 +254,7 @@ class LiveConversation:
 
     def __init__(self, cfg: Optional[dict] = None, *, budget=None, connect=None, mic=None, player=None,
                  barge_in: bool = True, stats_path: Optional[Path] = None,
+                 keep_open: Callable[[], bool] = lambda: False,
                  context: Callable[[], str] = lambda: "",
                  extra_instructions: Callable[[], str] = lambda: "",
                  on_user_turn: Callable[[str], None] = lambda text: None,
@@ -258,6 +270,7 @@ class LiveConversation:
         self.player = player if player is not None else _Player()
         self.barge_in = barge_in
         self._stats_path = stats_path or STATS_PATH
+        self._keep_open = keep_open
         self._session_thread: Optional[threading.Thread] = None
         self.last_turn: dict = {}     # tempos da ultima fala (para medir, sem texto)
         self._agent_voice_at: Optional[float] = None
@@ -399,8 +412,18 @@ class LiveConversation:
             # engolia o comeco do que a pessoa dizia. Quem decide parar de falar e o modelo.
             if speech:
                 self._user_at_local = time.monotonic()
-            elif played > 0.003:
-                self._learn_echo(rms, played)
+                self._barge_run += 1
+                self._barge_quiet = 0
+                # O modelo costuma parar sozinho. Se a pessoa insiste, o que ainda chega nao toca mais
+                if self.barge_in and self._barge_run == HEADPHONE_CUT_BLOCKS:
+                    self.stats["barge_cut"] += 1
+                    self.interrupt()
+            else:
+                if played > 0.003:
+                    self._learn_echo(rms, played)
+                self._barge_quiet += 1
+                if self._barge_quiet > HEADPHONE_HOLD:
+                    self._barge_run = 0
             return raw
         expected = float(np.percentile(self._echo_ratios, 80)) * played if learned else None
         loud = self.barge_in and expected is not None and rms > max(expected * ECHO_MARGIN, floor * 3.0, BARGE_MIN)
@@ -492,7 +515,7 @@ class LiveConversation:
         meio ("com o mouse em" / "cima") vira dois pedidos sem sentido."""
         if quiet >= USER_PAUSE_MAX_S:
             return True
-        if time.monotonic() - self._user_at_local < LOCAL_QUIET_S:
+        if time.monotonic() - self._user_at_local < (LOCAL_QUIET_DELEGATED_S if self._delegated else LOCAL_QUIET_S):
             return False
         if _OPEN_ENDING.search(text):
             return quiet >= USER_PAUSE_OPEN_S
@@ -541,6 +564,8 @@ class LiveConversation:
                 now = time.monotonic()
                 if closing_at is None:
                     limit = self.cfg.idle_seconds if (spoke or greeting) else self.cfg.grace_seconds
+                    if self._keep_open():     # tarefa rodando: a conversa continua com o mesmo contexto
+                        limit = max(limit, self.cfg.task_hold_seconds)
                     if started_at is None and now - opened >= self.cfg.startup_seconds:
                         raise LiveError("GPT-Live nao iniciou a tempo.", "startup_timeout")
                     if self._stop.is_set() or (started_at is not None and now - last_activity >= limit
