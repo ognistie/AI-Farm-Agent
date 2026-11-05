@@ -6,6 +6,202 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — 2026-11-04 (desktop app, closing for real, faster voice)
+
+### Added
+- **Desktop shortcut.** `scripts/install_shortcuts.py` creates "AI Farm Agent" on the Desktop and Start menu, with its own icon, no console window and the same identity as the window, so it can be pinned to the taskbar. `scripts/setup.ps1` runs it. Without a console, output goes to `logs/app.log` and startup errors appear in a message box.
+- **Only one instance.** Opening the app again brings the existing window forward instead of starting a second agent on the same microphone.
+- `python scripts/latency_report.py --voice` reports the time from the end of speech to each stage, from `memory/voice_latency.jsonl` (times only, never speech or transcripts).
+
+### Fixed
+- **The agent kept running after closing.** On Windows, `os.execv` starts a new process and ends the original, so VS Code and the terminal lost track of the real app. The app now stays tied to its launcher. Closing the main window always quits, even with the mini chat open; Ctrl+C and closing the terminal also quit; the paid session closes and confirms usage, and a stuck library can no longer hold the process open.
+- **The start of sentences was lost.** With headphones, the echo filter silenced the microphone while the agent spoke and for a moment after it. It now measures whether the microphone actually hears the agent, and only filters when it does.
+- **Speech with no response.** If the model stays silent, the app answers. A cut-off request runs when the app has a guess and the model also treated it as a request, instead of "deixa comigo" with nothing happening.
+
+### Changed
+- Less waiting at the end of a sentence: 0.6 s instead of 1 s, or 0.25 s when the model already delegated. A request the screen refused is retried in 1.5 s instead of 5 s.
+
+---
+
+## [Unreleased] — 2026-11-03 (GPT-Live: real-time conversation)
+
+### Added
+- **Real-time conversation in Conversa mode** (`core/voice/live_session.py`). GPT-Live 1 hears the microphone and speaks at once, using client delegation. Tasks still run through the app's understanding, queue and Maestro: a request runs even if the model never delegates, and a delegation alone never runs anything. Verified results go back to the model to be spoken.
+- The paid session closes after 60 s without conversation and reopens when local detection hears speech or a result is ready. Echo is replaced by silence while the agent speaks; talking over it still interrupts.
+- Settings switch "Conversa em tempo real com GPT-Live". When off, Conversa stays fully local.
+
+- Obsidian vaults open directly through `obsidian://open?vault=NAME` (`core/obsidian_vaults.py`), without clicking on the screen. Only registered vaults open, and an uncertain name becomes a question.
+- `memory/voice_conversation.jsonl` keeps counts per session (interruptions, audio gaps, drops), never speech or transcripts.
+
+### Changed
+- **Privacy:** with the key set and the switch on, Conversa sends microphone audio, a conversation summary and task results to OpenAI while a session is open.
+- Daily local voice quota raised from 600 to 1,800 seconds (about US$ 1.50).
+- Fallback voice is now Piper instead of the Windows voice.
+- Narration accepts small paraphrases, but never a changed number.
+
+### Fixed
+- **The agent went to Windows Settings without being asked.** A misheard vault name ("rede Aurol") became a guess about network settings, and vague speech ("esse aí com o mouse em cima") became clicks there. Settings now need to be named by the person, pointing without a name becomes a question, and only a short "yes" to a guess the person actually heard runs it.
+- **Speech cut off.** Playback now runs continuously with a small buffer, keeps the quiet start of words, and no longer mistakes a louder agent phrase for an interruption. A sentence ending in an open word ("com o mouse em") waits for the rest instead of becoming two requests.
+- **False claims from the model.** "Vou clicar" with no task running is corrected aloud and stays out of the conversation context, which fed later wrong commands.
+- **"Fechar o VS Code" closed the app and reported failure.** The pilot now treats a window that disappeared after an action as success when the goal was to close it.
+- **Opening an app without getting the foreground.** The wait no longer runs the full 12 s with the window already open behind, and a new window is no longer refused as ambiguous when another window of the same app exists.
+- **Every GPT-Live session was rejected.** The app sent `session.delegation: null`, which the API refuses with `invalid_type` before closing the connection. Sessions now use `{"type": "client"}`.
+- **`ValueError` after a single failure.** A failed session left a pending reservation that blocked all later calls. It now stays counted as spent without blocking; the daily quota still limits the total.
+- Provider error codes are now logged and shown instead of being discarded, and a session rejected before starting no longer counts as spent.
+- After two failures in a row, narration stays local for 5 minutes and warns once, instead of at every reply.
+
+---
+
+## [Unreleased] — 2026-10-20 (speed, verified memory, desktop features)
+
+Research on Claude Cowork, ChatGPT Work, realtime voice and agent memory, with sources: `docs/research/cowork-chatgpt-work.md`.
+
+### Changed
+- **Reasoning per agent** (`agent_thinking` in `config.yaml`). Routing, voice understanding, the conversation resolver and the final reply now answer without reasoning first. Generation, file reading and the pilots keep it.
+  - Maestro, with `scripts/eval_routing.py` (24 real requests from history, 2 trials): median 3.12 s → 1.69 s with the same routing accuracy (32/48 vs 31/48; the difference is one unstable case).
+  - Voice, with `eval_voice.py`: 54/54 both ways.
+- **Leaner Maestro plan.** The `objectives` and `forbidden_assumptions` fields were dropped because no code read them, and the generic-text cleanup moved to code. Output went from 213 to 130 tokens per plan (−39%) with the same accuracy.
+- **Second brain: only verified memory guides the agents** (`core/memory_gate.py`, idea from CoALA and MemGuard).
+  - A reference note is used only with `verificado: sim`, meaning it succeeded in a real run of the same agent. Each note carries its success and failure counts and last-run date.
+  - 228 of 255 references had never been proven. They moved out of the vault to `memory/vault_arquivo/hipoteses` and return automatically when a matching real run succeeds.
+  - A note that fails more than it succeeds is demoted.
+  - Every run updates the matching note.
+  - `00 Maestro/Mapa de roteamento` is generated from real runs.
+- **Voice:** a short chime when speech ends ("ouvi"), so there is no silence while transcribing (`voice.earcon`).
+- **Config:** `config.yaml` at the repository root is now found from any working directory. Running from `ai-farm-agent/` used to silently fall back to defaults.
+
+### Added — desktop app (ideas from Claude Desktop, ChatGPT Desktop, Cowork and Work)
+- **Settings** page (Ctrl+,):
+  - custom instructions applied to every request, as preferences that never widen permissions;
+  - "review the plan before executing";
+  - interruption and chime toggles;
+  - splash screen and mini chat toggles;
+  - the list of shortcuts.
+  - Stored in `desktop/data/settings.json`.
+- **Quick access from any app:** Alt+Space opens the mini chat with the cursor in the request box (`ui.quick_hotkey`).
+- **Attachments:** "+" button and drag and drop. Files enter the conversation, so "resume esta planilha" reads them. PDF and Word are read only when `pypdf` / `python-docx` are installed.
+- **Plan review:** Execute / Cancel before touching the PC, for typed requests (voice already confirms out loud). Stop releases a waiting plan.
+- **Conversations:** search, rename, and delete. Deleted conversations move to `memory/sessions/_excluidas`, so they can be recovered.
+
+### Added — tooling
+- `scripts/eval_routing.py` evaluates Maestro routing against real history.
+- `scripts/brain_verify.py` verifies the vault against history (`--apply`).
+- Smoke suite `test_round9_brain_speed_app` (22 checks). Four older checks were updated to the verified-memory contract.
+
+---
+
+## [Unreleased] — 2026-10-09 (fluid conversation)
+
+Measured on today's runs.
+- Every follow-up such as "clicar em Área de Trabalho" or "pausar o vídeo" paid a Maestro call (2.2–3.3 s) just to decide "continue in the open app".
+- "Summarize the spreadsheet you just made" took 125 s and 19 model calls, then failed while reading the Excel grid on screen.
+
+### Changed
+- **Continue without the Maestro.**
+  - An action inside what is already open (click, open an item, play, pause, go back, scroll, maximize, search on the open site) goes straight to the agent that owns the target (`continue_plan`). It saves ~2.5 s per conversational follow-up.
+  - Creating, writing, summarizing, chaining another app or ambiguous requests still go to the Maestro. Plan policies still apply.
+- **Questions about what the assistant created** read the file, not the screen (`core/artifact_qa.py`).
+  - The session now remembers created files (spreadsheet, site, script, document).
+  - "Resume a planilha", "quanto deu o total?" or "me explica esse site" are answered in one call from the file content, which is treated as data.
+  - On today's cash-flow spreadsheet the answer took 5.2 s with every total correct, against 125 s and a failure before.
+- **The pilot writes the user-facing sentence** (`say`) in its last turn. It becomes the assistant's reply without the extra reply call (~1.5 s faster to the spoken result).
+  - Pilots also stop after 60–75 s with a clear message instead of looping.
+- **Voice acts on its best guess** when something is open and the guess is a light action ("clica na pasta Relatorios"). The pilot checks the screen and says what it found. Consequential actions (send, delete, buy…) still ask first.
+- **Speculative transcription.** A 0.3 s pause in speech already starts transcribing, while the 0.8 s end-of-speech check runs. If speech continues, the early result is discarded. This saves ~0.5 s per utterance.
+
+### Fixed
+- **Summarizing a larger spreadsheet failed.**
+  - On a two-year cash-flow file, the reader model used its whole 1,200-token budget doing the arithmetic in its reasoning and returned an empty answer. The request then fell through to the screen pilot, which cannot read the Excel grid (30 s, failure).
+  - The app now computes the totals itself (sum, count, largest and smallest value with the row label, per sheet and column) and gives them to the model first. The response budget is 4,000 tokens.
+  - If the file still yields no answer, the assistant says so instead of falling back to the screen pilot.
+  - Real file: the summary takes 4.9 s and "quanto deu o lucro de 2026?" 2.1 s, both with exact figures.
+- Opening Excel or Word: the start screen is dismissed with Esc, which opens the blank document (Ctrl+N alone left it on the start screen).
+- Adaptive wait: an app that never reports "idle" (WhatsApp, UWP apps) counts as ready once it is stable and responding. "Abrir o WhatsApp" took 9 s.
+
+### Added
+- Smoke suites `test_round7_fluid_conversation` (19 checks) and `test_round8_spreadsheet_reader` (7 checks).
+
+---
+
+## [Unreleased] — 2026-10-09 (conversation, memory, second brain)
+
+Found while testing live voice and text conversations. Every fix targets the whole system, not a single task.
+
+### Fixed
+- **Typing into the wrong window.**
+  - Before pasting, `app_type` now checks that the target window is really in the foreground.
+  - Windows refuses focus to background apps (for example when the user talks to the assistant while working in another app), so Ctrl+V used to land elsewhere while the step reported success.
+  - The window is now raised with the input queue attached (`_bring_to_front`). If focus is still refused, the step fails with a clear message and nothing is typed.
+- **Waiting for the wrong app.** After `app_search`, the adaptive wait only ends when the window of *that* app is in front. When the Start menu closed, another window came forward and ended the wait for Obsidian in 0.4 s.
+  - `focus_window` now waits up to 8 s for slow apps (Obsidian, Teams, Spotify) and confirms focus.
+- **Conversation memory lost content.**
+  - The context cut every request to 160–200 characters, so "try again with the same message" reached the agent without the message.
+  - Each turn now stores its literal content (message, dictated text, query, recipient) from the plan. Recent turns appear in full.
+  - When the context is over budget, the oldest turns are dropped instead of the newest turn and the open windows.
+  - Voice understanding and the resolver copy referenced content into the request, because the executor does not see the conversation.
+  - "Escreva sobre X" now means composing a text about X rather than typing the word X.
+- **Failure replies guessed causes.** One reply said "it doesn't seem to be installed" for a focus timeout. Failures now record the step that really failed, and the reply only states what the result says.
+- `memory_agent`: the test/debug filter regexes contained backspace characters instead of `\b`, so they never matched.
+
+### Changed
+- **Live conversation, closer to Siri, Alexa and ChatGPT voice.**
+  - Turning it on says "Como posso ajudar?" right away (≈0.4 s). The voice model is loaded and warmed at launch.
+  - **Barge-in:** talking over the assistant stops it within ~240 ms, and the speech is recorded from the start instead of being discarded. Detection is relative to the speaker echo, so the assistant's own voice does not interrupt it (`voice.barge_in`).
+- **Second brain cleanup.**
+  - Automatic execution logs are no longer injected into agent prompts. They were one in three retrieved references, often duplicated, obsolete or false successes.
+  - The vault keeps the 40 most recent per folder. Older ones move to `memory/vault_arquivo` (315 moved).
+  - 9 reference notes were fixed to today's paths: Word/Excel blank document, Settings, calculator, Spotify, unknown apps, YouTube/Google first result.
+  - 9 were removed: duplicates, notes about old failures, and selector-based web steps.
+  - Two web playbooks no longer teach `web_click` selectors.
+  - Four new lessons cover the failures above.
+
+### Added
+- `scripts/vault_audit.py` checks reference notes for obsolete mechanisms, empty paths and duplicates (`--apply` moves them out of the vault).
+- `eval_voice.py` has 4 new held-out cases: resending the same message with a change, resending without a change, "write about X", and literal dictation.
+- Smoke suite `test_round6_conversation_memory_vault` (20 checks).
+
+---
+
+## [Unreleased] — 2026-10-09 (latency)
+
+Measured on the real history before the change (180 runs, 2–8 Oct): opening an app or site had a median of 7.4 s (P90 15.7 s), and opening Excel took 18–31 s.
+
+### Changed
+- **"Open <app/site>" without the model.**
+  - When the whole request is "abrir" plus the exact name of an app or site from the Obsidian dictionary (`70 Dicionario/Apps e sites`), the Maestro builds the plan directly. It saves one model call (~2–3 s).
+  - The plan goes through the same acceptance policies.
+  - Anything more ("e pesquisa…", "e cria…", a folder, a file) or something already open in the conversation still goes to the Maestro.
+- **Adaptive waits.** The fixed "aguardar N s" in the app routines is now a ceiling.
+  - The wait ends as soon as the window that came to the front is ready: it is not hung, its process is idle for input (`WaitForInputIdle`) and its title has been stable for 0.4 s.
+  - With no new window, it waits the full time as before.
+  - `app_search` uses the same check instead of a fixed 2 s.
+  - Simulation mode no longer sleeps.
+- Opening Excel or Word creates the blank document with Ctrl+N (`blank_document`) instead of a vision click (one model call).
+- Opening WhatsApp or Teams without a contact or message no longer searches for a chat with three vision clicks.
+- A site with a ready URL opens directly instead of through the browser pilot.
+- The assistant's reply starts before the run is written to Obsidian.
+- The speech model loads a few seconds after launch (`voice.preload_on_launch`), so the first voice command does not wait for it.
+- Long generations (spreadsheet, site, plan) show live progress in the status line ("Montando a planilha · 2.400 caracteres") instead of a static label for 30–70 s.
+
+### Added
+- Each history entry records model time (`metrics.llm_ms`, total and per agent) and time per phase (`timing`: resolve, Maestro, agent plan, steps).
+- `scripts/latency_report.py` gives the median and P90 per request type from the real history, plus where the time went.
+- `scripts/bench_stt.py` measures local speech-recognition time and accuracy with phrases spoken by the local voice. It needs no API.
+- `voice.beam_size` (now 1) and `Transcriber.chunk_length` are configurable. In `bench_stt.py`, with 32 utterances on an idle machine:
+  - `small` beam 5: 3.25 s per utterance, 19.3% WER.
+  - `small` beam 1: 2.75 s, 20.4% WER. This is −0.5 s per voice command, and the accuracy difference is about one word in 32 phrases.
+  - `base`: 1.0 s but 32.5% WER, so rejected.
+  - A shorter audio window did not help.
+- Smoke suite `test_latency_round5` (21 checks).
+
+### Evaluated, not changed
+- Voice understanding stays on Sonnet 5. `eval_voice.py`, 50 cases, 1 trial each:
+  - Sonnet 5: 50/50 correct, 50/50 speech style, median 1.38 s, US$ 0.087.
+  - Haiku 4.5: 50/50 correct, 48/50 speech style, median 1.21 s, US$ 0.095.
+  - −0.17 s does not pay for worse replies and a higher cost.
+
+---
+
 ## [Unreleased] — 2026-10-08
 
 ### Added

@@ -12,15 +12,17 @@ Provide the affected commit, relevant module, a minimal reproduction using synth
 
 - Model output is untrusted. JSON parsing and plan validation cover selected invariants; they do not establish complete action authorization.
 - Websites, files and vault notes can influence model context. Prompt instructions and keyword-based injection checks are not an isolation boundary.
-- Generated Python runs through `exec` with normal process permissions. Shell actions use `shell=True`. The current engine has no isolated sandbox or universal path/command allowlist.
-- Missing Python libraries can be installed automatically. Dependencies are not locked with hashes, and this review did not perform a dependency vulnerability audit.
+- The public executor rejects `run_python`, `run_command` and `pip_install`. CODE and DATA produce bounded declarative manifests; trusted builders write new project directories and workbooks without executing model text. Generated source remains untrusted and must be reviewed before a person runs it.
+- Internal process-runner utilities remain for tests and controlled development. Windows Job Objects bound process lifetime/resources, but do not restrict filesystem or network privileges. These utilities are not a security sandbox and are unavailable through the task dispatcher.
+- Execution-time tool ownership is checked outside the model. FILE paths must remain within roots derived from the original request. Project edits use snapshots, backups and conflict detection; undo refuses changed files or altered backups. These controls do not establish complete GUI effect authorization.
+- Runtime package installation is disabled. The validated Windows/Python 3.11 environment has a version lock and a repeatable vulnerability audit; the lock does not include package hashes. Zero known advisories in one scan is not proof of vulnerability absence.
 - Browser and desktop actions can use active user sessions. Login/CAPTCHA detection and selected safety rules do not guarantee that every consequential action is gated.
-- Cancellation is cooperative. In-process Python cannot be forcibly stopped by the run-token mechanism.
-- Simulation is handler-dependent. Generic filesystem handlers do not all check the dry-run flag, so simulation is not a universal side-effect barrier.
+- Cancellation retains the execution slot until termination is confirmed. Managed workers terminate descendants through a Job Object; native GUI actions and external applications still require end-to-end cancellation testing.
+- Tool simulation is enforced centrally before any handler is invoked. The surrounding planning/conversation flow may still call the model and save local history; simulation is not a privacy or offline mode.
 
 ## Data handling
 
-Prompts, relevant retrieved content and screenshots may be transmitted to Anthropic. The app stores task history, action parameters, reports, captures, route descriptions and execution notes locally. Selected vault and memory fields use pattern-based redaction; history, logs and screenshots are not comprehensively anonymized or encrypted.
+Prompts, relevant retrieved content and screenshots may be transmitted to Anthropic. With `OPENAI_API_KEY` set and the "Conversa em tempo real" option on (default), **Conversa mode sends microphone audio, a summary of the current conversation and task results to OpenAI** while a session is open. While the session is closed, nothing leaves the computer: a local detector only decides when to reopen it. Outside Conversa mode, short reply text is sent for narration and capture and transcription stay local. Turning the option off keeps Conversa local too. GPT-Live has no tools: every spoken request goes through the app's own understanding, Maestro and executor rules, and a delegation event alone never runs anything. `store=false` does not replace the provider's general data policy. The app stores task history, reports, route descriptions and execution notes locally. Action telemetry omits parameter values and automatic diagnostic screenshots are disabled. Selected vault and memory fields use pattern-based redaction; history and model context are not comprehensively anonymized or encrypted. No universal retention policy or at-rest encryption is implemented.
 
 Keep `.env`, learned routes, logs, reports, screenshots, generated vault notes and dated journals out of version control. Inspect screenshot content before sharing. A `.gitignore` rule does not remove already tracked files or Git history.
 
@@ -32,7 +34,7 @@ Treat exposed values as compromised: revoke or replace them through the relevant
 
 ## Operational guidance
 
-Use an unprivileged test account or isolated Windows environment with synthetic files and dedicated application accounts. Inspect plans with simulation before execution, avoid sensitive browser sessions and review API usage and local records. Simulation can still call the model and write history.
+Use an unprivileged test account or isolated Windows environment with synthetic files and dedicated application accounts. Inspect plans with simulation before execution, avoid sensitive browser sessions and review API usage and local records. Do not deploy unattended automation of consequential effects until action-level authorization and representative desktop tests are complete.
 
 ## References
 
@@ -41,3 +43,4 @@ Use an unprivileged test account or isolated Windows environment with synthetic 
 - [OWASP: LLM prompt injection prevention](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html)
 
 See [docs/security-review.md](docs/security-review.md) for the repository-specific findings and scope.
+See [the current release assessment](docs/research/production-readiness.md) for executed checks and remaining release blockers.

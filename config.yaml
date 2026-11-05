@@ -39,6 +39,16 @@ agent_effort:
   json_repair: low
   resolver: low
 
+# Raciocinio por agente (Sonnet 5): "off" = resposta direta, sem pensar antes.
+# Medido (scripts/eval_routing.py, 24 pedidos reais x2): Maestro 3,12 s -> 1,69 s com o mesmo
+# acerto; voz (eval_voice, 54 casos): 54/54 nos dois. Geracao (planilha, codigo), leitura de
+# arquivo e pilotos seguem com raciocinio: ali a qualidade depende dele.
+agent_thinking:
+  maestro: off
+  voice: off
+  resolver: off
+  reply: off
+
 limits:
   max_task_length: 2000
   max_steps_per_agent: 10
@@ -90,6 +100,10 @@ security:
     - "reg delete"
     - "diskpart"
     - "bcdedit"
+# Capturas automaticas ficam desativadas; ative para diagnostico quando apropriado.
+privacy:
+  capture_enabled: false
+
 # Segundo cerebro (Obsidian). Caminho relativo a pasta ai-farm-agent/.
 # Os agentes leem playbooks/politicas/tarefas de referencia e o app grava
 # planos, validacoes e execucoes. Se a pasta nao existir, o app segue sem.
@@ -102,16 +116,32 @@ voice:
   hotkey: "ctrl+alt+v"     # se estiver em uso, tenta ctrl+alt+m e ctrl+f9
   model: "small"          # tiny | base | small | medium (maior = mais preciso e mais lento)
   compute_type: "int8"
-  tts: "piper"             # piper (voz neural local) | sapi (voz do Windows)
+  beam_size: 1            # 1 = mais rapido (-0,5 s por fala; precisao igual no scripts/bench_stt.py); 5 = padrao do Whisper
+  tts: "auto"              # auto: GPT-Live com OPENAI_API_KEY; sem chave, Piper local. Tambem: gpt_live | piper | sapi
   tts_voice: "cadu"        # cadu | faber | jeff (vozes pt-BR do Piper)
   tts_rate: 1.05           # velocidade da fala
+  barge_in: true           # falar por cima do agente o interrompe (conversa ao vivo)
+  earcon: true             # sinal sonoro curto quando a fala termina ("ouvi"), antes da resposta
   live_pause_s: 0.8        # pausa que encerra uma fala na conversa ao vivo
   progress_after_s: 12     # aviso falado de progresso em pedido demorado (0 = nunca)
+  # GPT-Live cobra a sessao inteira, por segundo. No modo Conversa o microfone vai para o
+  # provedor enquanto ha conversa; a sessao fecha sem atividade e reabre ao detectar fala.
+  # Fora do modo Conversa so narra respostas curtas, com microfone e STT locais.
+  live:
+    voice: "marin"
+    session_max_s: 25       # narracao de uma resposta
+    startup_timeout_s: 10
+    close_timeout_s: 3
+    conversation_idle_s: 60 # conversa parada: fecha a sessao paga
+    wake_grace_s: 12        # reabriu por ruido e ninguem falou: fecha antes
+    daily_max_s: 1800       # quota local de segundos/dia UTC (30 min ~ US$ 1,50); nao e teto de fatura
   start_on_launch: true    # atalho global ativo desde a abertura do app
+  preload_on_launch: true  # carrega o reconhecimento de fala logo apos abrir (1a fala sem esperar o modelo)
 
 # Interface desktop
 ui:
   splash: true                 # tela de abertura ("pressione qualquer tecla para entrar")
   mini_chat: true              # quando o agente vai para outra janela, a conversa fica num mini chat no canto
   stop_hotkey: "ctrl+alt+x"    # atalho global para parar a execucao (o mini chat nao recebe cliques enquanto o agente trabalha)
+  quick_hotkey: "alt+space"   # acesso rapido de qualquer app (caixa de pedido por cima da tela); "" desliga
   mini_hide_from_capture: false  # true = o mini chat nao aparece em prints/gravacoes de tela (nem nos prints do agente)

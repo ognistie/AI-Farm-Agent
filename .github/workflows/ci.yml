@@ -15,9 +15,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Byte-compile all Python sources
-        run: python -m compileall -q ai-farm-agent
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ai-farm-agent/requirements-windows-py311.lock.txt
+      - name: Install reviewed Windows environment
+        run: python -m pip install -r ai-farm-agent/requirements-windows-py311.lock.txt
+      - name: Release code gate (no model calls or personal desktop actions)
+        run: python ai-farm-agent/scripts/check_release.py --code-only
+      - name: Audit installed dependencies
+        run: |
+          python -m pip install pip-audit==2.10.1
+          python -m pip_audit --path "$env:pythonLocation/Lib/site-packages"
+      - name: Preserve validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-check
+          path: |
+            ai-farm-agent/memory/release-check.json
+            ai-farm-agent/memory/release-check/
       - name: Ensure no secrets files are tracked
         shell: bash
         run: |

@@ -1,5 +1,9 @@
 # Repository security review
 
+> Historical review below. For the current implementation and executed release checks,
+> see [production readiness](research/production-readiness.md) and [SECURITY.md](../SECURITY.md).
+> Historical credential revocation remains unconfirmed; source-code hardening does not revoke credentials.
+
 Review date: 2026-09-28. Baseline: commit `b614c94`; documentation and privacy changes were assessed in the working tree.
 
 ## Scope and method

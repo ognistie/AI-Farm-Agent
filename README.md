@@ -1,10 +1,10 @@
 # AI Farm Agent
 
-**A Windows multi-agent assistant that turns natural language — typed or spoken — into verified actions on your desktop.**
+**A Windows multi-agent assistant for natural-language desktop tasks and verifiable code and spreadsheet artifacts.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0A84FF)
-![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
+![Validated Python: 3.11](https://img.shields.io/badge/python-3.11%20validated-3776AB)
 ![Model: Claude Sonnet 5](https://img.shields.io/badge/model-Claude%20Sonnet%205-D97757)
 [![CI](https://github.com/ognistie/AI-Farm-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ognistie/AI-Farm-Agent/actions/workflows/ci.yml)
 
@@ -32,9 +32,9 @@ Policies written in Python, not in prompts, decide whether a plan may run.
 | --- | --- |
 | **Continuous conversation** | Follow-ups act on what is already open. *"Abre o YouTube"* → *"agora toca o segundo vídeo"* continues in the same tab; *"muda a cor do título"* edits the project just created, with a backup to undo. Conversations are saved and can be reopened. |
 | **Stays out of the way** | When the agent moves to another app, the main window steps aside and the conversation continues in a mini chat in the bottom-right corner. While a task runs, the mini chat takes no focus or clicks, so it never interferes with what the agent types; `Ctrl+Alt+X` stops the task from anywhere. |
-| **Local voice** | Speech recognition (faster-whisper) and the assistant's voice (Piper) run on the machine; audio never leaves it. Two modes: record-and-send, or live conversation that executes while you talk. |
-| **Multi-agent orchestration** | Maestro plans and routes; each domain agent has three helper sub-agents (understand · build · review). |
-| **Deterministic guardrails** | Acceptance policies (`POL-001`–`POL-007`) validate plans before dispatch. A rejected plan is replanned once with the literal reason. Sensitive actions (send, delete, pay, credentials) stay with the user. |
+| **Real-time conversation** | Add `OPENAI_API_KEY` to talk with GPT-Live 1 in Conversa mode: it listens and speaks at once, tasks run through the Maestro, and the paid session closes when idle. The microphone goes to OpenAI during that conversation. Without the key, or with the option off, capture, faster-whisper and Piper stay local. |
+| **Multi-agent orchestration** | Maestro plans and routes to domain agents; deterministic validators and execution-time policies check the proposed operations. |
+| **Deterministic guardrails** | Acceptance policies validate plans before dispatch, and execution-time policies restrict tools by agent. Generated-code execution is disabled. Consequential GUI effects still require broader validation before a production release. |
 | **Second brain** | The Obsidian vault provides the agent's rules, known failures, playbooks, lessons learned, a ~2,600-variant Brazilian speech dictionary and the AIWorkbench engineering skills. Each request retrieves only what matches it. |
 | **Measured cost** | Each model call is metered. In a 30-task benchmark the average cost was **US$ 0.019 per task**. |
 
@@ -106,12 +106,26 @@ The plan note records **"Consultou: …"** with every note and skill used. All o
 | `10 Agentes/` | Agent notes, playbooks and sub-agent descriptions |
 | `20 Politicas/` | Human-readable acceptance policies |
 | `30 Skills/` | AIWorkbench skills as usage manuals (when to activate, how each agent applies them, what to check) |
-| `30 Tarefas de referencia/` | ~265 reference tasks with paths and acceptance criteria |
+| `30 Tarefas de referencia/` | Curated procedures with paths, evidence and acceptance criteria |
 | `60 Aprendizados/` | Curated lessons learned |
 | `70 Dicionario/` | Brazilian speech dictionary, Windows settings pages, keyboard shortcuts |
 | `40 Execucoes/`, `50 Diario/` | Local execution records (generated notes are git-ignored) |
 
 ## Voice and conversation
+
+With `voice.tts: auto`, adding `OPENAI_API_KEY` to the local `.env` and restarting selects
+**GPT-Live 1**. In Conversa mode it hears the microphone and answers in real time. Each utterance
+is also checked by the app, which decides what becomes a task, runs it through the Maestro and
+hands the verified result back to be spoken. The session closes when idle and reopens when local
+detection hears speech, so silence costs nothing. If GPT-Live fails, the conversation continues with
+local transcription and Piper. Settings has a switch to keep Conversa fully local.
+
+GPT-Live charges for **all session seconds**, including startup/wait/finalization; this is not
+billing only for words heard. Backend model usage is separate. Current rate: US$ 0.05/minute,
+billed per second ([official pricing](https://developers.openai.com/api/docs/models/gpt-live-1)).
+The default application quota is 1,800 seconds per UTC day (about US$ 1.50). See the
+[voice architecture and activation guide](docs/architecture/voice-on-demand.md) for limits,
+fallback, accounting recovery and the optional paid smoke test.
 
 - **Pipeline:**
   1. Microphone → local transcription (faster-whisper `small`, int8, CPU).
@@ -119,7 +133,16 @@ The plan note records **"Consultou: …"** with every note and skill used. All o
   3. One understanding call that returns the clean command, the continuation target and the immediate spoken reply.
 - **Instant answers:** time, date and simple open/search requests have no model latency. A cut-off request ("abre o…") gets a clarifying question instead of a guess.
 - **Persona:** one speaking style shared by voice, end-of-task replies and small talk. It is editable in `00 Maestro/Persona do assistente.md`, with ready-made lines that never repeat the last ones.
-- **Live mode:** speech is queued while a task runs. Long tasks give one progress update. Background conversation is ignored.
+- **Local listening mode:** without GPT-Live, local capture segments utterances while tasks run and barge-in cancels speech.
+- **Desktop app:**
+  - Alt+Space quick access from any app;
+  - custom instructions and settings (Ctrl+,);
+  - attachments by "+" or drag and drop;
+  - optional plan review before executing;
+  - conversation search, rename and delete.
+- **Curated memory:** current rules and playbooks guide the agents; task references require independent evidence before becoming verified. Unproven references remain versionable outside verified-reference retrieval (see `00 Maestro/Mapa de roteamento`).
+- **Fast follow-ups:** an action inside what is already open goes straight to the agent that owns it, with no planning call. Questions about a file the assistant just created ("resume a planilha") are answered by reading the file.
+- **Memory:** each turn keeps its literal content (message, dictated text, query). "Send the same message again" therefore works across turns, and the oldest turns are dropped first when the context is full.
 
 ## Cost benchmark
 
@@ -204,17 +227,29 @@ Model-backed scripts write their reports to the vault (`--vault`). Review them b
 
 ## Security and privacy
 
-The application runs with the permissions of the current Windows user. Generated Python runs in-process, and browser automation can use your signed-in sessions. **Use a dedicated environment with non-sensitive files and accounts.**
+The application runs with the permissions of the current Windows user. CODE and DATA now create artifacts from bounded manifests, without executing generated creator scripts. Direct Python, shell and package-install actions are rejected by the application executor. Browser automation can use your signed-in sessions. **Use a dedicated environment with non-sensitive files and accounts while end-to-end desktop and voice validation is pending.**
 
 Implemented controls:
+- simulation is intercepted before any tool handler runs;
+- FILE plans use declarative tools with request scope validation; existing destinations are preserved and deletion uses the recycle bin;
+- plan approvals carry a token; cancellation retains the execution slot until the controller finishes;
+- automatic diagnostic captures are disabled by default (`privacy.capture_enabled`); vision tools still observe the screen when invoked;
 - acceptance policies before execution;
 - `open_path` refuses executables, disk images and network/UNC paths;
 - the Start-menu fallback refuses names containing commands or paths;
 - page and window text in model context is treated as data, never as instructions;
-- writing goes only to a blank document, never to an open user file;
-- login, CAPTCHA, payments and sends are handed back to the user.
+- blank-document routines verify the selected document before typing;
+- project edits check snapshot hashes, preserve prior versions and roll back a failed publication;
+- CAPTCHA/login barriers require user intervention; universal confirmation of consequential GUI actions remains a release requirement.
 
-There is **no isolated sandbox** and no universal action-level authorization gate yet. Read [SECURITY.md](SECURITY.md) and the [security review](docs/security-review.md) before using it with real data.
+Tool ownership and file scopes are enforced. GUI effect-level authorization and representative native-app testing remain incomplete. Read [SECURITY.md](SECURITY.md) and the [security review](docs/security-review.md) before using it with real data.
+
+The reviewed dependency snapshot is [requirements-windows-py311.lock.txt](ai-farm-agent/requirements-windows-py311.lock.txt).
+`scripts/setup.ps1` also creates the **AI Farm Agent** shortcut on the Desktop and Start menu. To keep it on the taskbar, open the app and choose "Pin to taskbar"; Windows does not let programs do this themselves. `iniciar.cmd` opens the app with a console, for diagnostics.
+
+Use `scripts/setup.ps1` with Windows/Python 3.11, then run
+`python ai-farm-agent/scripts/check_release.py --code-only` from that environment.
+See [production readiness](docs/research/production-readiness.md) for the current release decision and evidence.
 
 ## Roadmap
 

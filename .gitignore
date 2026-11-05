@@ -29,6 +29,8 @@ pip-log.txt
 
 # Virtual env
 .venv/
+.venv-release/
+.repowise/
 venv/
 env/
 ENV/
@@ -94,6 +96,9 @@ AI-Farm-agents/40 Execucoes/Sucesso/
 AI-Farm-agents/40 Execucoes/Falhas/
 AI-Farm-agents/.obsidian/workspace*.json
 AI-Farm-agents/50 Diario/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].md
+AI-Farm-agents/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] *.md
+AI-Farm-agents/Sem t*tulo*.canvas
+AI-Farm-agents/Sem t*tulo*.base
 
 # Material de divulgacao local (videos, prompts, imagens de rascunho)
 docs/marketing/

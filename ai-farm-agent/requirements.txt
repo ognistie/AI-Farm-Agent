@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ══════════════════════════════════════════════════════════════
 #  AI Farm Agent — dependencias
 #  Instalar: pip install -r requirements.txt
@@ -7,8 +8,8 @@
 PySide6>=6.6.0
 
 # Core / LLM
-anthropic>=0.50.0,<1
-python-dotenv==1.0.1
+anthropic>=0.125.0,<1
+python-dotenv>=1.2.2,<2
 PyYAML>=6.0   # config.yaml (sem ele o projeto ignora o yaml e usa defaults)
 
 # Automacao Desktop / OS
@@ -17,6 +18,8 @@ pygetwindow==0.0.9
 psutil==5.9.8
 pyperclip==1.9.0
 Pillow
+openpyxl>=3.1,<4
+send2trash>=1.8,<2
 
 # Acessibilidade do Windows (UIA): le/clica links do navegador do usuario
 # (browser_click/browser_read) e botoes de apps (uia_click)
@@ -26,6 +29,7 @@ pywinauto>=0.6.9
 # O modelo 'small' (~480 MB) e baixado no primeiro uso.
 faster-whisper>=1.2
 sounddevice>=0.5
+websocket-client==1.9.2  # GPT-Live: sessoes curtas de narracao
 piper-tts>=1.8      # voz neural local pt-BR (baixa ~60 MB na 1a fala)
 pywin32>=306        # reserva: voz do Windows (SAPI)
 
