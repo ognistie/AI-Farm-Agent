@@ -527,7 +527,11 @@ class Controller:
             # Continuar no que esta aberto ("clica em X", "pausa o video", "volta"): o alvo ja
             # diz qual agente age; vai direto, sem a chamada do Maestro (~2,5 s por pedido)
             from agents.maestro import continue_plan, vault_plan
-            plan = vault_plan(task) or continue_plan(task, kind, target, self.session) \
+            from core.existing_targets import existing_plan
+            # Abrir o que ja existe (pasta ou site do projeto, subpasta, janela) nao passa pelo modelo:
+            # cair num agente que so cria era o que fazia o agente de codigo criar um projeto novo
+            plan = vault_plan(task) or existing_plan(task, self.session) \
+                or continue_plan(task, kind, target, self.session) \
                 or self.maestro.analyze(task, conversation=conversation, continue_in=target or "")
             self._emit_usage()
             lap("maestro")
@@ -553,7 +557,7 @@ class Controller:
                 return
 
             if plan.get("error"):
-                if plan.get("rejected_plan"):
+                if plan.get("rejected_plan") and not dry_run:
                     brain_plan = self._brain.write_plan(task, plan["rejected_plan"])
                 self._emit("error", {"msg": plan.get("message", "Erro do Maestro.")})
                 entry["error"] = plan.get("message", "maestro_error")
@@ -585,7 +589,8 @@ class Controller:
 
             # Plano proposto e validado vai para o segundo cerebro antes de
             # executar; cada agente anexa seus passos e a validacao.
-            brain_plan = self._brain.write_plan(task, plan)
+            # Simulacao nao deixa rastro no segundo cerebro (o plano simulado viraria referencia)
+            brain_plan = None if dry_run else self._brain.write_plan(task, plan)
 
             subtasks = plan.get("subtasks", [])
             turn["content"] = turn_content(subtasks, task)

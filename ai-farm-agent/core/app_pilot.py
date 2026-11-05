@@ -17,6 +17,7 @@ import time
 from typing import Callable, Optional
 
 from core import browser_uia as B
+from core.action_risk import NeedsConfirmation
 from core.browser_pilot import _parse, _paste
 
 MAX_TURNS = 12
@@ -123,8 +124,12 @@ class AppPilot:
                  vision_click: Optional[Callable[[dict], str]] = None,
                  should_stop: Optional[Callable[[], bool]] = None,
                  on_progress: Optional[Callable[[str], None]] = None,
-                 max_turns: int = MAX_TURNS):
+                 max_turns: int = MAX_TURNS,
+                 authorize_ui: Optional[Callable[..., str]] = None):
         self.llm = llm or self._default_llm
+        # Porta de efeito (core/action_risk.py): '' segue; texto = parar e perguntar
+        self.authorize_ui = authorize_ui
+        self._last_field = ""
         self.vision_click = vision_click
         self.should_stop = should_stop or (lambda: False)
         self.on_progress = on_progress or (lambda msg: None)
@@ -190,12 +195,25 @@ class AppPilot:
             if repeats >= 2:
                 history.append(f"{act} repetido sem efeito — escolha outro caminho")
                 continue
-            outcome, label = self._act(act, d, snap, win, view)
+            try:
+                outcome, label = self._act(act, d, snap, win, view)
+            except NeedsConfirmation as stop:
+                return {"ok": False, "status": "ask_user", "turns": turn, "trail": trail,
+                        "result": str(stop), "say": str(stop)}
             self.on_progress(f"[{snap.title[:30]}] {label} — {outcome}" + (f" ({reason})" if reason else ""))
             history.append(f"{label} (motivo: {reason}) -> {outcome}")
             trail.append(label)
         return {"ok": False, "status": "fail", "turns": self.max_turns, "trail": trail,
                 "result": f"Limite de {self.max_turns} ações atingido sem concluir."}
+
+    def _check(self, act: str, label: str, submit: bool = False, key: str = "") -> None:
+        if self.authorize_ui is None:
+            return
+        from core.action_risk import ui_risk
+        kind = ui_risk(act, label, submit=submit, key=key)
+        message = self.authorize_ui(kind, act, label) if kind else ""
+        if message:
+            raise NeedsConfirmation(message)
 
     def _el(self, snap, d):
         try:
@@ -214,6 +232,7 @@ class AppPilot:
             if el is None:
                 return "id inexistente nesta janela", f"{act} #{d.get('id')}"
             label = f"{act} {el.role} '{el.name[:50]}'"
+            self._check(act, el.name)
             w = B.wrap(el.elem)
             try:
                 if act == "double_click":
@@ -237,6 +256,8 @@ class AppPilot:
             if el is None or not text:
                 return "campo ou texto ausente", f"type #{d.get('id')}"
             label = f"type '{text[:40]}' em '{el.name[:30] or el.role}'"
+            self._last_field = el.name or ""
+            self._check("type", el.name, submit=bool(d.get("submit")))
             try:
                 B.wrap(el.elem).click_input()
                 time.sleep(0.2)
@@ -270,6 +291,7 @@ class AppPilot:
             return ("janela mudou" if _changed(win, before, 1.5) else "escrito"), f"write '{text[:40]}'"
         if act == "press":
             key = str(d.get("key") or d.get("text") or "enter").lower().replace(" ", "")
+            self._check("press", self._last_field, key=key)
             keys = [k for k in key.split("+") if k]
             pyautogui.hotkey(*keys) if len(keys) > 1 else pyautogui.press(keys[0] if keys else "enter")
             return ("janela mudou" if _changed(win, before, 1.5) else "ok"), f"press {key}"
@@ -285,6 +307,7 @@ class AppPilot:
             return "ok", f"scroll {'down' if down else 'up'}"
         if act == "vision_click" and self.vision_click:
             desc = str(d.get("description") or d.get("text") or "")
+            self._check(act, desc)
             res = self.vision_click({"description": f"{desc} (DENTRO da janela \"{snap.title[:50]}\")", "hwnd": win.handle})
             return (f"{res[:40]}; " + ("janela mudou" if _changed(win, before) else "sem mudança")), \
                 f"vision_click '{desc[:40]}'"

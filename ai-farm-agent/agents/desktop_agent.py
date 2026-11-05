@@ -396,6 +396,11 @@ class DesktopAgent:
 
         if params.get("vault"):
             return {"steps": vault_steps(params["vault"]), "agent": "DESKTOP"}
+        if isinstance(params.get("existing"), dict):
+            from core.existing_targets import existing_steps
+            steps = existing_steps(params["existing"])
+            return {"steps": steps, "agent": "DESKTOP",
+                    **({} if steps else {"error": "O alvo nao existe mais; nada foi aberto."})}
 
         # Continuacao da conversa: age na MESMA janela do pedido anterior
         cont = params.get("continue") or {}

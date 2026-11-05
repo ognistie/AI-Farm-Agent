@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 2026-11-04 (desktop app, closing for real, faster voice)
 
 ### Added
+- **Authorization by effect** (`core/action_risk.py`). Clicking "Enviar", "Comprar", "Pagar", "Excluir", "Publicar" and similar, pressing Enter in a message field, or deleting a file now goes through a gate decided by the app, also inside the browser and app pilots, where only a prompt rule stopped it before. `execution.authorization` starts in `shadow`: nothing changes for the user and `memory/authorization.jsonl` records what would be blocked (the button label, never the typed text). In `enforce` the pilot stops before acting and asks for "confirmo".
+- **Opening what already exists without a model** (`core/existing_targets.py`): the project's folder or site in the browser, a folder inside another, the folder changed at a given time, and bringing a folder window forward. An uncertain target becomes a question listing the real options.
 - **Durable task record** (`core/task_ledger.py`). Each task writes its events to `memory/tasks/` before and after every step, so a crash no longer erases it. On the next launch an unfinished task is marked as interrupted, and a step with no recorded end is listed as having an unknown outcome. Nothing is repeated automatically. `execution.ledger` in `config.yaml` turns it off.
 - `scripts/eval_live_turns.py` measures pauses, responses, delegation and interruptions on the real GPT-Live session, with a hard cap on accumulated spending.
 - **Desktop shortcut.** `scripts/install_shortcuts.py` creates "AI Farm Agent" on the Desktop and Start menu, with its own icon, no console window and the same identity as the window, so it can be pinned to the taskbar. `scripts/setup.ps1` runs it. Without a console, output goes to `logs/app.log` and startup errors appear in a message box.
@@ -45,6 +47,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Narration accepts small paraphrases, but never a changed number.
 
 ### Fixed
+- **"Check the site" created a new project and "open it in the browser" edited its files.** The code agent only has create and edit tools, so it now does nothing unless creating or changing is asked for, and says how to open the result instead.
+- **A "professional" site took 4.5 minutes and failed.** The answer passed the 16,000-token limit twice, because the retry asked for the same thing. Static sites now use medium reasoning, and after a cut answer the retry asks for a smaller project.
+- **The browser opened `c/Users/...` as a website.** A local page becomes a `file:///` address, and only if it exists.
+- **"LLM nao retornou nenhum step".** The file and data agents explain what they can do instead. A simulated task no longer writes a plan to the second brain.
 - **The agent went to Windows Settings without being asked.** A misheard vault name ("rede Aurol") became a guess about network settings, and vague speech ("esse aí com o mouse em cima") became clicks there. Settings now need to be named by the person, pointing without a name becomes a question, and only a short "yes" to a guess the person actually heard runs it.
 - **Speech cut off.** Playback now runs continuously with a small buffer, keeps the quiet start of words, and no longer mistakes a louder agent phrase for an interruption. A sentence ending in an open word ("com o mouse em") waits for the rest instead of becoming two requests.
 - **False claims from the model.** "Vou clicar" with no task running is corrected aloud and stays out of the conversation context, which fed later wrong commands.

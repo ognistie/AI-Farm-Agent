@@ -34,11 +34,29 @@ Sem medição ainda: ações duplicadas, recuperação após interrupção e vio
 | 0 | Ponto de restauração e cenários | feita |
 | 1 | Conversa natural | feita; metas ainda não comprovadas com voz humana |
 | 2 | Registro de tarefas | feita |
-| 3 | Autorização por efeito, começando só registrando | próxima |
+| 3 | Autorização por efeito, começando só registrando | feita, em modo `shadow` |
 | 4 | Verificação de cada passo | depende da 2 |
 | 5 | Ponte Live e Maestro, com ID de tarefa, pausa e correção | depende da 2 e da 3 |
 | 6 | Recuperação com conferência antes de repetir | depende da 2 e da 4 |
 | 7 | Aprendizado por trajetórias | depende da 2 e da 4 |
+
+## Correções do teste de 2026-11-05 (conversa + site)
+
+| Problema real | Causa | Correção |
+| --- | --- | --- |
+| "Verificar o site" criou um projeto novo; "abrir no navegador" editou arquivos | O agente de código só tem criar e alterar | Só age com pedido de criar ou mudar; ver e abrir vão para `core/existing_targets.py` |
+| Site "profissional" levou 4 min 24 s e falhou (US$ 0,36) | Resposta truncada em 16 mil tokens duas vezes | Raciocínio médio em site estático; após corte, pede versão menor |
+| Navegador abriu `c/Users/...` como site | Caminho local tratado como endereço | Vira `file:///` se a página existe |
+| "Pasta docs dentro de trabalhos" virou um caminho com a frase inteira | Extração de caminho sem subpasta | Resolve pasta dentro de pasta, por nome e por horário |
+| "LLM não retornou nenhum step" em 5 pedidos de pasta | Pedido fora das ferramentas do agente de arquivos | Abrir o que existe sem modelo; mensagem explica o que dá para fazer |
+
+## Autorização por efeito
+
+`core/action_risk.py` classifica pelo que a ação toca: rótulo do botão, campo em que Enter envia texto, ou exclusão de
+arquivo. Vale para o executor e dentro dos pilotos, antes de clicar. Começa em `shadow`: nada muda e
+`memory/authorization.jsonl` guarda o que seria bloqueado, para medir falsos bloqueios antes do `enforce`.
+`python -m core.action_risk` resume o registro. Limites: ícone sem rótulo não é reconhecido, e a confirmação vem do
+texto do pedido ("confirmo"), ainda sem botão na interface.
 
 ## Fora do escopo, até a medição justificar
 

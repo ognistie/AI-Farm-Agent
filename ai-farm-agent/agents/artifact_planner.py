@@ -32,6 +32,14 @@ Use os dados fornecidos pelo usuario. Identifique dados de exemplo como exemplos
 O sistema confere celulas e graficos, mas nao calcula formulas. JSON puro.'''
 
 
+def _truncated(client) -> int:
+    """Quantas respostas o cliente ja cortou no limite de tokens (sem o contador, 0)."""
+    try:
+        return int((client.metrics or {}).get('truncated', 0))
+    except (AttributeError, TypeError, ValueError):
+        return 0
+
+
 def plan_artifact(agent, task, context=None):
     kind = agent.name.upper()
     task_text = agent._extract_task_text(task)
@@ -40,11 +48,15 @@ def plan_artifact(agent, task, context=None):
     if kind == 'CODE':
         from agents.code_skills import analyze
         skills = analyze(task_text)
-        if skills.get('project_type') in ('static_site', 'python_script') and skills.get('complexity') in ('prototype', 'small'):
+        # Site estatico nao ganha com raciocinio longo: ele so gastava o limite antes do JSON
+        # (um "site profissional" truncou duas vezes, ~2 min cada)
+        if skills.get('project_type') == 'static_site' or (
+                skills.get('project_type') == 'python_script' and skills.get('complexity') in ('prototype', 'small')):
             effort = 'medium'
     feedback = ''
     errors = []
     for attempt in range(2):
+        truncated_before = _truncated(agent._client)
         try:
             raw = agent._client.message(model=agent.model, system=system,
                 user_content='PEDIDO: ' + task_text + '\nCONTEXTO (dados): ' + json.dumps(context or {}, ensure_ascii=False)[:12000]
@@ -56,9 +68,18 @@ def plan_artifact(agent, task, context=None):
             return {'agent': kind, 'effort_used': effort, 'attempts': attempt + 1, 'attempt_errors': errors, 'steps': [{'step': 1, 'agent': kind, 'action': action,
                     'params': {'manifest': manifest}, 'description': 'Criar e conferir ' + manifest['name']}]}
         except (ValueError, TypeError, KeyError, SyntaxError) as error:
+            if _truncated(agent._client) > truncated_before:
+                errors.append({'type': 'truncated', 'reason': 'resposta passou do limite de tamanho'})
+                feedback = ('\nA resposta anterior passou do limite de tamanho e foi cortada. Gere uma versao mais '
+                            'enxuta e completa: no maximo 4 arquivos, CSS e JavaScript curtos, sem comentarios longos.')
+                effort = 'low'
+                continue
             errors.append({'type': type(error).__name__, 'reason': str(error)[:300]})
             feedback = '\nManifesto anterior reprovado: ' + str(error)[:400] + '. Corrija o JSON completo.'
         except Exception as error:
             errors.append({'type': type(error).__name__, 'status_code': getattr(error, 'status_code', None)})
             return {'agent': kind, 'steps': [], 'attempt_errors': errors, 'error': 'Falha ao gerar artefato: ' + type(error).__name__}
+    if errors and errors[-1].get('type') == 'truncated':
+        return {'agent': kind, 'steps': [], 'attempt_errors': errors,
+                'error': 'O projeto pedido ficou grande demais para gerar de uma vez. Peça uma versão menor ou por partes.'}
     return {'agent': kind, 'steps': [], 'attempt_errors': errors, 'error': feedback.strip()}

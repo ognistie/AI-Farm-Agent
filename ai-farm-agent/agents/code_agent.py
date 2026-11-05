@@ -25,6 +25,7 @@ Custo otimizado:
 from __future__ import annotations
 
 import getpass
+import re
 from typing import Optional
 
 from agents.base_agent import BaseAgent
@@ -93,6 +94,20 @@ _TYPE_TOKEN_BONUS = {
 }
 
 
+_CREATE = (r"\b(?:cri\w*|fa[cz]\w*|fizer|ger[ae]\w*|mont\w*|desenvolv\w*|constru\w*|program(?:e|ar|a um|a uma)\b|escrev\w*|"
+           r"implement\w*|novo|nova|preciso de um|quero um|landing)\b")
+_CHANGE = (_CREATE[:-3] + r"|alter\w*|mud\w*|adicion\w*|acrescent\w*|corrig\w*|consert\w*|troc\w*|remov\w*|tir\w*|"
+           r"ajust\w*|melhor\w*|coloc\w*|bot\w*|inclu\w*|atualiz\w*|edit\w*|refator\w*|substitu\w*|deix\w*|"
+           r"aument\w*|diminu\w*|traduz\w*|aplic\w*|insir\w*|pon\w*)\b")
+NOT_A_CODE_CHANGE = ("Não criei nem alterei nada: o agente de código só cria ou altera projetos. Para ver o resultado, "
+                     "peça para abrir o site no navegador ou a pasta do projeto.")
+
+
+def _asks_to(pattern: str, text: str) -> bool:
+    from core.lexicon import norm
+    return bool(re.search(pattern, norm(text or "")))
+
+
 class CodeAgent(BaseAgent):
     """v21 — modular, com skills detection + validacao em camadas."""
 
@@ -104,7 +119,13 @@ class CodeAgent(BaseAgent):
     def plan(self, task, context=None):
         params = task.get('params', {}) if isinstance(task, dict) else {}
         target = params.get('continue') or {}
-        if target.get('type') == 'code' and target.get('folder'):
+        editing = target.get('type') == 'code' and target.get('folder')
+        # Este agente so tem duas ferramentas: criar e alterar projeto. Sem pedido de criar ou mudar,
+        # usar qualquer uma delas para "verificar" ou "abrir" cria projeto novo ou mexe no existente.
+        said = f"{self._extract_original_task(task) or ''} {self._extract_task_text(task)}"
+        if not _asks_to(_CHANGE if editing else _CREATE, said):
+            return {"steps": [], "agent": "CODE", "error": NOT_A_CODE_CHANGE}
+        if editing:
             return self.plan_edit(target['folder'], self._extract_task_text(task))
         from agents.artifact_planner import plan_artifact
         return plan_artifact(self, task, context)

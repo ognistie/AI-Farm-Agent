@@ -142,6 +142,9 @@ voice:
 # Execucao das tarefas
 execution:
   ledger: true             # registro duravel por tarefa em memory/tasks (so observa; false desliga)
+  # Efeito sensivel (enviar, comprar, pagar, excluir, publicar...): shadow so registra em
+  # memory/authorization.jsonl; enforce exige "confirmo" no pedido; off desliga
+  authorization: shadow
 
 # Interface desktop
 ui:

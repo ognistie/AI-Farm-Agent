@@ -125,6 +125,10 @@ CONFIRMATION_MARKERS = [
 ]
 
 
+NO_FILE_OPERATION = ("Não há uma operação de arquivos para isso. O agente de arquivos abre, lista, procura e lê "
+                     "arquivos, cria pastas, copia, move e manda para a lixeira; diga a pasta e o que fazer nela.")
+
+
 def _detect_operation(task: str) -> Optional[str]:
     """Detecta tipo de operacao na task. Retorna None se ambigua."""
     t = task.lower()
@@ -320,7 +324,7 @@ class FileAgent(BaseAgent):
 
         steps_raw = plan.get("steps", [])
         if not steps_raw:
-            return {"ok": False, "reason": "LLM nao retornou nenhum step"}
+            return {"ok": False, "reason": NO_FILE_OPERATION}
 
         from core.file_contracts import validate
         error = validate(steps_raw, self._allowed_roots, self._allow_delete)

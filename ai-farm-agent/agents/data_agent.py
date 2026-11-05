@@ -249,7 +249,7 @@ class DataAgent(BaseAgent):
 
         steps_raw = plan.get("steps", [])
         if not steps_raw:
-            return {"ok": False, "reason": "LLM nao retornou nenhum step"}
+            return {"ok": False, "reason": "Não consegui montar uma planilha para esse pedido; diga quais dados ela deve ter."}
 
         steps = []
         for st in steps_raw:

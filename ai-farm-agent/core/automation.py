@@ -512,6 +512,11 @@ class AutomationEngine:
         denied = authorize(getattr(self, 'current_agent', ''), getattr(self, 'authorized_task', ''), action, params)
         if denied:
             return {"success":False,"status":"rejected","verified":False,"action":action,"result":denied,"timestamp":ts}
+        from core.action_risk import step_risk
+        ask = self._authorize_ui(step_risk(action, params), action, str(params.get("description") or ""))
+        if ask:
+            return {"success":False,"status":"needs_confirmation","verified":False,"action":action,"result":"⛔ " + ask,
+                    "timestamp":ts}
         if action != "wait" and not dry_run:
             self._fg_before = _fg_state()
             self._expect = None          # o app esperado vale so ate a proxima acao
@@ -937,10 +942,19 @@ class AutomationEngine:
         hints = _brain_hints("WEB", goal)
         pilot = BrowserPilot(vision_click=self._vision_click,
                              should_stop=getattr(self, "should_stop", None),
-                             on_progress=getattr(self, "on_progress", None))
+                             on_progress=getattr(self, "on_progress", None),
+                             authorize_ui=self._authorize_ui)
         r = pilot.run(goal, p.get("start_url", ""), hints, resume=p.get("resume"))
         self.last_say = r.get("say", "")
         return format_result(r)
+
+    def _authorize_ui(self, kind, action, label=""):
+        """Porta de efeito para passos e pilotos. '' segue; texto = pergunta de confirmacao."""
+        if not kind:
+            return ""
+        from core.action_risk import authorize
+        return authorize(kind, task=getattr(self, "authorized_task", "") or "", agent=getattr(self, "current_agent", ""),
+                         action=action, label=label)
 
     def _app_task(self, p):
         """Objetivo livre dentro de uma janela de app ja aberta (piloto de apps)."""
@@ -963,7 +977,8 @@ class AutomationEngine:
                 return f"❌ Não achei a janela do {p['app']} para continuar"
         pilot = AppPilot(vision_click=self._vision_click,
                          should_stop=getattr(self, "should_stop", None),
-                         on_progress=getattr(self, "on_progress", None))
+                         on_progress=getattr(self, "on_progress", None),
+                         authorize_ui=self._authorize_ui)
         r = pilot.run(goal, hwnd, title, hints=_brain_hints("DESKTOP", goal))
         self.last_say = r.get("say", "")
         return format_result(r)

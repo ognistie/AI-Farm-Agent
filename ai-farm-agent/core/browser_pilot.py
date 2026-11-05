@@ -19,6 +19,7 @@ import time
 from typing import Callable, Optional
 
 from core import browser_uia as B
+from core.action_risk import NeedsConfirmation
 
 MAX_TURNS = 14
 MAX_SECONDS = 75          # piloto que nao conclui nisso para e avisa
@@ -125,14 +126,42 @@ def _open_browser(url: str, timeout: float = 12.0):
     return None
 
 
+LOCAL_PAGES = (".html", ".htm", ".pdf", ".svg", ".txt", ".png", ".jpg", ".jpeg")
+
+
+def local_page_url(url: str) -> str:
+    """Caminho do computador vira file:/// (so pagina ou documento que existe); o resto passa igual.
+    Antes "c/Users/.../projeto" ia para https://c/... e dava erro de DNS."""
+    import os
+    from pathlib import Path
+    raw = (url or "").strip().strip('"')
+    if raw.lower().startswith("file:"):
+        from urllib.parse import unquote, urlsplit
+        raw = unquote(urlsplit(raw).path).lstrip("/")
+    elif not re.match(r"^(?:[a-zA-Z]:)?[\\/]|^[a-zA-Z][\\/](?:users|documents|desktop)\b", raw, re.I):
+        return raw
+    candidate = re.sub(r"^([a-zA-Z])[\\/]", r"\1:/", raw) if not re.match(r"^[a-zA-Z]:", raw) else raw
+    path = Path(candidate)
+    if path.is_dir():
+        index = path / "index.html"
+        path = index if index.is_file() else path
+    if not path.is_file() or path.suffix.lower() not in LOCAL_PAGES or not os.path.isabs(str(path)):
+        return ""
+    return path.resolve().as_uri()
+
+
 class BrowserPilot:
     def __init__(self, llm: Optional[Callable[[str, str], str]] = None,
                  vision_click: Optional[Callable[[dict], str]] = None,
                  should_stop: Optional[Callable[[], bool]] = None,
                  on_progress: Optional[Callable[[str], None]] = None,
-                 max_turns: int = MAX_TURNS):
+                 max_turns: int = MAX_TURNS,
+                 authorize_ui: Optional[Callable[..., str]] = None):
         self.llm = llm or self._default_llm
         self.vision_click = vision_click
+        # Porta de efeito (core/action_risk.py): '' segue; texto = parar e perguntar
+        self.authorize_ui = authorize_ui
+        self._last_field = ""
         self.should_stop = should_stop or (lambda: False)
         self.on_progress = on_progress or (lambda msg: None)
         self.max_turns = max_turns
@@ -240,7 +269,11 @@ class BrowserPilot:
                                "Siga o objetivo nesta pagina ou conclua com done.")
                 confirmed = False
                 continue
-            outcome, label = self._act(act, d, snap)
+            try:
+                outcome, label = self._act(act, d, snap)
+            except NeedsConfirmation as stop:
+                return {"ok": False, "status": "ask_user", "turns": turn, "trail": trail, "result": str(stop),
+                        "title": snap.title, "url": snap.url, "say": str(stop)}
             confirmed = "CONFERIDO" in outcome
             if act == "click" and trail.count(label) >= 1:
                 outcome += (" | ATENCAO: voce ja clicou neste MESMO elemento antes. Se o resultado "
@@ -272,6 +305,7 @@ class BrowserPilot:
             if el is None:
                 return "id inexistente nesta página", f"click #{d.get('id')}"
             label = f"click {el.role} '{el.name[:50]}'"
+            self._check("click", el.name)
             w = B.wrap(el.elem)
             try:
                 if el.role in ("link", "botao", "menu", "aba", "caixa", "opcao"):
@@ -294,6 +328,8 @@ class BrowserPilot:
             if el is None or not text:
                 return "campo ou texto ausente", f"type #{d.get('id')}"
             label = f"type '{text[:40]}' em '{el.name[:30] or el.role}'"
+            self._last_field = el.name or ""
+            self._check("type", el.name, submit=bool(d.get("submit")))
             w = B.wrap(el.elem)
             try:
                 try:
@@ -314,6 +350,7 @@ class BrowserPilot:
 
         if act == "press":
             key = str(d.get("key") or d.get("text") or "enter").lower()
+            self._check("press", self._last_field, key=key)
             try:
                 win.set_focus()
             except Exception:
@@ -355,14 +392,23 @@ class BrowserPilot:
 
         return f"ação desconhecida '{act}'", act or "?"
 
+    def _check(self, act: str, label: str, submit: bool = False, key: str = "") -> None:
+        if self.authorize_ui is None:
+            return
+        from core.action_risk import ui_risk
+        kind = ui_risk(act, label, submit=submit, key=key)
+        message = self.authorize_ui(kind, act, label) if kind else ""
+        if message:
+            raise NeedsConfirmation(message)
+
     def _goto(self, win, url: str) -> bool:
         import pyautogui
-        url = (url or "").strip()
+        url = local_page_url((url or "").strip())
         if not url:
             return False
         from urllib.parse import urlsplit
         try:
-            if url != 'about:blank' and '://' in url and urlsplit(url).scheme not in ('http', 'https'):
+            if url != 'about:blank' and '://' in url and urlsplit(url).scheme not in ('http', 'https', 'file'):
                 return False
         except ValueError:
             return False
