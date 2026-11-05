@@ -20,15 +20,18 @@ from core import browser_uia as B
 from core.browser_pilot import _parse, _paste
 
 MAX_TURNS = 12
+MAX_SECONDS = 60          # piloto que nao conclui em 1 min para e avisa (antes: 2 min e 19 chamadas)
 BS_T, BS_N = "\\t", "\\n"     # "\t"/"\n" escritos como texto pelo modelo
 HISTORY_TURNS = 8
+_CLOSING = re.compile(r"\b(?:fech\w*|encerr\w*|sair|saia|close|quit)\b")
 
 SYSTEM = """Você controla UMA janela de aplicativo do Windows para cumprir UM objetivo.
 
 A cada turno recebe: objetivo, o que já foi feito e a janela atual (título, elementos numerados
 por região e textos visíveis). Escolha UMA ação por turno. Responda SÓ JSON:
 {"action": "...", "id": <número>, "text": "...", "key": "...", "submit": true/false,
- "description": "...", "reason": "motivo curto", "result": "..."}
+ "description": "...", "reason": "motivo curto", "result": "...",
+ "say": "so no fim (done/fail/ask_user): UMA frase curta e natural para o usuario, em portugues, com o dado pedido se houver; sem numeros de elemento, sem jargao"}
 
 AÇÕES:
 - click(id)              clicar num botão/item/aba/menu
@@ -73,6 +76,28 @@ def window_from_handle(hwnd):
         return w
     except Exception:
         return None
+
+
+def _window_gone(hwnd, wait: float = 1.0) -> bool:
+    """A janela deixou de existir? Apps Electron escondem antes de destruir, e minimizada ainda conta
+    como visivel. Espera um instante: sem foco e diferente de fechada."""
+    import ctypes
+    u = ctypes.windll.user32
+    end = time.time() + wait
+    while True:
+        if not u.IsWindow(int(hwnd)) or not u.IsWindowVisible(int(hwnd)):
+            return True
+        if time.time() >= end:
+            return False
+        time.sleep(0.1)
+
+
+def _gone_result(goal: str, turn: int, trail: list) -> dict:
+    """Janela sumiu depois de uma acao: se o objetivo era fechar, deu certo."""
+    from core.lexicon import norm
+    done = bool(trail) and bool(_CLOSING.search(norm(goal)))
+    return {"ok": done, "status": "done" if done else "fail", "turns": turn - 1, "trail": trail,
+            "result": "A janela foi fechada.", "say": "Pronto, fechei a janela." if done else ""}
 
 
 def _view(win) -> tuple:
@@ -121,17 +146,25 @@ class AppPilot:
             return {"ok": False, "status": "fail", "turns": 0, "trail": trail,
                     "result": f"A janela \"{title[:50]}\" foi fechada."}
         last_sig, repeats = None, 0
+        deadline = time.time() + MAX_SECONDS
         for turn in range(1, self.max_turns + 1):
             if self.should_stop():
                 return {"ok": False, "status": "cancelled", "turns": turn - 1, "trail": trail, "result": "Cancelado."}
-            try:
-                win.set_focus()
-            except Exception:
-                pass
+            if time.time() > deadline:
+                return {"ok": False, "status": "fail", "turns": turn - 1, "trail": trail,
+                        "result": f"Passou de {MAX_SECONDS} s sem concluir; parei para não travar a conversa."}
+            from core.automation import _bring_to_front, _is_front
+            if not _bring_to_front(hwnd) or not _is_front(hwnd):
+                if _window_gone(hwnd):
+                    return _gone_result(goal, turn, trail)
+                return {'ok': False, 'status': 'fail', 'turns': turn - 1, 'trail': trail,
+                        'result': 'Janela alvo nao pode ser confirmada em primeiro plano.'}
             snap = B.snapshot(win, app=True)
             if snap is None:
-                return {"ok": False, "status": "fail", "turns": turn - 1, "trail": trail,
-                        "result": "A janela foi fechada."}
+                return _gone_result(goal, turn, trail)
+            if re.search(r'\b(cmd|powershell|terminal|command prompt)\b', snap.title, re.I):
+                return {'ok': False, 'status': 'ask_user', 'turns': turn - 1, 'trail': trail,
+                        'result': 'Execucao por terminal exige controle manual.'}
             page = snap.render().replace("PAGINA VISIVEL", "JANELA VISIVEL").replace("URL: \n", "")
             if not snap.elements:
                 page += "\n(o app quase não expõe elementos: use vision_click descrevendo o alvo)"
@@ -143,10 +176,13 @@ class AppPilot:
             if d.get("action") == "__invalid__":
                 d = _parse(self.llm(SYSTEM, user + "\n\nResponda APENAS o objeto JSON de UMA acao."))
             act = str(d.get("action", "")).lower()
+            if self.should_stop():
+                return {"ok": False, "status": "cancelled", "turns": turn - 1, "trail": trail, "result": "Cancelado antes da acao."}
             reason = str(d.get("reason", ""))[:120]
             if act in ("done", "fail", "ask_user"):
                 return {"ok": act == "done", "status": act, "turns": turn, "trail": trail,
-                        "result": str(d.get("result") or d.get("reason") or "")}
+                        "result": str(d.get("result") or d.get("reason") or ""),
+                        "say": str(d.get("say") or "")[:300]}
             view = _view(win)
             sig = (act, d.get("id"), d.get("text"), view)
             repeats = repeats + 1 if sig == last_sig else 0
@@ -170,6 +206,9 @@ class AppPilot:
 
     def _act(self, act: str, d: dict, snap, win, before: tuple) -> tuple[str, str]:
         import pyautogui
+        from core.automation import _is_front
+        if not _is_front(win.handle):
+            return 'bloqueado: foco mudou desde a observacao', act
         if act in ("click", "double_click"):
             el = self._el(snap, d)
             if el is None:
@@ -246,7 +285,7 @@ class AppPilot:
             return "ok", f"scroll {'down' if down else 'up'}"
         if act == "vision_click" and self.vision_click:
             desc = str(d.get("description") or d.get("text") or "")
-            res = self.vision_click({"description": f"{desc} (DENTRO da janela \"{snap.title[:50]}\")"})
+            res = self.vision_click({"description": f"{desc} (DENTRO da janela \"{snap.title[:50]}\")", "hwnd": win.handle})
             return (f"{res[:40]}; " + ("janela mudou" if _changed(win, before) else "sem mudança")), \
                 f"vision_click '{desc[:40]}'"
         return f"ação desconhecida '{act}'", act or "?"

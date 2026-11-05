@@ -105,12 +105,26 @@ class ContextManager:
         ws_text = " ".join(str(v.get("result", "")) if isinstance(v, dict) else str(v) for v in delta.values())
         combined = f"{all_text} {ws_text}"
 
+        # Typed artifacts are authoritative; human-readable logs are a compatibility fallback.
+        for value in delta.values():
+            artifacts = value.get('artifacts', {}) if isinstance(value, dict) else {}
+            if isinstance(artifacts, dict):
+                if isinstance(artifacts.get('url'), str):
+                    result['url'] = artifacts['url']
+                folder = artifacts.get('folder')
+                if isinstance(folder, str) and os.path.isdir(folder):
+                    result['folder'] = folder
+                    result['primary_path'] = folder
+                for path in artifacts.get('files', []):
+                    if isinstance(path, str) and os.path.isfile(path) and path not in result['files']:
+                        result['files'].append(path)
+
         # Caminhos
         seen = set()
         for p in _extract_paths(combined):
             if p in seen: continue
             seen.add(p)
-            if os.path.isfile(p):
+            if os.path.isfile(p) and p not in result['files']:
                 result["files"].append(p)
                 if not result["primary_path"]: result["primary_path"] = p
             elif os.path.isdir(p):

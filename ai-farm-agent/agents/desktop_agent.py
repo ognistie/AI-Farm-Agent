@@ -24,9 +24,15 @@ def _build_steps(app, params):
         n[0] += 1
         steps.append({"step": n[0], "action": action, "params": p, "description": desc, "agent": "DESKTOP"})
 
+    # So abrir (sem contato nem mensagem): nada de procurar conversa por visao
+    only_open = (not person.strip() and not message.strip()
+                 and action_type in ("", "open"))
+
     if app in ("teams", "microsoft teams"):
         add("app_search", {"name": "Microsoft Teams"}, "Abrir Teams")
         add("wait", {"seconds": 5}, "Aguardar")
+        if only_open:
+            return steps
         add("focus_window", {"title": "Teams"}, "Focar")
         add("wait", {"seconds": 1}, "Aguardar")
         add("vision_click", {"description": "texto 'Chat' na barra lateral esquerda DENTRO do Teams"}, "Chat")
@@ -53,6 +59,8 @@ def _build_steps(app, params):
     if app in ("whatsapp", "whats", "zap"):
         add("app_search", {"name": "WhatsApp"}, "Abrir WhatsApp")
         add("wait", {"seconds": 4}, "Aguardar")
+        if only_open:
+            return steps
         add("focus_window", {"title": "WhatsApp"}, "Focar")
         add("wait", {"seconds": 1}, "Aguardar")
         add("vision_click", {"description": "campo de pesquisa DENTRO do WhatsApp"}, "Pesquisa")
@@ -80,8 +88,8 @@ def _build_steps(app, params):
     if app in ("word", "microsoft word"):
         add("app_search", {"name": "Word"}, "Abrir Word")
         add("wait", {"seconds": 5}, "Aguardar")
-        add("vision_click", {"description": "Documento em branco DENTRO do Word"}, "Novo")
-        add("wait", {"seconds": 3}, "Aguardar")
+        # Ctrl+N na tela inicial cria o documento (antes: clique por visao, 1 chamada de IA)
+        add("blank_document", {"app": "word"}, "Documento em branco")
         if text and text.strip():
             add("type_text", {"text": text}, "Digitar")
         return steps
@@ -89,8 +97,8 @@ def _build_steps(app, params):
     if app in ("excel", "microsoft excel"):
         add("app_search", {"name": "Excel"}, "Abrir Excel")
         add("wait", {"seconds": 5}, "Aguardar")
-        add("vision_click", {"description": "Pasta de trabalho em branco DENTRO do Excel"}, "Nova")
-        add("wait", {"seconds": 3}, "Aguardar")
+        # Ctrl+N na tela inicial cria a pasta (antes: clique por visao, 1 chamada de IA)
+        add("blank_document", {"app": "excel"}, "Pasta de trabalho em branco")
         return steps
 
     if app in ("vscode", "vs code", "visual studio code"):
@@ -231,6 +239,15 @@ def _then_do_rest(steps: list, app: str, task_text: str, params: dict) -> list:
     return steps + [{"step": len(steps) + 1, "action": "app_task",
                      "params": {"goal": task_text, "app": key},
                      "description": f"Fazer no {app}: {task_text[:50]}", "agent": "DESKTOP"}]
+
+
+def vault_steps(name: str) -> list:
+    """Abre pelo link do Obsidian e confere a janela: o titulo traz o nome do cofre."""
+    from core.obsidian_vaults import vault_uri
+    return [{"step": 1, "action": "open_path", "params": {"path": vault_uri(name)},
+             "description": f"Abrir o cofre {name} no Obsidian", "agent": "DESKTOP"},
+            {"step": 2, "action": "focus_window", "params": {"title": name, "timeout": 12},
+             "description": f"Confirmar a janela do cofre {name}", "agent": "DESKTOP"}]
 
 
 def continue_steps(cont: dict, task_text: str, params: dict) -> list:
@@ -376,6 +393,9 @@ class DesktopAgent:
         if isinstance(context, dict) and "app" in context:
             params = dict(context)
         task_text = task.get("task", "") if isinstance(task, dict) else str(task)
+
+        if params.get("vault"):
+            return {"steps": vault_steps(params["vault"]), "agent": "DESKTOP"}
 
         # Continuacao da conversa: age na MESMA janela do pedido anterior
         cont = params.get("continue") or {}

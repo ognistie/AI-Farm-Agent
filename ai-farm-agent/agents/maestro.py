@@ -24,6 +24,7 @@ MUDANÇAS v16:
 """
 
 import re
+from typing import Optional
 
 from core.ai_client import get_client
 from core.config import get_config
@@ -86,7 +87,8 @@ PROMPT = (
     "1. UM APP = 1 subtask\n"
     "2. 2+ subtasks APENAS quando APPS DIFERENTES cooperam\n"
     "3. text='' se usuario nao pediu para escrever\n"
-    "4. forbidden_assumptions = o que NAO presumir\n"
+    "4. Formato ENXUTO: analysis curto (ate 6 palavras); em cada subtask so agent, task, params e\n"
+    "   depends_on; skills no fim. Nada alem disso (cada token atrasa a resposta).\n"
     "5. PROIBIDO acoplar CODE + DESKTOP notepad/word com o codigo gerado.\n"
     "   Se voce roteou para CODE, o CODE ja cria os arquivos e abre o\n"
     "   VS Code. NUNCA crie uma subtask DESKTOP escrevendo o HTML/python\n"
@@ -97,48 +99,41 @@ PROMPT = (
     "Tarefa: 'abra o bloco de notas'\n"
     '{"analysis":"apenas abrir","subtasks":[{"agent":"DESKTOP",'
     '"task":"abrir bloco de notas","params":{"app":"notepad","action_type":"open","text":""},'
-    '"objectives":["Notepad aberto"],'
-    '"forbidden_assumptions":["NAO escrever nenhum texto"],"depends_on":null}],"skills":["notepad"]}\n\n'
+    '"depends_on":null}],"skills":["notepad"]}\n\n'
 
     "Tarefa: 'abra o vs code e crie um arquivo python com sistema de login'\n"
     '{"analysis":"criar arquivo python no VS Code","subtasks":[{"agent":"CODE",'
     '"task":"criar arquivo python com sistema de login e abrir no VS Code",'
     '"params":{"action_type":"create_file"},'
-    '"objectives":["Arquivo criado","VS Code aberto com o arquivo"],'
-    '"forbidden_assumptions":["NAO apenas abrir VS Code vazio"],"depends_on":null}],"skills":["python","vscode"]}\n\n'
+    '"depends_on":null}],"skills":["python","vscode"]}\n\n'
 
     "Tarefa: 'abra o youtube e pesquise videos de skate'\n"
     '{"analysis":"youtube + pesquisa","subtasks":[{"agent":"WEB",'
     '"task":"abrir youtube e pesquisar videos de skate",'
     '"params":{"url":"https://www.youtube.com","query":"videos de skate","action_type":"search"},'
-    '"objectives":["YouTube aberto","Pesquisa realizada"],'
-    '"forbidden_assumptions":["NAO pesquisar termo diferente"],"depends_on":null}],"skills":["youtube"]}\n\n'
+    '"depends_on":null}],"skills":["youtube"]}\n\n'
 
     "Tarefa: 'pesquise sobre Palmeiras e envie no Teams para Joao'\n"
     '{"analysis":"pesquisar + enviar via Teams","subtasks":['
     '{"agent":"WEB","task":"pesquisar sobre Palmeiras e ler resultado",'
     '"params":{"url":"https://www.google.com","query":"historia do Palmeiras","action_type":"search"},'
-    '"objectives":["Pesquisa realizada","Conteudo lido"],'
-    '"forbidden_assumptions":["NAO inventar conteudo"],"depends_on":null},'
+    '"depends_on":null},'
     '{"agent":"DESKTOP","task":"enviar resumo da pesquisa para Joao no Teams",'
     '"params":{"app":"teams","action_type":"send_message","person":"Joao","message":"{output_summary_1}"},'
-    '"objectives":["Teams aberto","Mensagem enviada"],'
-    '"forbidden_assumptions":["NAO enviar texto inventado"],"depends_on":1}'
+    '"depends_on":1}'
     '],"skills":["web","teams"]}\n\n'
 
     "Tarefa: 'abra o paint e desenhe uma casa'\n"
     '{"analysis":"abrir paint e desenhar","subtasks":[{"agent":"DESKTOP",'
     '"task":"abrir paint e desenhar uma casa",'
     '"params":{"app":"paint","action_type":"draw","text":"casa"},'
-    '"objectives":["Paint aberto","Desenho feito"],'
-    '"forbidden_assumptions":["NAO apenas abrir sem desenhar"],"depends_on":null}],"skills":["paint"]}\n\n'
+    '"depends_on":null}],"skills":["paint"]}\n\n'
 
     "Tarefa: 'abra o notepad e escreva de 10 ate 20'\n"
     '{"analysis":"notepad + numeros","subtasks":[{"agent":"DESKTOP",'
     '"task":"abrir notepad e escrever numeros 10-20",'
     '"params":{"app":"notepad","action_type":"write_text","text":"10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20"},'
-    '"objectives":["Notepad aberto","Numeros escritos"],'
-    '"forbidden_assumptions":["NAO escrever Ola"],"depends_on":null}],"skills":["notepad"]}\n\n'
+    '"depends_on":null}],"skills":["notepad"]}\n\n'
 
     "═══ CONVERSA EM ANDAMENTO ═══\n"
     "Se vier CONTEXTO DA CONVERSA, o usuario esta continuando uma conversa.\n"
@@ -258,6 +253,113 @@ def _format_route_hint(routes: list) -> str:
     return "\n".join(lines)
 
 
+# ── Atalho sem IA: "abrir <app ou site>" ──────────────────────────────
+# O pedido mais comum ("abre o youtube", "abrir o paint") nao precisa de
+# planejamento: o dicionario do Obsidian (70 Dicionario/Apps e sites) ja diz
+# o que e e como abrir. Economiza a chamada do Maestro (~2-3 s).
+_OPEN_REQUEST = re.compile(
+    r"^(?:por favor,? )?(?:abr[aei]|abrir|abre ai|entr[ae] n[oa]|entrar n[oa]|acess[ae]r?|vai n[oa])"
+    r"(?: (?:o|a|os|as|meu|minha|pra mim|para mim))* (?P<app>[\w .\-]{2,40}?)"
+    r"(?: (?:pra mim|para mim|por favor|ai))?$")
+
+
+def fast_open_plan(task: str, continue_in: str = "") -> Optional[dict]:
+    """Plano direto para "abrir X" quando X e exatamente um app/site do dicionario.
+    None quando ha qualquer duvida (o Maestro planeja normalmente)."""
+    if continue_in:
+        return None                    # algo aberto na conversa: o resolvedor/Maestro decidem
+    try:
+        from core.lexicon import get_lexicon, norm
+        lex = get_lexicon()
+        m = _OPEN_REQUEST.match(norm(task).strip(" .!?"))
+        if not m:
+            return None
+        target = m.group("app").strip()
+        apps = lex.apps_in(target)
+        if len(apps) != 1 or not lex.is_app_name(target):
+            return None
+        entry = lex.app_entry(apps[0][0])
+    except Exception:
+        return None
+    if entry is None or len(entry.extra) < 2:
+        return None
+    name = entry.meaning.split(" (")[0].split(" / ")[0]
+    alvo = entry.extra[1].strip()
+    how = entry.extra[2].strip() if len(entry.extra) > 2 else ""
+    if alvo == "web" and re.fullmatch(r"https?://\S+", how):
+        sub = {"agent": "WEB", "task": f"abrir {name}",
+               "params": {"url": how, "action_type": "open"}}
+    elif alvo.startswith("app:"):
+        sub = {"agent": "DESKTOP", "task": f"abrir {name}",
+               "params": {"app": alvo.split(":", 1)[1], "action_type": "open", "text": ""}}
+    else:
+        return None
+    sub["original_task"] = task
+    return {"analysis": f"Abrir {name} (atalho do dicionario, sem IA)",
+            "subtasks": [sub], "skills": [], "fast_path": "abrir"}
+
+
+# ── Atalho sem IA: continuar no que esta aberto ───────────────────────
+# "clica em Area de Trabalho", "pausa o video", "volta para a tela anterior" com o app/aba
+# aberto: o alvo da conversa ja diz qual agente age. Criar/escrever conteudo, resumir ou
+# mexer em outro app continuam no Maestro (ele decide agente e conteudo).
+_TARGET_AGENT = {"web": "WEB", "code": "CODE", "folder": "FILE"}
+_INTERACT = re.compile(
+    r"^(?:(?:agora|ai|e|entao|por favor)\s+)*(?:(?:no|na|nos|nas|em)\s+[^,]{1,70}?(?:,\s*|\s+))?"
+    r"(?:clic|cliqu|apert|pression|selecion|marc|desmarc|abr|entr|ir\b|va\b|vai\b|volt|avanc|pul|paus|"
+    r"toc|continu|rol|desc|sub|maximiz|minimiz|restaur|fech|ampli|diminu|aument|ativ|desativ|lig|deslig|"
+    r"pesquis|busc|procur|filtr|orden|mostr|exib|copi|recarreg|atualiz|tir|assist|reproduz|silenci|"
+    r"mud\w* para|troc\w* para|acess)\w*", re.I)
+_NOT_SIMPLE = re.compile(r"\b(?:cri[ae]r?|ger[ae]r?|escrev\w*|redi[gj]\w*|compo\w*|elabor\w*|resum\w*|"
+                         r"analis\w*|explic\w*|planilha nova|novo arquivo|e depois|depois disso)\b", re.I)
+
+
+def vault_plan(task: str) -> Optional[dict]:
+    """Abrir cofre do Obsidian: tem link direto e nao depende do que esta na tela, entao vem
+    antes de continuar na janela aberta. None: o pedido nao e sobre cofre."""
+    try:
+        from core.obsidian_vaults import parse_request
+        found = parse_request(task)
+    except Exception:
+        return None
+    if not found:
+        return None
+    if found.get("ask"):
+        return {"needs_clarification": True, "question": found["ask"]}
+    name = found["open"]
+    return {"analysis": f"Abrir o cofre {name} no Obsidian (link direto, sem IA)", "skills": [], "fast_path": "abrir",
+            "subtasks": [{"agent": "DESKTOP", "task": f"abrir o cofre {name} no Obsidian", "original_task": task,
+                          "params": {"vault": name, "action_type": "open"}}]}
+
+
+def continue_plan(task: str, kind: str, target: Optional[str], session) -> Optional[dict]:
+    """Plano direto para uma acao DENTRO do alvo aberto. None = o Maestro planeja."""
+    if kind != "continue" or not target or session is None or not session.target(target):
+        return None
+    try:
+        from core.lexicon import norm
+        t = norm(task).strip(" .!?")
+    except Exception:
+        t = (task or "").lower().strip(" .!?")
+    if not _INTERACT.match(t) or _NOT_SIMPLE.search(t) or len(t) > 220:
+        return None
+    if _detect_ambiguity(task):
+        return None
+    agent = "DESKTOP" if target.startswith("app:") else _TARGET_AGENT.get(target)
+    if not agent:
+        return None
+    plan = {"analysis": f"Continuar em {target} (atalho da conversa, sem IA)",
+            "subtasks": [{"agent": agent, "task": task, "params": {}, "original_task": task}],
+            "skills": [], "fast_path": "continuar"}
+    from core.plan_validator import validate_plan
+    check = validate_plan(task, plan)
+    if not check.approved:
+        return None
+    plan["validation"] = {"approved": True, "violations": []}
+    print(f"[Maestro] Atalho: {plan['analysis']}")
+    return plan
+
+
 class Maestro:
     def __init__(self, memory=None):
         self._config = get_config()
@@ -282,6 +384,17 @@ class Maestro:
                 "why": ambiguity["why"],
                 "subtasks": [],
             }
+
+        # "abrir <app/site>": plano direto do dicionario, sem chamar o modelo.
+        # Passa pelas mesmas politicas de aceite que um plano do LLM.
+        fast = fast_open_plan(task, continue_in)
+        if fast:
+            from core.plan_validator import validate_plan
+            check = validate_plan(task, fast)
+            if check.approved:
+                print(f"[Maestro] Atalho: {fast['analysis']}")
+                fast["validation"] = {"approved": True, "violations": []}
+                return fast
 
         # Memoria de rotas — falha do lookup nunca bloqueia a tarefa.
         # Vai na mensagem do usuario (nao no system) para nao invalidar
@@ -321,6 +434,13 @@ class Maestro:
         except Exception as brain_err:
             print(f"[Maestro] segundo cerebro indisponivel: {brain_err}")
 
+        try:
+            from core.user_settings import instructions_block
+            mine = instructions_block()
+            if mine:
+                hint = (hint + "\n\n" if hint else "") + mine
+        except Exception:
+            pass
         if conversation:
             hint = (hint + "\n\n" if hint else "") + "CONTEXTO DA CONVERSA:\n" + conversation
         if continue_in:
@@ -407,15 +527,15 @@ class Maestro:
                 sub.setdefault("original_task", task)
 
             # Validação pós-LLM: bloqueia texto inventado
-            generics = {"Ola!", "Ola", "Olá", "Hello", "Hi", "Oi", "Bom dia", ""}
+            # Texto generico que o usuario NAO pediu ("Ola", "Hello") nao vai para o app
+            generics = {"ola!", "ola", "olá", "olá!", "hello", "hi", "oi", "bom dia"}
+            low = task.lower()
             for sub in plan.get("subtasks", []):
-                params = sub.get("params", {})
-                for rule in sub.get("forbidden_assumptions", []):
-                    if "NAO escrever" in rule:
-                        if params.get("text", "") in generics:
-                            params["text"] = ""
-                        if params.get("message", "") in generics and "message" not in task.lower():
-                            params["message"] = ""
+                params = sub.get("params", {}) or {}
+                for k in ("text", "message"):
+                    v = str(params.get(k) or "").strip()
+                    if v.lower() in generics and v.lower() not in low:
+                        params[k] = ""
 
             # Filtro defensivo: se temos uma subtask CODE, removemos qualquer
             # subtask DESKTOP que pareça apenas "colar o codigo no notepad/word"

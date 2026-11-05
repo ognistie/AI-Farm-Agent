@@ -14,6 +14,7 @@ Mantem 1-pra-1 os eventos esperados pelo antigo frontend, mais 2 novos:
 from __future__ import annotations
 
 import os
+import secrets
 import threading
 import time
 import traceback
@@ -43,6 +44,30 @@ MAX_TASK_LENGTH = 2000
 TASK_TIMEOUT_S = 120
 
 
+# Parametros do plano que carregam CONTEUDO do usuario (o que "a mesma mensagem" retoma)
+_CONTENT_KEYS = ("message", "text", "query", "content", "subject", "person", "to", "url", "filename", "name")
+
+
+def turn_content(subtasks: list, request: str = "") -> str:
+    """Conteudo literal de um pedido, a partir do plano: o que cada agente recebeu para fazer
+    + os campos de conteudo (mensagem, texto, busca, destinatario...). So entra o que NAO esta
+    no pedido entendido (o contexto ja mostra o pedido; repetir so gasta tokens)."""
+    seen = (request or "").lower()
+    parts = []
+    for s in subtasks or []:
+        task = str(s.get("task") or "").strip()
+        if task and task.lower() not in seen:
+            parts.append(f"{(s.get('agent') or '').upper()}: {task}")
+            seen += " " + task.lower()
+        params = s.get("params") or {}
+        for k in _CONTENT_KEYS:
+            v = params.get(k)
+            if isinstance(v, str) and v.strip() and v.strip().lower() not in seen:
+                parts.append(f'{k}="{v.strip()}"')
+                seen += " " + v.strip().lower()
+    return " | ".join(parts)
+
+
 class Controller:
     """Coracao do desktop. Executa tarefas em background e publica eventos."""
 
@@ -62,6 +87,9 @@ class Controller:
 
         self._ContextManager = ContextManager
         self._ai_client = get_client()
+        from core.config import get_config
+        self._config = get_config()
+        self._ai_client.on_progress = self._on_llm_progress
         self.memory = MemoryAgent()
         from core.brain import get_brain
         self._brain = get_brain()
@@ -103,6 +131,11 @@ class Controller:
         self._voice_hints: Dict[str, dict] = {}
 
         self.state = {"running": False}
+        self._cancel_event = threading.Event()
+        # Revisao do plano (opcao em Configuracoes): o pedido espera o "Executar" do usuario
+        self._plan_gate = threading.Event()
+        self._plan_ok = False
+        self._plan_token = ""
         self._lock = threading.Lock()
         # Cada execucao recebe um id. Uma thread cancelada que ainda esteja
         # presa (ex.: aguardando a API) nao pode emitir eventos na tela da
@@ -130,6 +163,7 @@ class Controller:
                 bus.emit("error", {"msg": "Ja existe uma execucao em andamento."})
                 return
             self.state["running"] = True
+            self._cancel_event.clear()
             self._run_id += 1
             run_id = self._run_id
 
@@ -174,6 +208,8 @@ class Controller:
         + gravar a conversa. Em segundo plano: nao atrasa o proximo pedido."""
         err = str(entry.get("error") or "")
         kind = turn.get("kind")
+        reply_run_id = getattr(getattr(self, '_tls', None), 'run_id', getattr(self, '_run_id', None))
+        reply_session_id = getattr(self.session, 'id', None)
 
         def work():
             reply, speak = "", False
@@ -184,13 +220,23 @@ class Controller:
                     reply = (self.session.pending or {}).get("question", "")
                 elif err.startswith("limitation"):
                     reply = err.split(":", 1)[-1].strip()
+                elif kind != "cancel" and turn.get("say"):
+                    # O piloto ja escreveu a frase para o usuario no ultimo turno: sai na hora,
+                    # sem mais uma chamada de IA (~1,5 s antes da resposta falada)
+                    from core.reply import informative
+                    reply = turn["say"]
+                    speak = informative(turn.get("summary", "") or reply, bool(entry.get("success")))
+                    bus.emit("assistant_message", {"said": said, "text": reply, "speak": speak,
+                                                   "success": bool(entry.get("success")),
+                                                   "run_id": reply_run_id, "session_id": reply_session_id})
                 elif kind != "cancel":
                     from core.reply import compose
                     recent = [t.reply for t in self.session.turns[-4:] if t.reply]
                     r = compose(said, task, turn.get("summary", ""), bool(entry.get("success")), err, recent)
                     reply, speak = r["text"], r["speak"]
                     bus.emit("assistant_message", {"said": said, "text": reply, "speak": speak,
-                                                   "success": bool(entry.get("success"))})
+                                                   "success": bool(entry.get("success")),
+                                                   "run_id": reply_run_id, "session_id": reply_session_id})
                 if reply:
                     self.session.set_last_reply(reply)
             except Exception as e:
@@ -203,11 +249,51 @@ class Controller:
                     print(f"  [Sessao] nao gravou: {e}")
         threading.Thread(target=work, daemon=True, name="assistant-reply").start()
 
+    # Rotulo do andamento enquanto o modelo escreve (tarefas longas)
+    _PROGRESS_LABEL = {
+        "MAESTRO": "Planejando", "CODE": "Escrevendo o código", "DATA": "Montando a planilha",
+        "WEB": "Planejando a navegação", "DESKTOP": "Planejando os passos", "FILE": "Organizando",
+        "APP_PILOT": "Operando o app", "VISION": "Lendo a tela", "NARRATOR": "Escrevendo o relatório",
+        "READER": "Lendo o arquivo",
+    }
+
+    def _on_llm_progress(self, agent: str, stage: str, chars: int) -> None:
+        """Mostra o modelo trabalhando ("Montando a planilha · 2.400 caracteres") em vez de
+        um texto parado por 30-70 s. So durante uma tarefa (a resposta final e a voz rodam
+        fora dela e nao podem reabrir o estado de execucao)."""
+        label = self._PROGRESS_LABEL.get((agent or "").upper())
+        if not label or not self.state.get("running"):
+            return
+        if stage == "thinking" or not chars:
+            msg = f"{label} · pensando"
+        else:
+            msg = f"{label} · {chars:,} caracteres".replace(",", ".")
+        self._emit("phase", {"phase": "agent", "msg": msg, "progress": True})
+
+    def attach_files(self, paths: list) -> list:
+        """Anexos do usuario (+ ou arrastar): entram na conversa como arquivos que o assistente
+        pode ler ("resume esta planilha") e o pedido cita o caminho para os agentes."""
+        ok = [p for p in (paths or []) if isinstance(p, str) and os.path.isfile(p)]
+        if ok:
+            self.session.remember_files(ok)
+        return ok
+
+    def approve_plan(self, ok: bool, token: str = "") -> bool:
+        with self._lock:
+            if not token or token != self._plan_token or self._cancel_event.is_set():
+                return False
+            self._plan_ok = bool(ok)
+            self._plan_gate.set()
+            return True
+
     def force_stop(self) -> None:
         """Cancela execucao em andamento."""
         with self._lock:
-            self.state["running"] = False
-        bus.emit("cancelled", {"msg": "Execucao interrompida pelo usuario."})
+            self._plan_ok = False
+            self._plan_token = ""
+            self._cancel_event.set()
+            self._plan_gate.set()       # um plano esperando aprovacao tambem para
+        bus.emit("cancelled", {"msg": "Cancelamento solicitado; aguardando encerramento."})
 
     # ──────────────────────────────────────────────────────────────────
     #  Loop interno (porta de ui/server.py:_run)
@@ -220,7 +306,8 @@ class Controller:
 
     def _alive(self) -> bool:
         """A execucao desta thread deve continuar?"""
-        return self.state["running"] and self._is_current()
+        cancelled = getattr(self, "_cancel_event", None)
+        return self.state["running"] and self._is_current() and not (cancelled and cancelled.is_set())
 
     def _emit(self, event: str, payload: Any = None) -> None:
         if self._is_current():
@@ -272,6 +359,7 @@ class Controller:
                 by_agent[agent] = {
                     "calls": calls,
                     "cost_usd": round(cur["cost_usd"] - prev.get("cost_usd", 0.0), 6),
+                    "ms": cur.get("ms", 0) - prev.get("ms", 0),
                 }
         return {
             "api_calls": d("total_calls"),
@@ -282,6 +370,7 @@ class Controller:
             "cache_read_tokens": d("total_cache_read_tokens"),
             "cache_write_tokens": d("total_cache_write_tokens"),
             "cost_usd": round(d("total_cost_usd"), 6),
+            "llm_ms": d("total_llm_ms"),
             "by_agent": by_agent,
             "truncated": d("truncated"),
         }
@@ -299,6 +388,7 @@ class Controller:
         self._emit("step_start", {"step": 1, "total": 1, "action": "revert_project",
                                   "desc": "[CODE] Voltar a versao anterior", "progress": 0})
         open_t = "index.html" if os.path.exists(os.path.join(folder, "index.html")) else ""
+        self.engine.current_agent, self.engine.authorized_task = 'CODE', 'desfazer ultima edicao'
         r = self.engine.execute("revert_project", {"folder": folder, "open": open_t}, dry_run=dry_run)
         self._emit("step_done", {"step": 1, "total": 1, "ok": r.get("success", False),
                                  "result": r.get("result", ""), "action": "revert_project",
@@ -317,8 +407,18 @@ class Controller:
         brain_plan = None
         all_records: list = []
         said = task
-        turn = {"kind": "new", "agents": [], "summary": "", "recorded": False}
+        turn = {"kind": "new", "agents": [], "summary": "", "recorded": False, "content": ""}
         entry["session_id"] = self.session.id
+        # Onde o tempo foi (ms por fase): base para medir latencia (scripts/latency_report.py)
+        timing = {"resolve": 0, "maestro": 0, "agent_plan": 0, "steps": 0}
+        entry["timing"] = timing
+        t_mark = time.time()
+
+        def lap(phase: str) -> None:
+            nonlocal t_mark
+            now = time.time()
+            timing[phase] += int((now - t_mark) * 1000)
+            t_mark = now
 
         try:
             self._emit("phase", {"phase": "maestro", "msg": "Entendendo o pedido..."})
@@ -327,9 +427,11 @@ class Controller:
             # Conversa: "agora abra esse segundo video" vira um pedido
             # completo, apontando para o que ficou aberto antes.
             from core.followup import from_hint, resolve
+            from_voice = said.strip() in self._voice_hints
             res = from_hint(said, self.session, self._voice_hints.pop(said.strip(), None)) \
                 or resolve(said, self.session)
             self._emit_usage()
+            lap("resolve")
             kind, target = res["kind"], res.get("target")
             turn["kind"] = kind
             if res.get("via") == "pending":
@@ -362,13 +464,49 @@ class Controller:
                 entry["success"] = ok
                 return
 
+            # Pergunta sobre algo que o assistente CRIOU ("resume a planilha que voce gerou"):
+            # le o arquivo e responde numa chamada (antes: piloto lendo a tela, 2 min e falha)
+            from core import artifact_qa
+            last = self.session.turns[-1] if self.session.turns else None
+            just_created = bool(last and last.success and set(last.agents) & {"DATA", "CODE"})
+            art = artifact_qa.wants_answer(task, getattr(self.session, "files", []), just_created)
+            if art and not dry_run:
+                self._emit("phase", {"phase": "maestro", "msg": "Lendo o arquivo..."})
+                try:
+                    ans = artifact_qa.answer(task, art)
+                except Exception as qa_err:
+                    ans = ""
+                    self._log("WARN", "MAESTRO", f"Leitura do arquivo falhou: {qa_err}")
+                self._emit_usage()
+                entry["subtasks"] = [{"agent": "READER", "task": f"ler {os.path.basename(art)}"}]
+                turn["kind"] = "question"
+                if ans:
+                    self._log("INFO", "MAESTRO", f"Respondido lendo {os.path.basename(art)}")
+                    self._emit("answer", {"msg": ans})
+                    turn["summary"] = ans
+                    entry["success"] = True
+                    return
+                # Ler a TELA nao resolve (a grade do Excel nao expoe os valores): avisa em vez de
+                # cair no piloto, que gastava 30 s e falhava do mesmo jeito
+                msg = (f"Abri o arquivo {os.path.basename(art)}, mas não consegui montar a resposta agora. "
+                       "Quer que eu tente de novo?")
+                self._emit("answer", {"msg": msg})
+                turn["summary"] = msg
+                entry["success"] = False
+                entry["error"] = "leitura do arquivo sem resposta"
+                return
+
             self._emit("phase", {"phase": "maestro", "msg": "Analisando intencao..."})
             # Memoria: o Maestro consulta rotas parecidas e as usa como
             # referencia no prompt (nunca como atalho).
             conversation = "" if self.session.empty else self.session.context_block()
-            plan = self.maestro.analyze(task, conversation=conversation,
-                                        continue_in=target or "")
+            # Continuar no que esta aberto ("clica em X", "pausa o video", "volta"): o alvo ja
+            # diz qual agente age; vai direto, sem a chamada do Maestro (~2,5 s por pedido)
+            from agents.maestro import continue_plan, vault_plan
+            plan = vault_plan(task) or continue_plan(task, kind, target, self.session) \
+                or self.maestro.analyze(task, conversation=conversation, continue_in=target or "")
             self._emit_usage()
+            lap("maestro")
             maestro_skills = self._brain.last_skills.pop("MAESTRO", [])
             if maestro_skills:
                 self._log("INFO", "MAESTRO", "Skills aplicadas: " + ", ".join(maestro_skills))
@@ -397,11 +535,36 @@ class Controller:
                 entry["error"] = plan.get("message", "maestro_error")
                 return
 
+            # Revisar o plano antes de agir (Configuracoes): so pedidos digitados — na voz a
+            # confirmacao falada ja cumpre esse papel. Atalhos sem IA (abrir app) nao esperam.
+            from core.user_settings import load as _settings
+            if (_settings().get("plan_review") and not dry_run and not from_voice
+                    and plan.get("fast_path") != "abrir"):
+                with self._lock:
+                    if self._cancel_event.is_set():
+                        return
+                    self._plan_gate.clear()
+                    self._plan_ok = False
+                    self._plan_token = secrets.token_hex(16)
+                self._emit("plan_review", {"token": self._plan_token, "plan": {
+                    "summary": plan.get("analysis", ""),
+                    "steps": [f"[{s.get('agent', '')}] {s.get('task', '')}" for s in plan.get("subtasks", [])]}})
+                self._log("INFO", "MAESTRO", "Aguardando aprovação do plano")
+                approved = self._plan_gate.wait(180) and self._plan_ok
+                with self._lock:
+                    self._plan_token = ""
+                if not approved or not self._alive():
+                    self._emit("cancelled", {"msg": "Plano não aprovado."})
+                    entry["error"] = "plano não aprovado"
+                    turn["recorded"] = True
+                    return
+
             # Plano proposto e validado vai para o segundo cerebro antes de
             # executar; cada agente anexa seus passos e a validacao.
             brain_plan = self._brain.write_plan(task, plan)
 
             subtasks = plan.get("subtasks", [])
+            turn["content"] = turn_content(subtasks, task)
             entry["subtasks"] = [
                 {"agent": s.get("agent", ""), "task": s.get("task", "")}
                 for s in subtasks
@@ -427,6 +590,7 @@ class Controller:
             ctx_mgr = self._ContextManager()
             cont_target = self.session.target(target)
             cont_used = False
+            subtask_status = {}
 
             for si, subtask in enumerate(subtasks):
                 if not self._alive():
@@ -434,6 +598,12 @@ class Controller:
                     return
 
                 subtask = ctx_mgr.prepare_subtask(subtask, si)
+                subtask_status[si + 1] = False
+                dependency = subtask.get("depends_on")
+                if dependency is not None and not subtask_status.get(int(dependency), False):
+                    all_success = False
+                    self._log("WARN", "MAESTRO", f"Subtarefa {si + 1} bloqueada: pre-requisito {dependency} falhou.")
+                    continue
 
                 agent_name = subtask.get("agent", "").upper()
                 agent = self.agents.get(agent_name)
@@ -444,6 +614,9 @@ class Controller:
                     continue
 
                 subtask_params = dict(subtask.get("params", {}) or {})
+                # Continuation capabilities are owned by Session, never supplied by the model.
+                subtask_params.pop('continue', None)
+                subtask['params'] = subtask_params
                 # Continuacao: entrega ao agente o alvo ja aberto (aba, janela, projeto)
                 from core.routing import continue_target_for
                 tgt, why = continue_target_for(self.session, agent_name, subtask_params, target,
@@ -495,6 +668,7 @@ class Controller:
                                "params": subtask_params}
                     agent_plan = agent.plan(payload, context=legacy_ctx)
                 self._emit_usage()
+                lap("agent_plan")
 
                 # Rastro dos 3 subagentes do agente (entender/montar/conferir)
                 sub_traces = agent_plan.get("subagents") or []
@@ -537,6 +711,8 @@ class Controller:
                 ws_snapshot = dict(self.engine.workspace)
                 # Acoes longas (piloto do navegador) param no Esc e narram cada turno
                 self.engine.should_stop = lambda: not self._alive()
+                self.engine.current_agent = agent_name
+                self.engine.authorized_task = said
                 self.engine.on_progress = (
                     lambda msg, _a=agent_name: self._log("INFO", _a, msg))
 
@@ -567,6 +743,9 @@ class Controller:
                         time.sleep(2)
                         result = self.engine.execute(action, params, dry_run=dry_run)
 
+                    # frase final do piloto; so vale se ele foi o ULTIMO passo do pedido
+                    turn["say"] = getattr(self.engine, "last_say", "") or ""
+
                     # Subagente de conferencia pos-passo (ex.: ContentGuard do
                     # WebAgent marca prompt injection no conteudo lido).
                     if hasattr(agent, "review_step"):
@@ -593,7 +772,8 @@ class Controller:
                     sub_results.append(result.get("result", ""))
 
                     cap = None
-                    if (not dry_run and action not in NO_SCREENSHOT
+                    if (self._config.get("privacy.capture_enabled", False)
+                            and not dry_run and action not in NO_SCREENSHOT
                             and not is_desktop):
                         try:
                             cap = self.capture.capture_step(
@@ -613,7 +793,11 @@ class Controller:
                                        if cap and cap.get("filename") else None),
                         "progress": round((si + 1) / max(1, len(subtasks)) * 100),
                     })
+                    if not result.get("success", False):
+                        break  # subsequent actions may require the failed click/open/type
                     time.sleep(0.05)
+                lap("steps")
+                subtask_status[si + 1] = sub_ok
 
                 if not dry_run and hasattr(agent, "report_result"):
                     agent.report_result({"task": agent_task}, sub_ok)
@@ -658,7 +842,7 @@ class Controller:
                 except Exception:
                     pass
 
-            if not dry_run:
+            if not dry_run and all_records and all(r.get("verified") is True for r in all_records):
                 # Registra a ROTA (agentes + tipo de acao, sem conteudo) com
                 # o resultado. Falhas tambem contam: rota que falha mais do
                 # que funciona deixa de ser sugerida ao Maestro.
@@ -675,7 +859,9 @@ class Controller:
             # em memory/workflow_store v6.
 
             self._emit("task_done", {
-                "msg": "Concluido.",
+                "msg": "Execucao concluida." if all_success else "Execucao concluida com falhas.",
+                "success": all_success,
+                "verified": bool(all_records) and all(r.get("verified") is True for r in all_records),
                 "steps": step_n,
                 "dry_run": dry_run,
                 "skills": plan.get("skills", []),
@@ -693,6 +879,12 @@ class Controller:
                 self._emit("report_ready", {"report": report})
 
             entry["success"] = all_success
+            if not all_success and not entry.get("error"):
+                # O que falhou DE VERDADE (para a tela e para a resposta nao chutar a causa)
+                bad = [f"{r.get('action', '')}: {str(r.get('result', ''))[:140]}"
+                       for r in all_records if not r.get("success", True)]
+                if bad:
+                    entry["error"] = "Passo que falhou — " + " | ".join(bad[:2])
 
         except Exception as e:
             tb = traceback.format_exc()
@@ -700,33 +892,44 @@ class Controller:
             self._log("ERROR", "SYSTEM", f"Excecao: {e}", {"trace": tb})
             entry["error"] = str(e)
         finally:
-            with self._lock:
-                if self._is_current():
-                    self.state["running"] = False
-            # Conversa: este pedido vira contexto do proximo (mesmo se falhou)
-            if not turn["recorded"]:
-                try:
-                    self.session.add_turn(said, task, turn["kind"], turn["agents"],
-                                          entry.get("success"), turn["summary"]
-                                          or entry.get("error") or "")
-                except Exception as sess_err:
-                    print(f"  [Sessao] Falhou ao registrar: {sess_err}")
-            entry["ended_at"] = datetime.now().isoformat(timespec="seconds")
-            entry["duration_ms"] = int((time.time() - task_start) * 1000)
-            # Metricas REAIS desta execucao (delta do AIClient)
-            entry["metrics"] = self._metrics_delta(
-                metrics_before, self._ai_client.metrics)
             try:
-                history_store.append(entry)
-                self._emit("history_changed", {"entry": entry})
-            except Exception as hist_err:
-                print(f"  [History] Falhou ao gravar: {hist_err}")
-            # Segundo cerebro: plano vira "executado"/"falhou" e a execucao
-            # entra em 40 Execucoes/Sucesso ou Falhas (consulta futura).
-            if not str(entry.get("error") or "").startswith(("clarification", "limitation")):
+                if self._cancel_event.is_set():
+                    entry.update(success=False, status="cancelled", error="cancelado pelo usuario")
+                entry["verified"] = bool(all_records) and entry.get("success") is True and all(
+                    r.get("verified") is True for r in all_records)
+                # Conversa: este pedido vira contexto do proximo (mesmo se falhou)
+                if not turn["recorded"]:
+                    try:
+                        self.session.add_turn(said, task, turn["kind"], turn["agents"],
+                                              entry.get("success"), turn["summary"]
+                                              or entry.get("error") or "", turn.get("content", ""))
+                    except Exception as sess_err:
+                        print(f"  [Sessao] Falhou ao registrar: {sess_err}")
+                entry["ended_at"] = datetime.now().isoformat(timespec="seconds")
+                entry["duration_ms"] = int((time.time() - task_start) * 1000)
+                # Metricas REAIS desta execucao (delta do AIClient)
+                entry["metrics"] = self._metrics_delta(
+                    metrics_before, self._ai_client.metrics)
                 try:
-                    self._brain.finish(brain_plan, entry, all_records)
-                except Exception as brain_err:
-                    print(f"  [Brain] Falhou ao registrar: {brain_err}")
-            if not turn["recorded"]:
-                self._after_turn(said, task, turn, entry)
+                    history_store.append(entry)
+                    self._emit("history_changed", {"entry": entry})
+                except Exception as hist_err:
+                    print(f"  [History] Falhou ao gravar: {hist_err}")
+                # A resposta ao usuario sai primeiro (em segundo plano); gravar no
+                # Obsidian nao atrasa o "Pronto" na tela nem na voz.
+                if not turn["recorded"]:
+                    self._after_turn(said, task, turn, entry)
+                # Segundo cerebro: plano vira "executado"/"falhou" e a execucao
+                # entra em 40 Execucoes/Sucesso ou Falhas (consulta futura).
+                if not str(entry.get("error") or "").startswith(("clarification", "limitation")):
+                    try:
+                        self._brain.finish(brain_plan, entry, all_records)
+                    except Exception as brain_err:
+                        print(f"  [Brain] Falhou ao registrar: {brain_err}")
+
+            finally:
+                with self._lock:
+                    if self._is_current():
+                        self.state["running"] = False
+                self._emit("execution_finished", {"success": entry.get("success", False),
+                                                  "status": entry.get("status", "finished")})

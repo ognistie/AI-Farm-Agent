@@ -130,6 +130,12 @@ def observe(agent: str, params: dict, extracted: dict, session: Session) -> str:
                                  (prev + "\n" + text).strip() if text else prev)
             return f"app: {title[:40]}"
 
+        created = list(extracted.get("files") or [])
+        if extracted.get("primary_path") and extracted["primary_path"] not in created:
+            created.append(extracted["primary_path"])
+        if agent in ("CODE", "DATA", "FILE") and created:
+            session.remember_files([f for f in created if os.path.isfile(f)])
+
         if agent == "CODE":
             folder = cont.get("folder") if cont.get("type") == "code" else None
             folder = folder or extracted.get("folder")

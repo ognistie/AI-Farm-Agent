@@ -92,15 +92,30 @@ def _wants_generated_content(task: str) -> bool:
 def validate_plan(task: str, plan: dict) -> Validation:
     """Checa o plano do Maestro (lista de subtasks) contra as politicas."""
     v = Validation()
+    if not isinstance(plan, dict):
+        v.add('POL-000', 'plano deve ser um objeto')
+        return v
     subs = plan.get("subtasks") or []
     if not subs:
         v.add("POL-000", "plano sem subtasks")
+        return v
+    if not isinstance(subs, list) or len(subs) > 5 or any(not isinstance(s, dict) for s in subs):
+        v.add("POL-000", "subtasks deve ser uma lista de ate cinco objetos")
         return v
 
     literal = _literal_text(task)
     generated = _wants_generated_content(task) and not literal
 
     for i, sub in enumerate(subs, start=1):
+        dep = sub.get("depends_on")
+        if dep is not None and (isinstance(dep, bool) or not isinstance(dep, int) or not 1 <= dep < i):
+            v.add("POL-004", "depends_on deve apontar para uma subtarefa anterior", i)
+        if not isinstance(sub.get("params", {}), dict):
+            v.add("POL-000", "params deve ser um objeto", i)
+            continue
+        if not isinstance(sub.get('agent', ''), str) or not isinstance(sub.get('task', ''), str):
+            v.add('POL-000', 'agent e task devem ser texto', i)
+            continue
         agent = (sub.get("agent") or "").upper()
         params = sub.get("params") or {}
         if agent not in KNOWN_AGENTS:
@@ -142,6 +157,24 @@ def validate_steps(agent: str, subtask: dict, steps: list, task: str) -> Validat
     params = subtask.get("params") or {}
     if not steps:
         v.add("POL-000", "agente nao propos nenhum passo")
+        return v
+    if not isinstance(steps, list) or any(not isinstance(s, dict) or not isinstance(s.get('params', {}), dict) for s in steps):
+        v.add('POL-000', 'steps deve conter objetos com params validos')
+        return v
+    if agent in ('CODE', 'DATA'):
+        allowed = {'create_project', 'edit_project', 'revert_project'} if agent == 'CODE' else {'create_workbook'}
+        if any(step.get('action') not in allowed for step in steps):
+            v.add('POL-008', 'CODE/DATA aceitam apenas artefatos declarativos')
+        return v
+    if agent == 'FILE':
+        from core.file_contracts import validate, request_roots
+        from agents.file_agent import _has_explicit_confirmation
+        error = validate(steps, request_roots(task), _has_explicit_confirmation(task))
+        if error:
+            v.add('POL-008', error)
+        return v
+    if agent in ('WEB', 'DESKTOP') and any(s.get('action') in ('run_python', 'run_command', 'delete_file', 'pip_install') for s in steps):
+        v.add('POL-008', 'ferramenta privilegiada fora do dominio do agente')
         return v
     if len(steps) > 40:
         v.add("POL-006", f"plano longo demais ({len(steps)} passos)")

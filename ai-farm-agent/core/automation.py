@@ -61,9 +61,13 @@ def is_our_browser(title):
 _UNTITLED = ("sem título", "sem titulo", "untitled", "novo documento", "documento1", "new tab", "nova guia")
 
 
+# Office: "Pasta1 - Excel", "Book2 - Excel", "Documento1 - Word" (nunca "Pasta1.xlsx - Excel")
+_OFFICE_NEW = re.compile(r"^(?:pasta|book|documento|document)\d+(?:\s+-\s+|$)")
+
+
 def _is_untitled(title: str) -> bool:
     t = (title or "").lstrip("*• ").lower()
-    return any(t.startswith(u) for u in _UNTITLED)
+    return any(t.startswith(u) for u in _UNTITLED) or bool(_OFFICE_NEW.match(t))
 
 
 def _window_title(hwnd) -> str:
@@ -113,28 +117,89 @@ def _same_doc(a: str, b: str) -> bool:
     return bool(norm(a)) and norm(a) == norm(b)
 
 
+def _is_front(hwnd) -> bool:
+    """A janela (ou uma janela dela, ex.: dialogo) esta em primeiro plano?"""
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        fg = u.GetForegroundWindow()
+        if not fg:
+            return False
+        root = lambda h: u.GetAncestor(h, 3) or h          # GA_ROOTOWNER
+        return int(fg) == int(hwnd) or root(fg) == root(int(hwnd))
+    except Exception:
+        return False
+
+
+def _bring_to_front(hwnd) -> bool:
+    """Traz a janela para frente e CONFERE. O Windows nega o foco a quem esta em segundo
+    plano (ex.: conversa por voz com o usuario em outro app); por isso anexa a fila de
+    entrada da janela da frente antes de pedir o foco. Devolve se ficou mesmo na frente."""
+    try:
+        import ctypes
+        u, k = ctypes.windll.user32, ctypes.windll.kernel32
+        h = int(hwnd)
+        if not u.IsWindow(h):
+            return False
+        if u.IsIconic(h):
+            u.ShowWindow(h, 9)                              # SW_RESTORE
+        for _ in range(3):
+            if _is_front(h):
+                return True
+            fg = u.GetForegroundWindow()
+            me = k.GetCurrentThreadId()
+            other = u.GetWindowThreadProcessId(fg, None) if fg else 0
+            attached = bool(other and other != me and u.AttachThreadInput(me, other, True))
+            try:
+                u.BringWindowToTop(h)
+                u.SetForegroundWindow(h)
+            finally:
+                if attached:
+                    u.AttachThreadInput(me, other, False)
+            for _ in range(8):
+                if _is_front(h):
+                    return True
+                time.sleep(0.05)
+        return _is_front(h)
+    except Exception:
+        return False
+
+
 def _activate_hwnd(hwnd):
     """Traz para frente a janela guardada na conversa. Devolve o titulo ou None (fechou)."""
     if not hwnd:
         return None
     try:
         import ctypes
-        u = ctypes.windll.user32
         h = int(hwnd)
-        if not u.IsWindow(h):
+        if not ctypes.windll.user32.IsWindow(h):
             return None
-        if u.IsIconic(h):
-            u.ShowWindow(h, 9)   # SW_RESTORE
-        w = next((x for x in gw.getAllWindows() if x._hWnd == h), None)
-        try:
-            if w: w.activate()
-            else: u.SetForegroundWindow(h)
-        except Exception:
-            u.SetForegroundWindow(h)
-        time.sleep(0.4)
-        return (w.title if w else "") or "janela"
+        _bring_to_front(h)
+        time.sleep(0.15)
+        return _window_title(h) or "janela"
     except Exception:
         return None
+
+
+def _paste_front(hwnd, text: str) -> bool:
+    """Cola o texto SO se a janela certa esta na frente (senao o Ctrl+V cairia em outro app)."""
+    if not _bring_to_front(hwnd):
+        return False
+    if re.search(r'\b(cmd|powershell|terminal|command prompt)\b', _window_title(hwnd), re.I):
+        return False
+    time.sleep(0.1)
+    if not _is_front(hwnd):
+        return False
+    try:
+        from core.clipboard import paste_text
+        paste_text(text)
+    except Exception:
+        pyautogui.write(text)
+    return True
+
+
+_NO_FOCUS = ("⛔ O Windows não deixou trazer a janela '{t}' para frente. "
+             "Nada foi digitado (para não escrever em outro app).")
 
 
 def focus_away():
@@ -228,10 +293,153 @@ class BrowserController:
         return f"🌐 Nova aba"
 
 
+# ── Prontidao de janela (espera adaptativa) ───────────────────────────
+def _process_matches(hwnd, exe):
+    try:
+        import ctypes
+        from ctypes import wintypes
+        pid = wintypes.DWORD()
+        ctypes.windll.user32.GetWindowThreadProcessId(wintypes.HWND(hwnd), ctypes.byref(pid))
+        return psutil.Process(pid.value).name().casefold() == exe.casefold()
+    except Exception:
+        return False
+
+
+def _app_windows(name):
+    """Janelas visiveis do app: pelo processo quando conhecido, senao pelo titulo."""
+    exe = _KNOWN_EXE.get(_norm_name(name))
+    hints = _title_hints(name)
+    matches = []
+    for window in gw.getAllWindows():
+        if not window.visible or not window.title or is_our_browser(window.title):
+            continue
+        identity = _process_matches(window._hWnd, exe) if exe and exe.endswith('.exe') else any(h in window.title.lower() for h in hints)
+        if identity:
+            matches.append(window._hWnd)
+    return matches
+
+
+def _resolve_app_window(name, known=()):
+    """Find an app even when Windows denied foreground activation; never guess a document.
+    `known`: windows that existed before opening; a single new one is what was just opened."""
+    matches = _app_windows(name)
+    front, _ = _fg_state()
+    if front in matches:
+        return front
+    new = [hwnd for hwnd in matches if hwnd not in known]
+    if len(new) == 1:
+        return new[0]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _opened_without_focus(name, known, started):
+    """O Windows pode abrir o app sem dar o primeiro plano a ele. Sem isto a espera ia ate o fim
+    (12 s) com a janela ja aberta atras. Janela nova na frente segue a espera normal de pronta."""
+    first_seen = []
+
+    def check():
+        found = set(_app_windows(name))
+        new = found - set(known)
+        now = time.time()
+        if new:
+            if _fg_state()[0] in new:
+                return False
+            first_seen.append(now)
+            return now - first_seen[0] >= OPENED_SETTLE_S
+        return bool(found) and now - started >= REUSED_WINDOW_S    # abriu aba na janela que ja existia
+    return check
+
+
+def _title_hints(name: str) -> tuple:
+    """Trechos de titulo que identificam a janela do app ('Bloco de Notas' -> 'bloco de notas',
+    'notepad'; 'Microsoft Teams' -> 'microsoft teams', 'teams')."""
+    n = (name or "").strip().lower()
+    if not n:
+        return ()
+    hints = {n}
+    try:
+        from core.observer import APP_TITLES
+        known = set(APP_TITLES.get(_norm_name(n), ()))
+    except Exception:
+        known = set()
+    hints |= known
+    last = n.split()[-1]
+    if not known and len(last) > 3:
+        hints.add(last)              # "Microsoft Teams" -> "teams" (app fora da tabela)
+    return tuple(sorted(hints))
+
+
+# As rotinas pedem "aguardar N s" depois de abrir algo. N e o TETO: a espera
+# acaba assim que a janela nova esta pronta. Sem mudanca de janela, espera N.
+READY_MIN_S = 0.3        # nunca menos que isso (o app ainda pinta a janela)
+READY_STABLE_S = 0.4     # titulo parado por esse tempo = carregou
+READY_SETTLED_S = 1.0    # app que nunca fica "ocioso" (WhatsApp, apps UWP): estavel e respondendo basta
+OPENED_SETTLE_S = 0.6    # janela nova atras: tempo para o foco ainda chegar
+REUSED_WINDOW_S = 3.0    # nenhuma janela nova: o app reaproveitou a que ja estava aberta
+
+
+def _fg_state():
+    """(hwnd, titulo) da janela em primeiro plano."""
+    try:
+        import ctypes
+        u = ctypes.windll.user32
+        h = u.GetForegroundWindow()
+        n = u.GetWindowTextLengthW(h)
+        buf = ctypes.create_unicode_buffer(n + 1)
+        u.GetWindowTextW(h, buf, n + 1)
+        return int(h or 0), buf.value
+    except Exception:
+        return 0, ""
+
+
+def _responsive(hwnd: int) -> bool:
+    """Janela visivel, de outro processo e respondendo (sem exigir 'ocioso')."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        if not hwnd or not u.IsWindowVisible(hwnd) or u.IsHungAppWindow(hwnd):
+            return False
+        pid = wintypes.DWORD()
+        u.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        return pid.value != os.getpid()
+    except Exception:
+        return False
+
+
+def _window_ready(hwnd: int) -> bool:
+    """Janela visivel, respondendo, de outro processo, e com o app ocioso para entrada."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u, k = ctypes.windll.user32, ctypes.windll.kernel32
+        if not hwnd or not u.IsWindowVisible(hwnd) or u.IsHungAppWindow(hwnd):
+            return False
+        pid = wintypes.DWORD()
+        u.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value == os.getpid():
+            return False                       # a propria janela do AI Farm Agent nao conta
+        hp = k.OpenProcess(0x00100000 | 0x1000, False, pid.value)   # SYNCHRONIZE | QUERY_LIMITED
+        if not hp:
+            return True                        # sem acesso (app elevado): nao bloqueia
+        try:
+            # 0 = ocioso; WAIT_FAILED (app sem fila de mensagens) tambem conta como pronto
+            return u.WaitForInputIdle(hp, 0) in (0, 0xFFFFFFFF)
+        finally:
+            k.CloseHandle(hp)
+    except Exception:
+        return False
+
+
 class AutomationEngine:
     def __init__(self):
         self.executed_steps = []
         self.dry_run = False
+        # Janela em primeiro plano ANTES da ultima acao (base da espera adaptativa)
+        self._fg_before = None
+        self._expect = None      # titulos aceitos depois de abrir um app ("obsidian", "bloco de notas")
+        self.should_stop = None
+        self._target_hwnd = None
         self.vision = None
         self.browser = BrowserController()
         self.workspace = {}  # Contexto compartilhado entre passos
@@ -279,19 +487,50 @@ class AutomationEngine:
             "browser_click":self._browser_click,"browser_read":self._browser_read,"browser_task":self._browser_task,
             "edit_project":self._edit_project,"revert_project":self._revert_project,
             "blank_document":self._blank_document,"app_task":self._app_task,"open_path":self._open_path,
+            "create_project":self._create_project,"create_workbook":self._create_workbook,
+            "open_url":self._open_url,
         }
         handler = MAP.get(action)
         if not handler:
-            return {"success":False,"action":action,"result":f"Acao desconhecida: {action}","timestamp":ts}
+            return {"success":False,"status":"rejected","verified":False,"action":action,"result":f"Acao desconhecida: {action}","timestamp":ts}
+        if not isinstance(params, dict):
+            return {"success":False,"status":"rejected","verified":False,"action":action,"result":"Parametros devem ser um objeto.","timestamp":ts}
+        self.last_say = ""               # frase final do piloto (vira a resposta ao usuario)
+        # Central invariant: simulation cannot invoke ANY handler (including reads/captures).
+        if dry_run:
+            rec = {"success":True,"status":"simulated","verified":False,"action":action,
+                   "params":params,"result":f"[SIM] {action}","timestamp":ts,"dry_run":True}
+            self.executed_steps.append(rec)
+            return rec
+        if callable(getattr(self, "should_stop", None)) and self.should_stop():
+            return {"success":False,"status":"cancelled","verified":False,"action":action,
+                    "result":"Cancelado antes da acao.","timestamp":ts}
+        if action in ('run_python', 'run_command', 'pip_install'):
+            return {"success":False,"status":"rejected","verified":False,"action":action,
+                    "result":"Execucao arbitraria desativada. Use ferramentas declarativas.","timestamp":ts}
+        from core.action_policy import authorize
+        denied = authorize(getattr(self, 'current_agent', ''), getattr(self, 'authorized_task', ''), action, params)
+        if denied:
+            return {"success":False,"status":"rejected","verified":False,"action":action,"result":denied,"timestamp":ts}
+        if action != "wait" and not dry_run:
+            self._fg_before = _fg_state()
+            self._expect = None          # o app esperado vale so ate a proxima acao
         try:
             result = handler(params)
-            ok = not (isinstance(result,str) and result.lstrip().startswith(FAILURE_PREFIXES))
-            rec = {"success":ok,"action":action,"params":params,"result":result,"timestamp":ts,"dry_run":dry_run}
+            if isinstance(result, dict):
+                rec = {**result, "success": result.get("success") is True,
+                       "verified": result.get("verified") is True and result.get("success") is True}
+            else:
+                ok = not (isinstance(result,str) and result.lstrip().startswith(FAILURE_PREFIXES))
+                rec = {"success":ok,"result":result,"verified":False}
+            rec.update(action=action, params=params, timestamp=ts, dry_run=False)
+            rec.setdefault("status", "succeeded" if rec["success"] else "failed")
         except pyautogui.FailSafeException:
-            sw,sh = pyautogui.size(); pyautogui.moveTo(sw//2,sh//2,duration=0.1)
             rec = {"success":False,"action":action,"params":params,"result":"FailSafe","timestamp":ts}
         except Exception as e:
             rec = {"success":False,"action":action,"params":params,"result":f"Erro: {e}","timestamp":ts}
+        rec.setdefault("status", "failed")
+        rec.setdefault("verified", False)
 
         # Log da acao
         duration = int((time.time() - start_time) * 1000)
@@ -360,104 +599,60 @@ class AutomationEngine:
             return f"⏳ Wait fixo"
 
     # === RUN PYTHON — o coração universal ===
+    def _create_project(self, p):
+        from core.artifact_builder import build_project
+        return build_project(p.get('manifest'))
+
+    def _open_url(self, p):
+        from urllib.parse import urlsplit
+        import webbrowser
+        url = p.get('url', '')
+        if not isinstance(url, str) or any(char.isspace() for char in url):
+            return '⛔ URL invalida.'
+        try:
+            parsed = urlsplit(url)
+        except ValueError:
+            return '⛔ URL invalida.'
+        if url != 'about:blank' and (parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password):
+            return '⛔ Apenas URLs HTTP/HTTPS sem credenciais sao permitidas.'
+        opened = webbrowser.open_new_tab(url)
+        return {'success': bool(opened), 'verified': False, 'result': 'Abertura solicitada: ' + url,
+                'artifacts': {'url': url}}
+
+    def _create_workbook(self, p):
+        from core.artifact_builder import build_workbook
+        return build_workbook(p.get('manifest'))
+
     def _run_python(self, p):
-        """Executa código Python com TODAS as libs padrão pré-carregadas."""
+        """Same-user managed worker; no code executes in the desktop process."""
+        if self.dry_run:
+            return "[SIM] Python"
         code = p.get("code", "")
-        desc = p.get("description", "código")
-        if self.dry_run: return f"[SIM] {desc}"
-        if not code: return "❌ Código vazio"
-
-        code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-
-        # Auto-install libs externas — usando AST pra pegar SOMENTE imports
-        # de nivel topo do script (ignora imports dentro de strings/funcoes,
-        # que era a causa de "pip install database/utils" sendo disparado
-        # por imports dentro do conteudo de arquivos a serem criados).
-        stdlib = {"os","sys","json","time","datetime","pathlib","shutil","glob","re","math",
-                  "csv","subprocess","io","base64","random","collections","string","traceback",
-                  "getpass","hashlib","copy","tempfile","platform","typing","dataclasses",
-                  "sqlite3","zipfile","configparser","itertools","functools","textwrap",
-                  "contextlib","logging","calendar","statistics","uuid","pickle","struct",
-                  "ctypes","threading","queue","heapq","operator","decimal","pprint",
-                  "ast","webbrowser","html","unicodedata","argparse"}
-        found = []
-        try:
-            tree = _ast.parse(code)
-            for node in tree.body:  # SO o nivel topo, nao dentro de funcoes/strings
-                if isinstance(node, _ast.Import):
-                    for n in node.names:
-                        found.append(n.name.split(".")[0])
-                elif isinstance(node, _ast.ImportFrom):
-                    if node.module and node.level == 0:  # ignora imports relativos
-                        found.append(node.module.split(".")[0])
-        except SyntaxError:
-            # codigo nao compila — pula auto-install, deixa o exec falhar com
-            # mensagem real em vez de poluir com pip install
-            print("  ⚠️ Codigo com erro de sintaxe — pulando auto-install")
-
-        for lib in found:
-            if lib and lib not in stdlib and lib not in sys.modules:
-                try: __import__(lib)
-                except ImportError:
-                    print(f"  📦 Instalando {lib}...")
-                    subprocess.run([sys.executable,"-m","pip","install",lib,"--break-system-packages","-q"],capture_output=True,timeout=60)
-
-        # Globals com TUDO pré-importado
-        g = {"__builtins__":__builtins__,"workspace":self.workspace,"BASE":BASE,"USERNAME":USERNAME,
-             "os":os,"sys":sys,"json":json,"time":time,"datetime":datetime,
-             "subprocess":subprocess,"shutil":shutil,"glob":glob,"re":re,
-             "math":math,"csv":csv,"base64":base64,"pathlib":pathlib,
-             "random":random,"collections":collections,"string":string,
-             "traceback":traceback,"getpass":getpass}
-
-        # Importa libs externas usadas no código
-        for lib in found:
-            if lib and lib not in g:
-                try: g[lib] = __import__(lib)
-                except: pass
-
-        # ─── FIX CRITICO v9 ─────────────────────────────────────────
-        # Mudamos o CWD para o Desktop do usuario ANTES de executar.
-        # Causa-raiz: o LLM as vezes gera `os.makedirs('pasta_x')` sem
-        # expanduser. Como o CWD do processo Python e a pasta do projeto,
-        # a pasta acabava DENTRO do projeto em vez do Desktop do user.
-        # Agora forcamos o CWD para o Desktop. Caminhos absolutos com
-        # expanduser('~') continuam funcionando normal.
-        desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
-        if not os.path.isdir(desktop_dir):
-            desktop_dir = os.path.expanduser("~")   # fallback se Desktop nao existir
-        original_cwd = os.getcwd()
-
-        # Executa
-        import io as _io
-        from contextlib import redirect_stdout, redirect_stderr
-        out, err = _io.StringIO(), _io.StringIO()
-        try:
-            os.chdir(desktop_dir)
-            with redirect_stdout(out), redirect_stderr(err):
-                exec(code, g)
-            r = out.getvalue().strip() or "✅ OK"
-            if err.getvalue().strip(): r += f"\n⚠️ {err.getvalue().strip()[:200]}"
-            return f"🐍 {desc}\n{r[:500]}"
-        except Exception as e:
-            return f"❌ {desc}\n{traceback.format_exc().strip().split(chr(10))[-1]}"
-        finally:
-            # Sempre volta ao CWD original — nao deixa o processo "perdido"
+        if not isinstance(code, str) or not code.strip():
+            return {"success": False, "status": "rejected", "result": "Codigo vazio.", "verified": False}
+        from core.process_runner import run_python
+        import uuid
+        directory = pathlib.Path(__file__).resolve().parent.parent / "memory" / "executions" / uuid.uuid4().hex
+        directory.mkdir(parents=True, exist_ok=False)
+        cwd = str(directory)
+        serializable = {}
+        for key, value in self.workspace.items():
             try:
-                os.chdir(original_cwd)
-            except OSError:
-                pass
+                json.dumps(value, allow_nan=False)
+                serializable[key] = value
+            except (TypeError, ValueError):
+                continue
+        result = run_python(code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME),
+                            workspace=serializable, cwd=cwd,
+                            should_stop=getattr(self, "should_stop", None))
+        if result["success"]:
+            self.workspace.update(result.pop("workspace", {}))
+        result["result"] = f"🐍 {p.get('description', 'codigo')}\n" + result["result"]
+        return result
 
     def _pip_install(self, p):
-        """Instala biblioteca Python."""
-        lib = p.get("library", "") or p.get("name", "")
-        if self.dry_run: return f"[SIM] pip install {lib}"
-        try:
-            r = subprocess.run([sys.executable, "-m", "pip", "install", lib, "--break-system-packages", "-q"],
-                capture_output=True, text=True, timeout=60)
-            if r.returncode == 0: return f"📦 {lib} instalado"
-            return f"❌ Falha: {r.stderr[:200]}"
-        except: return f"❌ Timeout instalando {lib}"
+        return {"success": False, "status": "rejected", "verified": False,
+                "result": "Instalacao durante tarefas desativada. Instale dependencias pelo ambiente do projeto."}
 
     # === SMART ACTIONS ===
     def _excel_write(self, p):
@@ -488,10 +683,20 @@ class AutomationEngine:
             # a busca do Iniciar + Enter EXECUTA o que for digitado: so nome de app, nunca comando/caminho
             return f"⛔ '{name[:40]}' não parece nome de aplicativo (tem caminho, argumento ou símbolo de comando)."
         if self.dry_run: return f"[SIM] {name}"
+        before = _fg_state()
+        self._expect = _title_hints(name)
         if exe:
             try:
+                known = _app_windows(name)
                 subprocess.Popen(["cmd", "/c", "start", "", exe], creationflags=0x08000000)
-                time.sleep(2.0)
+                self._await_ready(before, 12.0, early=_opened_without_focus(name, known, time.time()))
+                hwnd, title = _fg_state()
+                if not any(hint in title.lower() for hint in self._expect):
+                    hwnd = _resolve_app_window(name, known)
+                    if not hwnd:
+                        return f'❌ Janela do aplicativo {name} nao confirmada ou ambigua.'
+                    _activate_hwnd(hwnd)
+                self._target_hwnd = hwnd
                 return f"✅ {name}"
             except Exception:
                 pass                     # cai na busca do menu Iniciar
@@ -499,7 +704,15 @@ class AutomationEngine:
         try:
             from core.clipboard import paste_text; paste_text(name)
         except: pyautogui.typewrite(name, interval=0.04) if name.isascii() else pyautogui.write(name)
-        time.sleep(1.5); pyautogui.press("enter"); time.sleep(2)
+        time.sleep(1.5); before = _fg_state(); pyautogui.press("enter")
+        self._await_ready(before, 12.0)
+        hwnd, title = _fg_state()
+        if not any(hint in title.lower() for hint in self._expect):
+            hwnd = _resolve_app_window(name)
+            if not hwnd:
+                return f'❌ Janela do aplicativo {name} nao confirmada.'
+            _activate_hwnd(hwnd)
+        self._target_hwnd = hwnd
         return f"✅ {name}"
 
     def _app_type(self, p):
@@ -513,16 +726,16 @@ class AutomationEngine:
             if expect and not _same_doc(got, expect):
                 return (f"⛔ A aba ativa mudou para '{got[:40]}' (a conversa usava '{expect[:40]}'). "
                         "Não vou escrever no documento errado.")
-            try: from core.clipboard import paste_text; paste_text(text)
-            except: pyautogui.write(text)
+            if not _paste_front(p.get("hwnd"), text):
+                return _NO_FOCUS.format(t=got[:40])
             return f"✅ '{got[:25]}': {text[:40]}"
         # Documento em branco garantido por blank_document: digita NELE
         doc = getattr(self, "_doc_hwnd", None)
         if p.get("require_untitled") and doc:
             got = _activate_hwnd(doc)
             if got and _is_untitled(got):
-                from core.clipboard import paste_text
-                paste_text(text)
+                if not _paste_front(doc, text):
+                    return _NO_FOCUS.format(t=got[:40])
                 self._doc_hwnd = None
                 return f"✅ '{got[:25]}': {text[:40]}"
         search = title.lower()
@@ -532,15 +745,8 @@ class AutomationEngine:
                     if search in w.title.lower() and w.visible and w.title and not is_our_browser(w.title):
                         if p.get("require_untitled") and not _is_blank_doc(w.title):
                             continue   # nunca digitar num documento que o usuario ja tinha aberto
-                        try:
-                            if w.isMinimized: w.restore()
-                            w.activate()
-                        except:
-                            try: import ctypes; ctypes.windll.user32.SetForegroundWindow(w._hWnd)
-                            except: pass
-                        time.sleep(0.4)
-                        try: from core.clipboard import paste_text; paste_text(text)
-                        except: pyautogui.write(text)
+                        if not _paste_front(w._hWnd, text):
+                            return _NO_FOCUS.format(t=w.title[:40])
                         return f"✅ '{title[:25]}': {text[:40]}"
             except: pass
             time.sleep(0.4)
@@ -575,6 +781,17 @@ class AutomationEngine:
             if blank is not None:
                 hwnd = blank._hWnd
         title = _activate_hwnd(hwnd) or _window_title(hwnd) or found[1]
+        if not _is_blank_doc(title) and " - " not in title and key in ("excel", "word", "powerpoint"):
+            # Tela inicial do Office ("Excel", sem documento): Esc fecha a tela e abre o
+            # documento em branco (o Ctrl+N nessa tela nem sempre funciona)
+            _activate_hwnd(hwnd)
+            pyautogui.press("escape")
+            for _ in range(10):
+                time.sleep(0.3)
+                again = _app_window(key)
+                if again and _is_blank_doc(again[1]):
+                    hwnd, title = again
+                    break
         for attempt in range(2):
             if _is_blank_doc(title):
                 break
@@ -601,41 +818,52 @@ class AutomationEngine:
         title = p.get("title","")
         if self.dry_run: return f"[SIM] {title}"
         got = _activate_hwnd(p.get("hwnd"))
-        if got: return f"🎯 {got[:40]}"
-        for _ in range(6):
+        if got and _is_front(p.get('hwnd')):
+            self._target_hwnd = p['hwnd']
+            return f"🎯 {got[:40]}"
+        if not title:
+            return '⛔ Focar exige titulo ou handle confirmado.'
+        # Apps pesados (Obsidian, Teams, Spotify) levam alguns segundos para criar a janela
+        try:
+            limit = min(float(p.get("timeout", 8)), 20.0)
+        except (TypeError, ValueError):
+            limit = 8.0
+        end, seen = time.time() + limit, ""
+        while time.time() < end:
             try:
                 for w in gw.getAllWindows():
                     if title.lower() in w.title.lower() and w.visible and w.title and not is_our_browser(w.title):
-                        try:
-                            if w.isMinimized: w.restore()
-                            w.activate()
-                        except:
-                            try: import ctypes; ctypes.windll.user32.SetForegroundWindow(w._hWnd)
-                            except: pass
-                        time.sleep(0.4); return f"🎯 {w.title[:40]}"
-            except: pass
+                        seen = w.title
+                        if _bring_to_front(w._hWnd):
+                            self._target_hwnd = w._hWnd
+                            time.sleep(0.2)
+                            return f"🎯 {w.title[:40]}"
+            except Exception:
+                pass
+            stop = getattr(self, "should_stop", None)
+            if stop and stop():
+                break
             time.sleep(0.4)
-        return f"❌ '{title}'"
+        if seen:
+            return _NO_FOCUS.format(t=seen[:40]).replace("Nada foi digitado (para não escrever em outro app).",
+                                                        "A janela existe, mas ficou atrás.")
+        return f"❌ A janela '{title}' não apareceu em {limit:.0f}s"
 
     # === VISION ===
     def _ensure_app_focus(self):
-        """Garante que a janela ativa NÃO é o browser do AI Farm Agent."""
-        try:
-            active = gw.getActiveWindow()
-            if active and is_our_browser(active.title):
-                # Busca outra janela visível que não seja a nossa
-                for w in gw.getAllWindows():
-                    if w.visible and w.title.strip() and not is_our_browser(w.title):
-                        try: w.activate(); time.sleep(0.3); return
-                        except: pass
-        except: pass
+        """Fail closed: never guess an unrelated foreground window."""
+        hwnd = getattr(self, '_target_hwnd', None)
+        return bool(hwnd and _bring_to_front(hwnd) and _is_front(hwnd))
 
     def _vision_click(self, p):
         desc = p.get("description","")
         if self.dry_run: return f"[SIM] {desc}"
         if not self.vision: return "⚠️ Sem visão"
 
-        self._ensure_app_focus()  # Garante foco no app certo
+        if p.get('hwnd'):
+            self._target_hwnd = p['hwnd']
+        if not self._ensure_app_focus():
+            return '⛔ Janela alvo nao confirmada para visao.'
 
         # Tenta até 2 vezes
         for attempt in range(2):
@@ -710,7 +938,9 @@ class AutomationEngine:
         pilot = BrowserPilot(vision_click=self._vision_click,
                              should_stop=getattr(self, "should_stop", None),
                              on_progress=getattr(self, "on_progress", None))
-        return format_result(pilot.run(goal, p.get("start_url", ""), hints, resume=p.get("resume")))
+        r = pilot.run(goal, p.get("start_url", ""), hints, resume=p.get("resume"))
+        self.last_say = r.get("say", "")
+        return format_result(r)
 
     def _app_task(self, p):
         """Objetivo livre dentro de uma janela de app ja aberta (piloto de apps)."""
@@ -734,7 +964,9 @@ class AutomationEngine:
         pilot = AppPilot(vision_click=self._vision_click,
                          should_stop=getattr(self, "should_stop", None),
                          on_progress=getattr(self, "on_progress", None))
-        return format_result(pilot.run(goal, hwnd, title, hints=_brain_hints("DESKTOP", goal)))
+        r = pilot.run(goal, hwnd, title, hints=_brain_hints("DESKTOP", goal))
+        self.last_say = r.get("say", "")
+        return format_result(r)
 
     def _browser_read(self, p):
         """Le titulo, URL, texto e links da pagina aberta no navegador do usuario."""
@@ -760,6 +992,11 @@ class AutomationEngine:
             if self.dry_run: return f"[SIM] Abrir {raw}"
             os.startfile(raw.strip()); time.sleep(1.2)
             return f"⚙️ Configurações do Windows abertas ({raw.strip()})"
+        from core.obsidian_vaults import URI_PATTERN
+        if re.match(URI_PATTERN, raw.strip()):
+            if self.dry_run: return f"[SIM] Abrir {raw}"
+            os.startfile(raw.strip())
+            return "📓 Cofre do Obsidian solicitado"
         if re.match(r"^https?://", raw.strip()):
             if self.dry_run: return f"[SIM] Abrir {raw}"
             import webbrowser; webbrowser.open(raw.strip()); return f"🌐 {raw.strip()}"
@@ -782,7 +1019,8 @@ class AutomationEngine:
         if not self.vision: return "⚠️ Sem visão"
         if not text: return "❌ Texto vazio"
 
-        self._ensure_app_focus()  # Garante foco no app certo
+        if not self._ensure_app_focus():
+            return '⛔ Janela alvo nao confirmada para digitacao.'
 
         for attempt in range(2):
             r = self.vision.find_element(desc)
@@ -862,22 +1100,35 @@ class AutomationEngine:
     def _move_file(self, p):
         s,d = expand(p.get("source","")),expand(p.get("destination",""))
         if not os.path.exists(s): return f"❌ {s}"
+        if os.path.lexists(d): return f"⛔ Destino ja existe: {d}"
         if os.path.dirname(d): os.makedirs(os.path.dirname(d),exist_ok=True)
-        shutil.move(s,d); return f"→ {d}"
+        shutil.move(s,d)
+        ok = os.path.exists(d) and not os.path.exists(s)
+        return {"success": ok, "verified": ok, "result": f"→ {d}",
+                "evidence": {"verifier": "filesystem", "source_absent": not os.path.exists(s), "destination": d}}
 
     def _copy_file(self, p):
         s,d = expand(p.get("source","")),expand(p.get("destination",""))
         if not os.path.exists(s): return f"❌ {s}"
+        if os.path.lexists(d): return f"⛔ Destino ja existe: {d}"
         if os.path.dirname(d): os.makedirs(os.path.dirname(d),exist_ok=True)
-        shutil.copytree(s,d) if os.path.isdir(s) else shutil.copy2(s,d); return f"→ {d}"
+        shutil.copytree(s,d) if os.path.isdir(s) else shutil.copy2(s,d)
+        # Existence is observed, but content equality of a directory is not assumed.
+        return {"success": os.path.exists(d), "verified": False, "result": f"→ {d}",
+                "evidence": {"verifier": "filesystem", "destination": d}}
 
     def _create_folder(self, p):
-        path = expand(p.get("path","")); os.makedirs(path,exist_ok=True); return f"📁 {path}"
+        path = expand(p.get("path","")); os.makedirs(path,exist_ok=True)
+        return {"success": os.path.isdir(path), "verified": os.path.isdir(path), "result": f"📁 {path}",
+                "evidence": {"verifier": "filesystem", "directory": path}}
 
     def _delete_file(self, p):
         path = expand(p.get("path",""))
         if not os.path.exists(path): return "❌"
-        shutil.rmtree(path) if os.path.isdir(path) else os.remove(path); return "Deletado"
+        from send2trash import send2trash
+        send2trash(path)
+        return {"success": not os.path.exists(path), "verified": not os.path.exists(path),
+                "result": "Enviado para a lixeira.", "evidence": {"verifier": "filesystem_absence", "path": path}}
 
     def _read_file(self, p):
         path = expand(p.get("path",""))
@@ -902,15 +1153,14 @@ class AutomationEngine:
         if self.dry_run:
             return f"[SIM] Editaria {len(files)} arquivo(s) em {folder}: " + \
                    ", ".join(f.get("path", "") for f in files)[:200]
-        r = apply_edit(folder, files)
+        r = apply_edit(folder, files, expected_hashes=p.get('expected_hashes'))
         if not r["ok"]:
             return f"❌ {r['error']}"
-        if p.get("open"):
-            target = os.path.join(folder, p["open"])
-            if os.path.exists(target):
-                import webbrowser; webbrowser.open("file:///" + target.replace("\\", "/"))
-        return (f"✅ {p.get('summary', 'Projeto alterado')}\nArquivos: {', '.join(r['changed'])}\n"
-                f"Pasta: {folder}\nVersão anterior guardada (diga \"desfaz\" para voltar).")
+        paths = [str(pathlib.Path(folder) / rel) for rel in r['changed']]
+        return {"success": True, "verified": r.get('verified', False),
+                "result": f"Projeto alterado e conteudo conferido. Versao anterior preservada.\nPasta: {folder}",
+                "artifacts": {"folder": folder, "files": paths},
+                "evidence": {"verifier": "filesystem", "scope": "artifact_content", "files": paths}}
 
     def _revert_project(self, p):
         from core.project_versions import revert_last
@@ -919,11 +1169,8 @@ class AutomationEngine:
         r = revert_last(folder)
         if not r["ok"]:
             return f"❌ {r['error']}"
-        if p.get("open"):
-            target = os.path.join(folder, p["open"])
-            if os.path.exists(target):
-                import webbrowser; webbrowser.open("file:///" + target.replace("\\", "/"))
-        return f"↩️ Versão anterior restaurada ({', '.join(r['restored'])})\nPasta: {folder}"
+        return {"success": True, "verified": False,
+                "result": f"Versao anterior restaurada ({', '.join(r['restored'])})\nPasta: {folder}"}
 
     def _find_files(self, p):
         path, pat = expand(p.get("path",".")), p.get("pattern","*")
@@ -932,21 +1179,31 @@ class AutomationEngine:
 
     # === CONTROL ===
     def _close_app(self, p):
-        name = p.get("app_name","").lower()
-        c = sum(1 for pr in psutil.process_iter(["name"]) if name in pr.info.get("name","").lower() and (pr.terminate() or True))
-        return f"Fechado ({c})" if c else "Nenhum"
+        name = str(p.get('app_name') or '').strip().lower()
+        if not name:
+            return '⛔ Aplicativo alvo ausente.'
+        window = gw.getActiveWindow()
+        if not window or name not in (window.title or '').lower():
+            return '⛔ A janela ativa nao corresponde ao aplicativo solicitado.'
+        if not _bring_to_front(window._hWnd) or not _is_front(window._hWnd):
+            return '⛔ Nao foi possivel confirmar a janela alvo.'
+        pyautogui.hotkey('alt', 'f4')  # preserve native save/confirmation dialogs; never terminate processes
+        return {'success': True, 'verified': False, 'result': 'Fechamento solicitado; confirme eventuais dialogos do aplicativo.'}
 
     def _run_command(self, p):
-        cmd = p.get("command","")
-        if not safe(cmd): return "⛔ Bloqueado"
-        try:
-            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30, encoding="utf-8", errors="replace")
-            return f"$ {cmd}\n{r.stdout[:1500]}" + (f"\n⚠️ {r.stderr[:200]}" if r.stderr else "")
-        except: return "Timeout"
+        command = p.get("command", "")
+        if not isinstance(command, str) or not command.strip() or not safe(command):
+            return {"success": False, "status": "rejected", "verified": False, "result": "Comando bloqueado ou vazio."}
+        from core.process_runner import run_command
+        return run_command(command, timeout=30, should_stop=getattr(self, "should_stop", None))
 
     def _type_text(self, p):
         text = p.get("text","")
-        focus_away(); time.sleep(0.15)
+        hwnd = p.get('hwnd') or getattr(self, '_doc_hwnd', None) or getattr(self, '_target_hwnd', None)
+        if not hwnd or not _bring_to_front(hwnd) or not _is_front(hwnd):
+            return '⛔ Digitar exige uma janela alvo confirmada.'
+        if re.search(r'\b(cmd|powershell|terminal|command prompt)\b', _window_title(hwnd), re.I):
+            return '⛔ Execucao de comandos por digitacao desativada.'
         try: from core.clipboard import paste_text; paste_text(text)
         except: pyautogui.write(text)
         return f"Digitado: {text[:60]}"
@@ -969,8 +1226,47 @@ class AutomationEngine:
         fp = os.path.join("captures",f"ss_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
         pyautogui.screenshot().save(fp); return f"📸 {fp}"
 
+    def _await_ready(self, baseline, max_s: float, min_s: float = READY_MIN_S, early=None):
+        """Espera a janela que a acao anterior trouxe para frente ficar pronta (no maximo
+        max_s). Devolve (segundos, pronta?). Sem janela nova, espera o tempo todo.
+        Depois de abrir um app, so conta a janela DELE (o menu Iniciar fechando devolve a
+        frente para outra janela por um instante; antes isso encerrava a espera cedo)."""
+        expect = getattr(self, "_expect", None)
+        t0 = time.time()
+        last, since = None, t0
+        while True:
+            el = time.time() - t0
+            if el >= max_s:
+                return el, False
+            cur = _fg_state()
+            if cur != last:
+                last, since = cur, time.time()
+            changed = baseline is not None and cur != baseline and cur[1].strip()
+            if changed and expect:
+                changed = any(h in cur[1].lower() for h in expect)
+            stable = time.time() - since
+            if changed and el >= min_s and (
+                    (stable >= READY_STABLE_S and _window_ready(cur[0]))
+                    or (stable >= READY_SETTLED_S and _responsive(cur[0]))):
+                return el, True
+            stop = getattr(self, "should_stop", None)
+            if stop and stop():
+                return el, False
+            if early is not None and early():
+                return el, True
+            time.sleep(0.1)
+
     def _wait(self, p):
-        s = min(p.get("seconds",1),30); time.sleep(s); return f"⏳ {s}s"
+        try:
+            s = min(float(p.get("seconds", 1)), 30.0)
+        except (TypeError, ValueError):
+            s = 1.0
+        if self.dry_run:
+            return f"[SIM] ⏳ {s}s"
+        if p.get("fixed") or self._fg_before is None:
+            time.sleep(s); return f"⏳ {s}s"
+        took, ready = self._await_ready(self._fg_before, s)
+        return f"⏳ {took:.1f}s (pronto)" if ready else f"⏳ {s}s"
 
     # === WEB ===
     def _web_goto(self, p): return self.browser.goto(p.get("url",""))

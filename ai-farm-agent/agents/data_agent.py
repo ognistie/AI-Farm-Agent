@@ -179,6 +179,10 @@ class DataAgent(BaseAgent):
         super().__init__(name="DATA", system_prompt=BASE_PROMPT)
 
     def plan(self, task, context=None):
+        from agents.artifact_planner import plan_artifact
+        return plan_artifact(self, task, context)
+
+    def _legacy_plan(self, task, context=None):
         task_text = self._extract_task_text(task)
 
         # Subagentes: SchemaDesigner (tipo + colunas) e FormulaChartDesigner

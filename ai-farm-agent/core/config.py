@@ -165,10 +165,10 @@ class Config:
     def _find_config_file(self):
         """Procura config.yaml no projeto."""
         candidates = [
-            Path("config.yaml"),
-            Path("config.yml"),
             Path(__file__).parent.parent / "config.yaml",
             Path(__file__).parent.parent / "config.yml",
+            # raiz do repositorio (onde o config.yaml fica): vale de qualquer pasta de trabalho
+            Path(__file__).parent.parent.parent / "config.yaml",
         ]
         for p in candidates:
             if p.exists():

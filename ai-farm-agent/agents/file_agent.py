@@ -143,6 +143,8 @@ def _is_destructive(op: Optional[str]) -> bool:
 
 def _has_explicit_confirmation(task: str) -> bool:
     t = task.lower()
+    if re.search(r"\b(n[aã]o|nunca|sem)\b", t):
+        return False
     return any(m in t for m in CONFIRMATION_MARKERS)
 
 
@@ -163,26 +165,14 @@ def _mentions_sensitive_path(task: str) -> Optional[str]:
 #  Prompt
 # ───────────────────────────────────────────────────────────────────
 
-BASE_PROMPT = """Voce e o FILE AGENT — Senior Sysadmin em arquivos Windows/Linux.
-Suas regras sao absolutas. Voce protege os dados do usuario.
-
-REGRAS OPERACIONAIS:
-1. Imports: os, shutil, glob, pathlib, subprocess (todos top-level).
-2. Caminhos: SEMPRE os.path.expanduser('~') (Desktop, Downloads, Documents).
-3. Verifica antes de mover/copiar: os.path.exists(origem).
-4. Colisao: se destino existe, sufixo _2/_3 (NUNCA sobrescrever silenciosamente).
-5. print() detalhado: origem, destino, contagem, total bytes.
-6. Abre o Explorer da pasta resultante no final.
-7. UMA step com codigo Python valido completo.
-8. JSON puro: {"steps":[{"step":1,"description":"...","code":"..."}]}
-
-REGRAS DE SEGURANCA (BLINDADAS):
-- NUNCA delete sem confirmacao do usuario na propria task.
-- NUNCA mexer em C:\\Windows, C:\\Users, /, /etc, Program Files.
-- Antes de operacao em massa (>500MB): shutil.disk_usage(dest) e abortar
-  se livre < 2x do necessario. print() o motivo.
-- try/except deve PRINTAR a excecao literal antes de continuar.
-- Idempotencia: rodar 2x nao deve duplicar nem perder arquivos.
+BASE_PROMPT = """Voce planeja operacoes de arquivo declarativas. Nunca gere Python ou shell.
+Ferramentas: list_files(path), find_files(path,pattern), read_file(path), create_folder(path),
+copy_file(source,destination), move_file(source,destination), delete_file(path).
+Use apenas caminhos dentro das PASTAS RESOLVIDAS e do escopo do pedido.
+Nao invente nomes de arquivos: se nao conhece o conteudo da pasta, liste primeiro e pare.
+Nao sobrescreva destinos. Maximo 40 operacoes. Exclusao somente com confirmacao explicita.
+Se a ferramenta necessaria nao existe, devolva steps vazio e error com a limitacao.
+JSON: {"steps":[{"action":"list_files","params":{"path":"caminho absoluto"},"description":"..."}]}
 """
 
 
@@ -233,6 +223,10 @@ class FileAgent(BaseAgent):
 
     def plan(self, task, context=None):
         task_text = self._extract_task_text(task)
+        from core.file_contracts import request_roots
+        original = self._extract_original_task(task)
+        self._allowed_roots = request_roots(original)
+        self._allow_delete = _has_explicit_confirmation(original)
 
         # Subagentes: PathResolver (pastas reais / sensiveis) e
         # OperationPlanner (operacao + modo executar/simular). O
@@ -240,7 +234,7 @@ class FileAgent(BaseAgent):
         from agents.subagents import PathResolver, OperationPlanner
         paths = PathResolver().run(task_text)
         sensitive = paths.data["sensitive"]
-        opplan = OperationPlanner().run(task_text, sensitive)
+        opplan = OperationPlanner().run(original, sensitive)
         self._traces = [paths, opplan]
         op = opplan.data["op"]
         destructive = opplan.data["destructive"]
@@ -276,8 +270,7 @@ class FileAgent(BaseAgent):
         if context:
             ctx = "\nCONTEXTO: " + json.dumps(context)
 
-        hints = _safety_hint(op, destructive, has_confirm, sensitive) \
-              + _category_hint(task_text)
+        hints = "\nEscopo autorizado: " + json.dumps(self._allowed_roots)
         if paths.data["folders"]:
             hints += "\nPASTAS RESOLVIDAS (use estes caminhos): " + ", ".join(paths.data["folders"])
 
@@ -329,50 +322,18 @@ class FileAgent(BaseAgent):
         if not steps_raw:
             return {"ok": False, "reason": "LLM nao retornou nenhum step"}
 
-        steps = []
-        for st in steps_raw:
-            code = st.get("code", "")
-            code = code.replace("{BASE}", BASE).replace("{USERNAME}", USERNAME)
-
-            # Validacao AST
-            try:
-                ast.parse(code)
-            except SyntaxError as e:
-                snippet = ""
-                try:
-                    snippet = code.split("\n")[(e.lineno or 1) - 1][:120]
-                except Exception:
-                    pass
-                return {
-                    "ok": False,
-                    "reason": (f"SyntaxError linha {e.lineno}: {e.msg}. "
-                               f"Linha: `{snippet}`"),
-                }
-
-            # Subagente SafetyAuditor: sem apagar em modo simulacao, sem
-            # tocar em pastas do sistema (defesa em profundidade).
-            from agents.subagents import SafetyAuditor
-            audit = SafetyAuditor().run(code, getattr(self, "_mode", "executar"))
-            self._last_audit = audit
-            if not audit.ok:
-                return {"ok": False, "reason": f"SafetyAuditor: {audit.summary}"}
-
-            steps.append({
-                "step": st.get("step", len(steps) + 1),
-                "description": st.get("description", ""),
-                "action": "run_python",
-                "params": {"code": code,
-                           "description": st.get("description", "")},
-                "agent": "FILE",
-            })
+        from core.file_contracts import validate
+        error = validate(steps_raw, self._allowed_roots, self._allow_delete)
+        if error:
+            return {"ok": False, "reason": error}
+        steps = [{**step, "step": i, "agent": "FILE"} for i, step in enumerate(steps_raw, 1)]
 
         return {"ok": True, "steps": steps, "reason": ""}
 
     def _wrap_steps(self, steps: list) -> dict:
         self._metrics["total_plans"] += 1
         self._metrics["successful_plans"] += 1
-        total_code = sum(len(s["params"]["code"]) for s in steps)
-        self.logger.info(f"Plano: {len(steps)} step(s), {total_code} chars")
+        self.logger.info(f"Plano declarativo: {len(steps)} operacoes")
         traces = list(getattr(self, "_traces", []))
         if getattr(self, "_last_audit", None):
             traces.append(self._last_audit)

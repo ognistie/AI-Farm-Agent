@@ -21,6 +21,7 @@ from typing import Callable, Optional
 from core import browser_uia as B
 
 MAX_TURNS = 14
+MAX_SECONDS = 75          # piloto que nao conclui nisso para e avisa
 HISTORY_TURNS = 8
 
 SYSTEM = """Você controla o navegador do usuário (Edge/Chrome no Windows) para cumprir UM objetivo, em QUALQUER site.
@@ -30,7 +31,8 @@ numerados que dá para clicar/digitar e um trecho do texto). Escolha UMA ação 
 
 Responda SÓ JSON:
 {"action": "...", "id": <número do elemento>, "text": "...", "url": "...", "key": "...",
- "submit": true/false, "description": "...", "reason": "motivo curto", "result": "..."}
+ "submit": true/false, "description": "...", "reason": "motivo curto", "result": "...",
+ "say": "so no fim (done/fail/ask_user): UMA frase curta e natural para o usuario, em portugues, com o dado pedido se houver; sem numeros de elemento, sem jargao"}
 
 AÇÕES:
 - click(id)                       clicar num link/botão/aba/item da lista
@@ -182,11 +184,15 @@ class BrowserPilot:
                     "result": "Nenhum navegador aberto e nenhum endereço inicial."}
 
         last_sig, repeats, confirmed = None, 0, False
+        deadline = time.time() + MAX_SECONDS
         for turn in range(1, self.max_turns + 1):
             if self.should_stop():
                 return {"ok": False, "status": "cancelled", "turns": turn - 1, "trail": trail,
                         "result": "Cancelado."}
-            snap = B.snapshot(B.browser_window() or win)
+            if time.time() > deadline:
+                return {"ok": False, "status": "fail", "turns": turn - 1, "trail": trail,
+                        "result": f"Passou de {MAX_SECONDS} s sem concluir; parei para não travar a conversa."}
+            snap = B.snapshot(win)
             if snap is None:
                 return {"ok": False, "status": "fail", "turns": turn - 1, "trail": trail,
                         "result": "O navegador foi fechado."}
@@ -205,6 +211,8 @@ class BrowserPilot:
                 return {"ok": False, "status": "fail", "turns": turn, "trail": trail,
                         "result": f"Resposta invalida do modelo: {d.get('raw', '')[:120]}"}
             act = str(d.get("action", "")).lower()
+            if self.should_stop():
+                return {"ok": False, "status": "cancelled", "turns": turn - 1, "trail": trail, "result": "Cancelado antes da acao."}
             reason = str(d.get("reason", ""))[:120]
 
             if act == "done" and _blank(snap.url) and not trail:
@@ -214,7 +222,8 @@ class BrowserPilot:
             if act in ("done", "fail", "ask_user"):
                 res = str(d.get("result") or d.get("reason") or "")
                 return {"ok": act == "done", "status": act, "turns": turn, "trail": trail,
-                        "result": res, "title": snap.title, "url": snap.url}
+                        "result": res, "title": snap.title, "url": snap.url,
+                        "say": str(d.get("say") or "")[:300]}
 
             # Repeticao = mesma acao com a pagina IGUAL (rolar de novo muda a vista: nao e repeticao)
             view = hash(tuple(e.name for e in snap.elements[:40])) ^ hash(snap.text[:300])
@@ -254,6 +263,9 @@ class BrowserPilot:
     def _act(self, act: str, d: dict, snap) -> tuple[str, str]:
         import pyautogui
         win = snap.win
+        from core.automation import _is_front
+        if not _is_front(win.handle):
+            return 'bloqueado: foco mudou desde a observacao', act
         before = B._signature(win)
         if act == "click":
             el = self._el(snap, d)
@@ -337,7 +349,7 @@ class BrowserPilot:
 
         if act == "vision_click" and self.vision_click:
             desc = str(d.get("description") or d.get("text") or "")
-            res = self.vision_click({"description": desc + " (dentro da pagina do navegador)"})
+            res = self.vision_click({"description": desc + " (dentro da pagina do navegador)", "hwnd": win.handle})
             changed = B.wait_change(win, before, 3.0)
             return (f"{res[:40]}; " + ("página mudou" if changed else "sem mudança")), f"vision_click '{desc[:40]}'"
 
@@ -348,6 +360,18 @@ class BrowserPilot:
         url = (url or "").strip()
         if not url:
             return False
+        from urllib.parse import urlsplit
+        try:
+            if url != 'about:blank' and '://' in url and urlsplit(url).scheme not in ('http', 'https'):
+                return False
+        except ValueError:
+            return False
+        if url.startswith('about:') and url != 'about:blank':
+            return False
+        if win is not None:
+            from core.automation import _bring_to_front, _is_front
+            if not _bring_to_front(win.handle) or not _is_front(win.handle):
+                return False
         blank = url.lower().startswith("about:")
         if not blank and not re.match(r"^[a-z]+://", url):
             url = "https://" + url

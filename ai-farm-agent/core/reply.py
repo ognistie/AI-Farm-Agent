@@ -15,7 +15,8 @@ from typing import Callable, Optional
 SYSTEM = """Você é o assistente de um agente que usa o PC do usuário. Escreva a resposta ao usuário
 depois de um pedido executado (1 a 2 frases, até ~30 palavras).
 - Conte o que foi feito e, se o pedido era saber algo, o DADO lido primeiro (só o que está no resultado).
-- Se falhou: diga o que deu errado em palavras simples e uma sugestão do que tentar.
+- Se falhou: diga o que deu errado em palavras simples (só o que está no RESULTADO — nunca invente
+  causa, ex.: não diga "não está instalado" se o resultado não diz isso) e uma sugestão do que tentar.
 - Se o resultado tem uma lista (vídeos, produtos, arquivos), cite no máximo 2 itens e ofereça o próximo passo.
 - Não leia URLs, caminhos, ids nem nomes técnicos de passos.
 JEITO DE FALAR:
@@ -52,6 +53,10 @@ def compose(said: str, task: str, summary: str, success: bool, error: str = "",
     try:
         from core.voice.persona import get_persona
         system = SYSTEM.replace("{style}", get_persona().style())
+        from core.user_settings import instructions_block
+        mine = instructions_block()
+        if mine:
+            system += "\n" + mine
         text = (llm or _default_llm)(system, user).strip().strip('"')
     except Exception:
         text = ""

@@ -5,10 +5,12 @@ Cada acao vira uma linha JSON em logs/actions.jsonl.
 
 import json
 import time
+import threading
 from datetime import datetime
 from pathlib import Path
 
-LOG_FILE = Path("logs/actions.jsonl")
+LOG_FILE = Path(__file__).resolve().parent.parent / "logs" / "actions.jsonl"
+_lock = threading.Lock()
 
 def log_action(agent, action, params, result, method="", duration_ms=0, screenshot_path=""):
     """Registra uma acao executada."""
@@ -17,15 +19,16 @@ def log_action(agent, action, params, result, method="", duration_ms=0, screensh
         "timestamp": datetime.now().isoformat(),
         "agent": agent,
         "action": action,
-        "params": {k: str(v)[:100] for k, v in (params or {}).items()},
+        "param_keys": sorted((params or {}).keys()),  # no text, code, credentials or personal paths
         "result": "SUCCESS" if result.get("success") else "FAIL",
-        "error": result.get("error", result.get("result", ""))[:200] if not result.get("success") else "",
+        "status": result.get("status", "succeeded" if result.get("success") else "failed"),
         "method": method,
         "duration_ms": duration_ms,
     }
     try:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        with _lock:
+            with open(LOG_FILE, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except:
         pass
 

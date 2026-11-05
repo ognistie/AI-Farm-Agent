@@ -347,12 +347,12 @@ def _native_fallback(steps):
         a = step.get("action",""); p = step.get("params",{})
         if a == "web_goto":
             n+=1; url = p.get("url","")
-            native.append(_s(n,"run_python",{"code":f'import subprocess; subprocess.Popen(\'start "" "{url}"\', shell=True); print("OK")',"description":f"Abrir {url[:50]}"},f"Abrir {url[:50]}"))
+            native.append(_s(n,"open_url",{"url":url},f"Abrir {url[:50]}"))
         elif a == "web_new_tab":
             n+=1; url = p.get("url","about:blank")
             if url != "about:blank":
-                native.append(_s(n,"run_python",{"code":f'import subprocess; subprocess.Popen(\'start "" "{url}"\', shell=True); print("OK")',"description":"Nova guia"},f"Nova guia"))
-            else: native.append(_s(n,"hotkey",{"keys":["ctrl","t"]},"Nova guia"))
+                native.append(_s(n,"open_url",{"url":url},f"Nova guia"))
+            else: native.append(_s(n,"open_url",{"url":"about:blank"},"Nova guia"))
         elif a == "wait": n+=1; s=dict(step); s["step"]=n; native.append(s)
         elif a == "web_type":
             n+=1; native.append(_s(n,"wait",{"seconds":2},"Aguardar"))
@@ -490,6 +490,16 @@ class WebAgent(BaseAgent):
                         f"Continuar na aba: {task_text[:60]}")]
             traces.append(Navigator().trace(True, f"continuar na aba \"{(cont.get('title') or '')[:50]}\"",
                                             steps=steps))
+            return {"steps": steps, "agent": "WEB", "attempt": attempt, "subagents": traces}
+
+        # So abrir um site cujo endereco ja veio pronto (atalho do dicionario no
+        # Maestro): abre o link, sem o piloto do navegador (que le a pagina com IA)
+        url_open = (params.get("url") or "").strip()
+        if (params.get("action_type") or "").lower() == "open" and re.fullmatch(r"https?://\S+", url_open):
+            steps = _open_url(url_open)
+            if not self._has_playwright():
+                steps = _native_fallback(steps) or steps
+            traces.append(Navigator().trace(True, f"abrir {url_open[:60]}", steps=steps))
             return {"steps": steps, "agent": "WEB", "attempt": attempt, "subagents": traces}
 
         if not is_simple_web(task_text):

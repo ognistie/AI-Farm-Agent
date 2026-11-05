@@ -102,6 +102,14 @@ class CodeAgent(BaseAgent):
         self._config = get_config()
 
     def plan(self, task, context=None):
+        params = task.get('params', {}) if isinstance(task, dict) else {}
+        target = params.get('continue') or {}
+        if target.get('type') == 'code' and target.get('folder'):
+            return self.plan_edit(target['folder'], self._extract_task_text(task))
+        from agents.artifact_planner import plan_artifact
+        return plan_artifact(self, task, context)
+
+    def _legacy_plan(self, task, context=None):
         task_text = self._extract_task_text(task)
         # Continuacao da conversa: altera o projeto JA criado (nao recria)
         params = (task.get("params") or {}) if isinstance(task, dict) else {}
@@ -228,7 +236,7 @@ class CodeAgent(BaseAgent):
                 return {"steps": [{"step": 1, "action": "edit_project", "agent": "CODE",
                                    "description": f"Alterar projeto: {summary[:70]}",
                                    "params": {"folder": folder, "files": files, "summary": summary,
-                                              "open": open_target}}],
+                                              "open": open_target, "expected_hashes": proj['hashes']}}],
                         "agent": "CODE",
                         "subagents": traces + [Reviewer().trace(True, f"{len(files)} arquivo(s) alterado(s)")]}
             self.logger.warning(f"Edicao reprovada (tentativa {attempt}): {err}")

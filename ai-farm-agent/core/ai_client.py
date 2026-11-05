@@ -58,6 +58,29 @@ def _pricing_for(model: str) -> dict[str, float]:
     return MODEL_PRICING["claude-sonnet-5"]
 
 
+# Modelos que aceitam desligar o raciocinio (thinking disabled). Sonnet 5.5, Opus 5.5 e Fable
+# recusam com 400: nesses o "off" vira so effort baixo.
+_THINKING_OFF_MODELS = ("claude-opus-4-7", "claude-opus-4-8", "claude-haiku-5-5")
+
+
+def can_disable_thinking(model: str) -> bool:
+    m = (model or "").lower()
+    return m == "claude-sonnet-5" or m.startswith(_THINKING_OFF_MODELS)
+
+
+def thinking_off_for(agent: str) -> bool:
+    """config.yaml > agent_thinking: <agente>: off -> resposta direta, sem raciocinio
+    (rotas curtas e sensiveis a latencia: entender a fala, rotear, passo do piloto)."""
+    if not agent:
+        return False
+    try:
+        from core.config import get_config
+        v = get_config().get(f"agent_thinking.{agent.lower()}")
+    except Exception:
+        return False
+    return str(v).lower() in ("off", "false", "0", "no")
+
+
 def _supports_effort(model: str) -> bool:
     return (model or "").lower().startswith(_EFFORT_MODELS)
 
@@ -91,6 +114,8 @@ def get_client() -> "AIClient":
 class AIClient:
     """Cliente centralizado para a API Anthropic."""
 
+    on_progress = None   # callback de andamento (ver __init__)
+
     def __init__(self) -> None:
         api_key = os.getenv("ANTHROPIC_API_KEY", "")
         if not api_key:
@@ -111,11 +136,15 @@ class AIClient:
             "total_cache_read_tokens": 0,
             "total_cache_write_tokens": 0,
             "total_cost_usd": 0.0,
+            "total_llm_ms": 0,      # tempo esperando o modelo (latencia percebida)
             "calls_by_model": {},   # {model_short: {calls, in_tokens, out_tokens, cost_usd}}
             "calls_by_agent": {},   # {agent: {calls, cost_usd}}
             "errors": 0,
             "truncated": 0,
         }
+        # Andamento de respostas longas (quem usa: a UI). Chamado com
+        # (agente, "thinking"|"writing", caracteres de texto ja gerados).
+        self.on_progress = None
         logger.info("AIClient v3 inicializado (cache + effort + custo real)")
 
     # ─── API publica ───────────────────────────────────────────────
@@ -129,17 +158,17 @@ class AIClient:
 
     def message(self, model: str, system: str, user_content,
                 max_tokens: int = 8000, images=None,
-                effort: Optional[str] = None, agent: str = "") -> str:
+                effort: Optional[str] = None, agent: str = "", json_schema: Optional[dict] = None) -> str:
         """Wrapper que retorna apenas o texto."""
         return self.message_with_meta(
             model=model, system=system, user_content=user_content,
-            max_tokens=max_tokens, images=images, effort=effort, agent=agent,
+            max_tokens=max_tokens, images=images, effort=effort, agent=agent, json_schema=json_schema,
         )["text"]
 
     def message_with_meta(self, model: str, system: str, user_content,
                           max_tokens: int = 8000, images=None,
                           effort: Optional[str] = None,
-                          agent: str = "") -> dict[str, Any]:
+                          agent: str = "", json_schema: Optional[dict] = None) -> dict[str, Any]:
         """
         Envia mensagem e retorna {text, model_used, input_tokens,
         output_tokens, cache_read_tokens, cache_write_tokens, cost_usd,
@@ -159,10 +188,17 @@ class AIClient:
                                  "cache_control": {"type": "ephemeral"}}]
         if effort and _supports_effort(model):
             params["output_config"] = {"effort": effort}
+        if json_schema is not None:
+            params.setdefault('output_config', {})['format'] = {'type': 'json_schema', 'schema': json_schema}
+        if thinking_off_for(agent) and can_disable_thinking(model) and not images:
+            # Sem raciocinio: a resposta sai direto (rotas curtas). Com imagem fica o padrao.
+            params["thinking"] = {"type": "disabled"}
 
         start = time.time()
         try:
             with self._client.messages.stream(**params) as stream:
+                if self.on_progress:
+                    self._relay_progress(stream, agent, start)
                 resp = stream.get_final_message()
         except APIError as e:
             self._metrics["errors"] += 1
@@ -184,6 +220,29 @@ class AIClient:
         return self._record_success(resp, model, duration_ms, agent)
 
     # ─── Helpers internos ──────────────────────────────────────────
+
+    def _relay_progress(self, stream, agent: str, start: float) -> None:
+        """Repassa o andamento do streaming (no maximo ~1x/s, so em respostas
+        que passam de 1,5 s). Erro no callback nunca afeta a resposta."""
+        chars, thinking, last = 0, False, 0.0
+        for event in stream:
+            if getattr(event, "type", "") != "content_block_delta":
+                continue
+            kind = getattr(event.delta, "type", "")
+            if kind == "thinking_delta":
+                thinking = True
+            elif kind == "text_delta":
+                chars += len(event.delta.text or "")
+                thinking = False
+            else:
+                continue
+            now = time.time()
+            if now - last >= 0.9 and now - start >= 1.5:
+                last = now
+                try:
+                    self.on_progress(agent, "thinking" if thinking else "writing", chars)
+                except Exception:
+                    pass
 
     def _build_content(self, user_content, images) -> list:
         """Monta content blocks (imagens opcionais + texto)."""
@@ -221,6 +280,7 @@ class AIClient:
         m["total_cache_read_tokens"] += cache_read
         m["total_cache_write_tokens"] += cache_write
         m["total_cost_usd"] += cost
+        m["total_llm_ms"] = m.get("total_llm_ms", 0) + duration_ms
 
         short = self._short_name(model)
         per = m["calls_by_model"].setdefault(
@@ -233,9 +293,10 @@ class AIClient:
 
         if agent:
             per_agent = m["calls_by_agent"].setdefault(
-                agent, {"calls": 0, "cost_usd": 0.0}
+                agent, {"calls": 0, "cost_usd": 0.0, "ms": 0}
             )
             per_agent["calls"] += 1
+            per_agent["ms"] = per_agent.get("ms", 0) + duration_ms
             per_agent["cost_usd"] = round(per_agent["cost_usd"] + cost, 6)
 
         # Sonnet 5 devolve blocos `thinking` antes do texto — so o texto importa.

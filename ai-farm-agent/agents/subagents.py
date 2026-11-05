@@ -314,7 +314,8 @@ class PathResolver(Subagent):
     def run(self, task: str) -> Trace:
         from agents.file_agent import _mentions_sensitive_path
         t = (task or "").lower()
-        folders = sorted({f"{_HOME}/{v}" for k, v in KNOWN_FOLDERS.items() if re.search(rf"\b{k}\b", t)})
+        from core.paths import known_folder
+        folders = sorted({known_folder(v) for k, v in KNOWN_FOLDERS.items() if re.search(rf"\b{k}\b", t)})
         sensitive = _mentions_sensitive_path(task)
         summary = ", ".join(folders) if folders else "nenhuma pasta conhecida citada"
         if sensitive:

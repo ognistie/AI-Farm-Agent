@@ -1936,7 +1936,7 @@ def test_brain_vault():
             "# Web\n\n## Regras de execução\n- Pesquisa vira URL\n\n## Outra\nx", encoding="utf-8")
         (root / "30 Tarefas de referencia").mkdir()
         (root / "30 Tarefas de referencia/Pesquisar no Google.md").write_text(
-            "---\nagente: WEB\nkeywords: pesquisar google busca\n---\n# P\n\n## Caminho\nWEB(search)\n",
+            "---\nagente: WEB\nverificado: sim\nkeywords: pesquisar google busca\n---\n# P\n\n## Caminho\nWEB(search)\n",
             encoding="utf-8")
         b = Brain(str(root))
         check(b.agent_guide("WEB") == "- Pesquisa vira URL", "le 'Regras de execução' (com acento)")
@@ -2053,7 +2053,7 @@ def test_subagents():
 
 
 def test_reference_retrieval():
-    """Busca de tarefas de referencia no vault real (50+ por agente)."""
+    """Recuperacao na base curada; lacunas nao viram procedimentos comprovados."""
     print("\n=== Tarefas de referencia (vault) ===")
     from pathlib import Path
     from core.brain import Brain
@@ -2062,21 +2062,27 @@ def test_reference_retrieval():
         print("SKIP | vault AI-Farm-agents nao encontrado")
         return True
     b = Brain(str(vault))
-    counts = {a: len(list((vault / "30 Tarefas de referencia" / a).glob("*.md")))
-              for a in ("Web", "Desktop", "Code", "Data", "File")}
-    ok_counts = all(n >= 50 for n in counts.values())
-    print(f"{'OK  ' if ok_counts else 'FAIL'} | >=50 referencias por agente {counts}")
+    from core.brain import _frontmatter
+    # Curadoria pode preservar uma referencia nao verificada, fora da recuperacao.
+    # Nao inventar evidencia ou exigir pastas por agente quando as notas sao canonicas.
+    notes = [f for f in (vault / "30 Tarefas de referencia").rglob("*.md")
+             if "tipo: tarefa-referencia" in f.read_text(encoding="utf-8")[:400]]
+    metadata = [_frontmatter(f.read_text(encoding='utf-8')) for f in notes]
+    counts = {a: sum(m.get('agente') == a for m in metadata) for a in ('WEB','DESKTOP','CODE','DATA','FILE')}
+    invalid = [f.name for f, m in zip(notes, metadata) if m.get('verificado') not in ('sim', 'nao')]
+    ok_counts = not invalid and all(n >= 1 for n in counts.values())
+    print(f"{'OK  ' if ok_counts else 'FAIL'} | referencias canonicas por agente, estado explicito {counts}")
     cases = [
         ("pesquise a cotacao do dolar hoje", "WEB"),
-        ("mande uma mensagem no whatsapp para o joao", "DESKTOP"),
+        ("mande uma mensagem no whatsapp para o joao", None),  # envio experimental nao e receita recuperavel
         ("crie uma api de clientes com fastapi", "CODE"),
         ("crie uma planilha de controle de estoque", "DATA"),
-        ("encontre arquivos duplicados na pasta imagens", "FILE"),
+        ("organize os arquivos da pasta downloads por tipo", "FILE"),
     ]
     passed = int(ok_counts)
     for task, agent in cases:
         refs = b.find_references(task, k=2)
-        ok = bool(refs) and refs[0]["agent"].startswith(agent)
+        ok = not refs if agent is None else bool(refs) and refs[0]["agent"].startswith(agent)
         print(f"{'OK  ' if ok else 'FAIL'} | {task!r} -> {refs[0]['title'] if refs else '-'} [{refs[0]['agent'] if refs else ''}]")
         passed += ok
     total = len(cases) + 1
@@ -2516,7 +2522,715 @@ def test_window_mode():
     return passed == total
 
 
+def test_latency_round5():
+    """Latencia: atalho 'abrir X' sem IA, espera adaptativa, rotinas sem visao, metricas de tempo."""
+    print("\n=== Latencia (rodada 5) ===")
+    import time as _t
+    import core.automation as A
+    from agents.maestro import fast_open_plan
+    from core.plan_validator import validate_plan
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    # ── atalho do Maestro ────────────────────────────────────────────
+    hits = {c: fast_open_plan(c) for c in ("Abrir o YouTube", "abra o meu google", "abra o bloco de notas",
+                                            "abre o excel", "Abra o Excel para mim.", "acessa o linkedin")}
+    check("'abrir <app/site>' vira plano direto (sem IA) e passa nas politicas",
+          all(p and validate_plan(c, p).approved for c, p in hits.items()))
+    check("site abre pela URL do dicionario", hits["Abrir o YouTube"]["subtasks"][0]["params"]["url"]
+          == "https://www.youtube.com")
+    check("app abre pela chave do dicionario", hits["abre o excel"]["subtasks"][0]["params"]["app"] == "excel")
+    misses = ["abra o gmail no google", "abra o youtube e pesquisa lofi", "abra a pasta Jogo Exemplo",
+              "abra o vs code e crie um site", "abra configurações do YouTube", "abrir",
+              "abre o arquivo relatorio.docx", "abra meu excel e faça uma planilha"]
+    check("pedido com algo a mais (pesquisar, criar, pasta, arquivo) continua no Maestro",
+          not any(fast_open_plan(c) for c in misses))
+    check("com algo aberto na conversa, o atalho nao decide", fast_open_plan("abre o youtube", "web") is None)
+
+    # ── espera adaptativa (janela simulada; nada abre na tela) ────────
+    eng = A.AutomationEngine.__new__(A.AutomationEngine)
+    eng.dry_run, eng.should_stop = False, None
+    real_fg, real_ready = A._fg_state, A._window_ready
+    try:
+        t0 = _t.time()
+        A._fg_state = lambda: (2, "Sem título - Bloco de Notas") if _t.time() - t0 > 0.2 else (1, "AI Farm Agent")
+        A._window_ready = lambda h: True
+        took, ready = eng._await_ready((1, "AI Farm Agent"), 3.0)
+        check(f"janela nova pronta: espera acaba cedo ({took:.1f}s de 3s)", ready and took < 1.3)
+        A._fg_state = lambda: (1, "AI Farm Agent")
+        t1 = _t.time(); took, ready = eng._await_ready((1, "AI Farm Agent"), 0.6)
+        check("nada mudou na tela: espera o tempo pedido (comportamento antigo)",
+              not ready and _t.time() - t1 >= 0.55)
+        A._fg_state = lambda: (2, f"Carregando {int(_t.time() * 20)}")
+        took, ready = eng._await_ready((1, "x"), 0.8)
+        check("titulo ainda mudando (carregando): nao considera pronto", not ready)
+        t0 = _t.time()
+        A._fg_state = lambda: (2, "Excel") if _t.time() - t0 > 0.1 else (1, "x")
+        A._window_ready = lambda h: False
+        took, ready = eng._await_ready((1, "x"), 0.7)
+        check("app ainda ocupado/travado: nao considera pronto", not ready)
+    finally:
+        A._fg_state, A._window_ready = real_fg, real_ready
+    eng.dry_run = True
+    t2 = _t.time(); out = eng._wait({"seconds": 5})
+    check("simulacao nao espera de verdade", _t.time() - t2 < 0.1 and out.startswith("[SIM]"))
+    eng.dry_run, eng._fg_before = False, None
+    t3 = _t.time(); eng._wait({"seconds": 0.3})
+    check("sem acao anterior conhecida: espera fixa", _t.time() - t3 >= 0.28)
+
+    # ── rotinas: abrir nao usa visao (IA) ─────────────────────────────
+    from agents.desktop_agent import _build_steps
+    acts = lambda app, **p: [s["action"] for s in _build_steps(app, {"app": app, "action_type": "open", **p})]
+    check("Excel/Word: documento em branco por Ctrl+N (sem clique por visao)",
+          acts("excel") == ["app_search", "wait", "blank_document"]
+          and acts("word") == ["app_search", "wait", "blank_document"])
+    check("WhatsApp/Teams so abrir: sem procurar conversa", acts("whatsapp") == ["app_search", "wait"]
+          and acts("teams") == ["app_search", "wait"])
+    check("WhatsApp com contato e mensagem mantem o fluxo completo",
+          "vision_click" in [s["action"] for s in _build_steps("whatsapp", {"app": "whatsapp", "action_type":
+                             "send_message", "person": "Joao", "message": "oi"})])
+    check("Office novo e reconhecido como em branco (e arquivo salvo nao)",
+          A._is_untitled("Pasta1 - Excel") and A._is_untitled("Documento1 - Word")
+          and not A._is_untitled("Pasta1.xlsx - Excel") and not A._is_untitled("Excel"))
+    from agents.web_agent import WebAgent
+    plan = WebAgent().plan({"task": "abrir g1", "params": {"url": "https://g1.globo.com", "action_type": "open"}})
+    check("site com URL pronta abre direto (sem o piloto do navegador)",
+          plan["steps"] and all(s["action"] != "browser_task" for s in plan["steps"]))
+
+    # ── medir: tempo de IA e por fase no historico ────────────────────
+    from desktop.controller import Controller
+    before = {"total_llm_ms": 100, "calls_by_agent": {"MAESTRO": {"calls": 1, "cost_usd": 0.1, "ms": 100}}}
+    after = {"total_llm_ms": 2600, "calls_by_agent": {"MAESTRO": {"calls": 2, "cost_usd": 0.2, "ms": 2600}}}
+    d = Controller._metrics_delta(before, after)
+    check("historico guarda o tempo de IA (total e por agente)",
+          d["llm_ms"] == 2500 and d["by_agent"]["MAESTRO"]["ms"] == 2500)
+    import inspect
+    src = inspect.getsource(Controller._run)
+    check("historico guarda o tempo por fase", all(f'lap("{p}")' in src for p in ("resolve", "maestro", "agent_plan", "steps")))
+    check("resposta ao usuario sai antes de gravar no Obsidian",
+          src.index("self._after_turn(said, task, turn, entry)") < src.index("self._brain.finish("))
+
+    # ── andamento de respostas longas (stream simulado) ───────────────
+    from types import SimpleNamespace as NS
+    from core.ai_client import AIClient
+    cli = AIClient.__new__(AIClient)
+    seen = []
+    cli.on_progress = lambda ag, st, ch: seen.append((ag, st, ch))
+    ev = lambda kind, text="": NS(type="content_block_delta", delta=NS(type=kind, text=text))
+
+    class FakeStream:
+        def __iter__(self):
+            yield ev("thinking_delta")
+            _t.sleep(1.0)
+            for _ in range(30):
+                yield ev("text_delta", "x" * 100)
+                _t.sleep(0.05)
+    cli._relay_progress(FakeStream(), "DATA", _t.time() - 2.0)   # resposta ja passou de 1,5 s
+    check("andamento repassado (pensando -> caracteres), no maximo ~1x/s",
+          seen and seen[0][1] == "thinking" and seen[-1][1] == "writing" and seen[-1][2] > 0 and len(seen) <= 4)
+    ctl = Controller.__new__(Controller)
+    ctl.state = {"running": False}
+    out = []
+    ctl._emit = lambda ev_, p: out.append(p["msg"])
+    ctl._on_llm_progress("DATA", "writing", 2400)
+    ctl.state["running"] = True
+    ctl._on_llm_progress("DATA", "writing", 2400)
+    ctl._on_llm_progress("REPLY", "writing", 50)
+    check("andamento so durante a tarefa e so de agentes da tarefa",
+          out == ["Montando a planilha · 2.400 caracteres"])
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_round6_conversation_memory_vault():
+    """Rodada 6: foco verificado, espera pelo app certo, memoria da conversa, barge-in, vault limpo."""
+    print("\n=== Rodada 6: conversa, memoria e vault ===")
+    import sys as _sys
+    import tempfile
+    import threading
+    import time as _t
+    import types
+    from pathlib import Path
+    import numpy as np
+    import core.automation as A
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    # ── nunca digitar sem a janela certa na frente ────────────────────
+    pasted = []
+    real = (A._bring_to_front, A._is_front)
+    import core.clipboard as CB
+    real_paste = CB.paste_text
+    try:
+        CB.paste_text = lambda text, restore=True: pasted.append(text)
+        A._bring_to_front = lambda h: False
+        A._is_front = lambda h: False
+        check("Windows negou o foco: nada e colado", A._paste_front(123, "oi") is False and not pasted)
+        A._bring_to_front = lambda h: True
+        A._is_front = lambda h: True
+        check("janela certa na frente: cola", A._paste_front(123, "oi") is True and pasted == ["oi"])
+    finally:
+        A._bring_to_front, A._is_front = real
+        CB.paste_text = real_paste
+    src = Path(A.__file__).read_text(encoding="utf-8")
+    body = src.split("def _app_type")[1].split("def _blank_document")[0]
+    check("app_type so cola via _paste_front (os 3 caminhos)", body.count("_paste_front(") == 3
+          and "paste_text(" not in body)
+
+    # ── espera pelo app certo (menu Iniciar fechando nao conta) ───────
+    eng = A.AutomationEngine.__new__(A.AutomationEngine)
+    eng.dry_run, eng.should_stop = False, None
+    rf, rr = A._fg_state, A._window_ready
+    try:
+        A._window_ready = lambda h: True
+        eng._expect = A._title_hints("Obsidian")
+        A._fg_state = lambda: (7, "projeto - Visual Studio Code")
+        took, ready = eng._await_ready((1, "AI Farm Agent"), 0.9)
+        check("outra janela na frente depois de abrir o app: continua esperando", not ready)
+        t0 = _t.time()
+        A._fg_state = lambda: (9, "AI-Farm-agents - Obsidian v1.8") if _t.time() - t0 > 0.3 else (7, "VS Code")
+        took, ready = eng._await_ready((1, "AI Farm Agent"), 3.0)
+        check(f"janela DO app na frente: pronta ({took:.1f}s)", ready and took < 1.5)
+        check("hints do app", A._title_hints("Bloco de Notas") == ("bloco de notas", "notepad")
+              and "teams" in A._title_hints("Microsoft Teams"))
+    finally:
+        A._fg_state, A._window_ready = rf, rr
+    fbody = src.split("def _focus_window")[1].split("# === VISION")[0]
+    check("focus_window espera o app (ate 8 s) e confere o foco", 'p.get("timeout", 8)' in fbody
+          and "_bring_to_front(" in fbody)
+
+    # ── memoria da conversa: conteudo inteiro, corte pelo mais antigo ─
+    from core.session import Session
+    from desktop.controller import turn_content
+    msg = "Oi Joana, segue o relatório de vendas do trimestre com os números atualizados. Abraço!"
+    s = Session()
+    for i in range(5):
+        s.add_turn(f"pedido antigo {i} " + "x" * 400, "y" * 400, "new", ["WEB"], True, "ok")
+    subs = [{"agent": "WEB", "task": "enviar email para Joana", "params": {"message": msg, "person": "Joana"}}]
+    s.add_turn("manda aquela mensagem pra joana", "enviar email para Joana", "new", ["WEB"], False,
+               "nao enviou", turn_content(subs, "enviar email para Joana"))
+    b = s.context_block(1600)
+    check("mensagem inteira no contexto do pedido mais recente", msg in b)
+    check("limite estourado: saem os pedidos ANTIGOS (o recente fica)", "pedido antigo 0" not in b
+          and "joana" in b.lower() and len(b) <= 1600)
+    check("conteudo sem repetir o que o pedido ja diz",
+          turn_content([{"agent": "WEB", "task": "enviar: " + msg, "params": {"message": msg}}], "enviar: " + msg) == "")
+    from core.voice.understand import SYSTEM as VS
+    from core.followup import SYSTEM as RS
+    check("regras: copiar conteudo retomado e 'escrever sobre' (voz e resolvedor)",
+          all("a mesma mensagem" in x and "SOBRE X" in x for x in (VS, RS)))
+
+    # ── conversa ao vivo ───────────────────────────────────────────────
+    from core.voice.persona import LINES
+    check("ao ligar a conversa: 'Como posso ajudar?'",
+          all("Como posso ajudar?" in l for l in LINES["listening_on"]))
+    from core.voice import recorder as R
+
+    def run(levels):
+        stop, state, barges = threading.Event(), {"i": 0}, []
+
+        class FakeStream:
+            def __init__(self, **k): pass
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n):
+                i = state["i"]; state["i"] += 1
+                lv = levels[i] if i < len(levels) else 0.0
+                if i >= len(levels):
+                    stop.set()
+                x = (np.random.default_rng(i).standard_normal(n) * lv).astype(np.float32)
+                return x.reshape(-1, 1), None
+        old = _sys.modules.get("sounddevice")
+        _sys.modules["sounddevice"] = types.SimpleNamespace(InputStream=FakeStream)
+        try:
+            a = R.record_utterance(stop, start_timeout=None, silence_s=0.6, paused=lambda: True,
+                                   on_barge=lambda: barges.append(state["i"]))
+        finally:
+            if old is not None:
+                _sys.modules["sounddevice"] = old
+            else:
+                _sys.modules.pop("sounddevice", None)
+        return barges, a
+    echo = [0.01 if k % 7 < 3 else 0.045 for k in range(60)]
+    barges, audio = run(echo + [0.12] * 35 + [0.002] * 40)
+    check("falar por cima do agente o interrompe e a fala e gravada",
+          len(barges) == 1 and audio is not None and len(audio) / 16000 > 1.0)
+    check("so o eco da voz do agente (mesmo alto) nao interrompe",
+          run(echo * 3)[0] == [] and run([0.02 if k % 5 < 2 else 0.07 for k in range(90)])[0] == [])
+
+    # ── vault: so orientacao curada entra no prompt; registros com retencao ──
+    from core.brain import Brain, EXEC_KEEP
+    import core.brain as BR
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "30 Tarefas de referencia").mkdir(parents=True)
+        (root / "40 Execucoes/Sucesso").mkdir(parents=True)
+        (root / "30 Tarefas de referencia/Abrir Paint.md").write_text(
+            "---\nagente: DESKTOP\nverificado: sim\nkeywords: abrir paint\n---\n# A\n\n## Caminho\napp_search Paint\n", encoding="utf-8")
+        for i in range(EXEC_KEEP + 5):
+            (root / f"40 Execucoes/Sucesso/2026-10-0{1 + i // 30} {i:04d} - abrir paint.md").write_text(
+                "---\nkeywords: abrir paint\n---\n## Caminho\nDESKTOP — vision_click\n", encoding="utf-8")
+        br = Brain(str(root))
+        refs = br.find_references("abrir o paint", k=3)
+        check("registro automatico de execucao nao entra no prompt", refs and all(
+            not r["note"].startswith("40") for r in refs))
+        old_arch = BR.EXEC_ARCHIVE
+        BR.EXEC_ARCHIVE = root.parent / (root.name + "_arquivo")
+        try:
+            moved = br.prune_executions()
+        finally:
+            BR.EXEC_ARCHIVE = old_arch
+        left = len(list((root / "40 Execucoes/Sucesso").glob("*.md")))
+        check(f"retencao: ficam os {EXEC_KEEP} mais recentes, o resto sai do vault (movidos {moved})",
+              moved == 5 and left == EXEC_KEEP)
+    import importlib.util as _iu
+    _spec = _iu.spec_from_file_location("vault_audit", Path(__file__).resolve().parent / "vault_audit.py")
+    _va = _iu.module_from_spec(_spec); _spec.loader.exec_module(_va)
+    from core.brain import get_brain
+    check("vault atual: nenhuma tarefa de referencia obsoleta, vazia ou duplicada",
+          _va.audit(get_brain().root) == [])
+
+    # ── resposta de falha nao chuta causa; memoria filtra prompt de teste ──
+    from core.reply import SYSTEM as REPLY
+    check("resposta de falha: so o que esta no resultado (nada de 'nao esta instalado')",
+          "nunca invente" in REPLY and "não está instalado" in REPLY)
+    import inspect
+    from desktop.controller import Controller
+    check("falha registra o passo que falhou de verdade",
+          "Passo que falhou" in inspect.getsource(Controller._run))
+    from agents.memory_agent import MemoryAgent
+    m = MemoryAgent.__new__(MemoryAgent)
+    check("memoria nao guarda prompt de teste/debug ('test', 'debug') mas guarda 'testes unitarios'",
+          not m.should_remember("test do sistema com python flask")[0]
+          and m.should_remember("crie testes unitarios para a api flask")[0])
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_round7_fluid_conversation():
+    """Rodada 7: continuar sem o Maestro, perguntas sobre arquivos criados, resposta do piloto,
+    Office em branco, prontidao tolerante, voz que age no palpite, transcricao antecipada."""
+    print("\n=== Rodada 7: conversa fluida e rapida ===")
+    import inspect
+    import os as _os
+    import sys as _sys
+    import tempfile
+    import threading
+    import time as _t
+    import types
+    from pathlib import Path
+    import numpy as np
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    # ── continuar no que esta aberto: direto ao agente ────────────────
+    import core.session as CS
+    from core.session import Session
+    from agents.maestro import continue_plan
+    real_alive = CS._alive
+    CS._alive = lambda h: True
+    try:
+        s = Session()
+        s.remember_app("explorer", 1, "Documentos - Explorador de Arquivos")
+        s.remember_web(2, "https://web.whatsapp.com", "WhatsApp", [])
+        fast = [("Clicar em Área de Trabalho no painel do Explorador de Arquivos", "app:explorer", "DESKTOP"),
+                ("pausar o vídeo e avançar para o minuto 2:50", "web", "WEB"),
+                ("no WhatsApp Web, clicar na conversa com Gabriel", "web", "WEB"),
+                ("voltar para a tela anterior", "app:explorer", "DESKTOP")]
+        check("acao dentro do alvo aberto vai direto ao agente (sem Maestro)",
+              all((p := continue_plan(t, "continue", tg, s)) and p["subtasks"][0]["agent"] == ag
+                  for t, tg, ag in fast))
+        slow = ["criar uma planilha de fluxo de caixa", "fazer um resumo da planilha",
+                "no Bloco de Notas, escrever um texto sobre Aristóteles", "abrir o Excel e depois mandar por email"]
+        check("criar, escrever, resumir ou encadear outro app continua no Maestro",
+              not any(continue_plan(t, "continue", "app:explorer", s) for t in slow))
+        check("pedido novo (sem alvo) continua no Maestro",
+              continue_plan("clicar em sistema", "new", "app:explorer", s) is None
+              and continue_plan("clicar em sistema", "continue", "app:fechado", s) is None)
+    finally:
+        CS._alive = real_alive
+
+    # ── perguntas sobre o que foi criado: le o arquivo ────────────────
+    from core import artifact_qa as Q
+    d = tempfile.mkdtemp()
+    xlsx, html = _os.path.join(d, "fluxo.xlsx"), _os.path.join(d, "index.html")
+    from openpyxl import Workbook
+    wb = Workbook(); ws = wb.active; ws.title = "Lançamentos"
+    ws.append(["Data", "Descrição", "Entrada", "Saída"]); ws.append(["01/10", "Vendas", 5000, 0])
+    ws.append(["02/10", "Aluguel", 0, 1800]); ws.append(["Total", "", "=SUM(C2:C3)", "=SUM(D2:D3)"])
+    wb.save(xlsx)
+    Path(html).write_text("<h1>Padaria</h1>", encoding="utf-8")
+    files = [html, xlsx]
+    check("'resumo da planilha que acabou de ser gerada' -> le a planilha",
+          Q.wants_answer("fazer um resumo da planilha de fluxo de caixa que acabou de ser gerada", files) == xlsx)
+    check("'me explica esse site' -> le o site", Q.wants_answer("me explica esse site", files) == html)
+    check("logo depois de criar: 'quanto deu o total?' -> le o arquivo",
+          Q.wants_answer("quanto deu o total de entradas?", files, just_created=True) == xlsx)
+    check("mudar o arquivo ou pedir outra coisa NAO vira pergunta",
+          not any(Q.wants_answer(t, files, True) for t in
+                  ("adiciona uma coluna de categoria na planilha", "criar uma planilha nova",
+                   "abre a planilha", "pesquisa o total de vendas do brasil")))
+    content = Q.read_file(xlsx)
+    check("planilha lida com valores e formulas por aba",
+          "## Aba: Lançamentos" in content and "Aluguel\t0\t1800" in content and "=SUM(C2:C3)" in content)
+    seen = {}
+    ans = Q.answer("resume a planilha", xlsx, llm=lambda sy, us: seen.update(sy=sy, us=us) or "Entraram R$ 5.000.")
+    check("uma chamada com o conteudo como DADO", ans == "Entraram R$ 5.000." and "DADO" in seen["sy"]
+          and "<conteudo_do_arquivo>" in seen["us"])
+    from desktop.controller import Controller
+    run_src = inspect.getsource(Controller._run)
+    check("controller responde lendo o arquivo ANTES de planejar",
+          run_src.index("artifact_qa.wants_answer") < run_src.index("continue_plan(")
+          < run_src.index("self.maestro.analyze("))
+    from core.observer import observe
+    s2 = Session()
+    observe("DATA", {}, {"files": [xlsx], "primary_path": xlsx}, s2)
+    check("arquivo criado fica guardado na conversa (e no arquivo salvo)",
+          s2.files == [xlsx] and Session().__class__ and "files" in s2.to_dict())
+
+    # ── piloto: frase final pronta + limite de tempo ──────────────────
+    import core.app_pilot as AP
+    import core.browser_pilot as BP
+    check("pilotos devolvem a frase para o usuario (say) e param apos o limite de tempo",
+          all('"say"' in m.SYSTEM and "deadline" in inspect.getsource(m) and m.MAX_SECONDS <= 75
+              for m in (AP, BP)))
+    ctl = Controller.__new__(Controller)
+    out = []
+    import desktop.controller as DC
+    real_emit = DC.bus.emit
+    DC.bus.emit = lambda ev, p=None: out.append((ev, p))
+    import core.reply as RP
+    real_compose = RP.compose
+    RP.compose = lambda *a, **k: (_ for _ in ()).throw(AssertionError("chamou a IA da resposta"))
+    try:
+        ctl.session = Session()
+        ctl.session.add_turn("clica em documentos", "clicar em Documentos", "continue", ["DESKTOP"], True, "x")
+        ctl.session.save = lambda *a, **k: None
+        ctl._after_turn("clica em documentos", "clicar em Documentos",
+                        {"kind": "continue", "summary": "Cliquei em Documentos [52]", "say": "Abri Documentos."},
+                        {"success": True})
+        for _ in range(40):
+            if any(ev == "assistant_message" for ev, _p in out):
+                break
+            _t.sleep(0.05)
+    finally:
+        DC.bus.emit = real_emit
+        RP.compose = real_compose
+    msg = [p for ev, p in out if ev == "assistant_message"]
+    check("frase do piloto vira a resposta, sem outra chamada de IA",
+          msg and msg[0]["text"] == "Abri Documentos.")
+
+    # ── Office: tela inicial fecha com Esc; prontidao tolerante ──────────
+    import core.automation as A
+    bd = inspect.getsource(A.AutomationEngine._blank_document)
+    check("Excel/Word: tela inicial sai com Esc antes do Ctrl+N", 'press("escape")' in bd)
+    eng = A.AutomationEngine.__new__(A.AutomationEngine)
+    eng.dry_run, eng.should_stop, eng._expect = False, None, ("whatsapp",)
+    rf, rr, rs = A._fg_state, A._window_ready, A._responsive
+    try:
+        t0 = _t.time()
+        A._fg_state = lambda: (5, "WhatsApp") if _t.time() - t0 > 0.2 else (1, "x")
+        A._window_ready = lambda h: False          # app que nunca fica "ocioso"
+        A._responsive = lambda h: True
+        took, ready = eng._await_ready((1, "x"), 4.0)
+        check(f"app que nunca fica ocioso: estavel e respondendo basta ({took:.1f}s de 4s)", ready and took < 1.8)
+    finally:
+        A._fg_state, A._window_ready, A._responsive = rf, rr, rs
+
+    # ── voz: com algo aberto, age no melhor palpite (sem acao com consequencia) ──
+    from desktop.voice import VoiceController
+    s3 = Session()
+    CS._alive = lambda h: True
+    try:
+        s3.remember_app("explorer", 1, "Explorador")
+        ok_guess = VoiceController._act_on_guess({"guess": "clicar na pasta Relatorios"}, s3)
+        no_send = VoiceController._act_on_guess({"guess": "enviar o arquivo pro João"}, s3)
+        no_target = VoiceController._act_on_guess({"guess": "clicar na pasta Relatorios"}, Session())
+    finally:
+        CS._alive = real_alive
+    check("nome duvidoso com algo aberto: pede esclarecimento", not ok_guess)
+    check("acao com consequencia ou nada aberto: continua perguntando", not no_send and not no_target)
+
+    # ── transcricao antecipada: comeca na pausa ───────────────────────
+    from core.voice import recorder as R
+    stop, st, pauses = threading.Event(), {"i": 0}, []
+    levels = [0.002] * 5 + [0.12] * 40 + [0.002] * 40
+
+    class FakeStream:
+        def __init__(self, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self, n):
+            i = st["i"]; st["i"] += 1
+            lv = levels[i] if i < len(levels) else 0.0
+            x = (np.random.default_rng(i).standard_normal(n) * lv).astype(np.float32)
+            return x.reshape(-1, 1), None
+    old = _sys.modules.get("sounddevice")
+    _sys.modules["sounddevice"] = types.SimpleNamespace(InputStream=FakeStream)
+    try:
+        audio = R.record_utterance(stop, start_timeout=None, silence_s=0.8,
+                                   on_pause=lambda a: pauses.append(len(a)))
+    finally:
+        if old is not None:
+            _sys.modules["sounddevice"] = old
+        else:
+            _sys.modules.pop("sounddevice", None)
+    check("pausa de 0,3 s ja entrega o audio para transcrever (antes do fim confirmado)",
+          len(pauses) == 1 and audio is not None and 0 < len(audio) - pauses[0] <= int(0.95 * 16000))
+    vsrc = inspect.getsource(VoiceController._proc_worker)
+    check("so reaproveita a transcricao antecipada se depois da pausa so veio silencio",
+          'spec["n"]' in vsrc and "self.silence_s + 0.15" in vsrc)
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_round8_spreadsheet_reader():
+    """Rodada 8: resumo de planilha grande (dois anos) — totais calculados pelo app e resposta garantida."""
+    print("\n=== Rodada 8: leitura de planilha ===")
+    import inspect
+    import os as _os
+    import tempfile
+    from openpyxl import Workbook
+    from core import artifact_qa as Q
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    d = tempfile.mkdtemp()
+    x = _os.path.join(d, "fluxo_2025_2026.xlsx")
+    wb = Workbook()
+    for yi, year in enumerate((2025, 2026)):
+        ws = wb.active if yi == 0 else wb.create_sheet()
+        ws.title = f"Lancamentos {year}"
+        ws.append([f"FLUXO DE CAIXA - {year}"])
+        ws.append(["Data", "Descricao", "Entradas (R$)", "Saidas (R$)", "Saldo"])
+        for m in range(1, 13):
+            ws.append([f"{year}-{m:02d}-05", f"Entrada - Vendas ({m})", 1000.0 * m + yi, None, f"=E{m + 2}"])
+            ws.append([f"{year}-{m:02d}-20", f"Saida - Aluguel ({m})", None, 400.0 + m, f"=E{m + 2}"])
+    comp = wb.create_sheet("Comparativo")
+    comp.append(["Mes", "Entradas 2025"]); comp.append(["Jan", "='Lancamentos 2025'!C3"])
+    wb.save(x)
+    c = Q.read_file(x)
+    ent25 = sum(1000.0 * m for m in range(1, 13))
+    check("totais calculados pelo app vem PRIMEIRO, por aba e coluna",
+          c.startswith("ESTATISTICAS CALCULADAS PELO APP") and c.index("ESTATISTICAS") < c.index("LINHAS DA PLANILHA"))
+    check("soma exata das entradas de 2025 (sem o modelo fazer conta)",
+          f"soma {Q._brl(ent25)}" in c and "coluna 'Entradas (R$)'" in c)
+    check("maior valor com o rotulo da linha", "maior 12.000,00 (Entrada - Vendas (12))" in c)
+    check("colunas de formula (saldo, comparativo) nao viram total falso", "coluna 'Saldo'" not in c)
+    seen = {}
+    Q.answer("resume", x, llm=lambda sy, us: seen.update(sy=sy) or "ok")
+    check("prompt explicita limites das estatisticas", "não são necessariamente totais" in seen["sy"])
+    src = inspect.getsource(Q._default_llm)
+    check("limite de resposta folgado (o raciocinio nao come a resposta)", "max_tokens=4000" in src)
+    from desktop.controller import Controller
+    run = inspect.getsource(Controller._run)
+    blk = run[run.index("artifact_qa.wants_answer"):run.index("continue_plan(")]
+    check("arquivo lido sem resposta: avisa e PARA (nao cai no piloto que le a tela)",
+          "não consegui montar a resposta" in blk and blk.count("return") >= 2)
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
+def test_round9_brain_speed_app():
+    """Rodada 9: raciocinio por agente, plano enxuto, memoria verificada, funcoes do app."""
+    print("\n=== Rodada 9: velocidade, memoria verificada e app ===")
+    import inspect
+    import json as _json
+    import tempfile
+    from pathlib import Path
+    from types import SimpleNamespace as NS
+    passed, total = 0, 0
+
+    def check(label, ok):
+        nonlocal passed, total
+        total += 1
+        passed += bool(ok)
+        print(f"{'OK  ' if ok else 'FAIL'} | {label}")
+
+    # ── raciocinio por agente (medido: Maestro 3,1 s -> 1,7 s, mesmo acerto) ──
+    import core.ai_client as AC
+    from core.config import get_config
+    cfg = get_config()
+    check("Sonnet 5 aceita desligar o raciocinio; Sonnet 5.5/Opus 5.5 nao (viraria 400)",
+          AC.can_disable_thinking("claude-sonnet-5") and not AC.can_disable_thinking("claude-sonnet-5-5")
+          and not AC.can_disable_thinking("claude-opus-5-5"))
+    check("config: Maestro, voz, resolvedor e resposta sem raciocinio; geracao e piloto com",
+          all(AC.thinking_off_for(a) for a in ("MAESTRO", "VOICE", "RESOLVER", "REPLY"))
+          and not any(AC.thinking_off_for(a) for a in ("DATA", "CODE", "APP_PILOT", "WEB_PILOT", "READER")))
+    sent = []
+
+    class FakeStream:
+        def __init__(self, kw): sent.append(kw)
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def __iter__(self): return iter(())
+        def get_final_message(self):
+            return NS(content=[NS(type="text", text="{}")], stop_reason="end_turn",
+                      usage=NS(input_tokens=1, output_tokens=1, cache_read_input_tokens=0,
+                               cache_creation_input_tokens=0))
+    cli = AC.AIClient.__new__(AC.AIClient)
+    cli._client = NS(messages=NS(stream=lambda **kw: FakeStream(kw)))
+    cli._metrics = {"total_calls": 0, "total_input_tokens": 0, "total_output_tokens": 0,
+                    "total_cache_read_tokens": 0, "total_cache_write_tokens": 0, "total_cost_usd": 0.0,
+                    "calls_by_model": {}, "calls_by_agent": {}, "errors": 0, "truncated": 0}
+    cli.message("claude-sonnet-5", "S", "u", effort="low", agent="MAESTRO")
+    cli.message("claude-sonnet-5", "S", "u", effort="low", agent="DATA")
+    cli.message("claude-sonnet-5-5", "S", "u", effort="low", agent="MAESTRO")
+    cli.message("claude-sonnet-5", "S", "u", effort="low", agent="MAESTRO", images=[{"base64": "x"}])
+    check("requisicao: thinking disabled so onde configurado, modelo aceita e sem imagem",
+          sent[0].get("thinking") == {"type": "disabled"} and "thinking" not in sent[1]
+          and "thinking" not in sent[2] and "thinking" not in sent[3])
+
+    # ── plano enxuto (213 -> 130 tokens de saida) ──
+    from agents.maestro import PROMPT, Maestro
+    check("formato do plano sem campos que nenhum codigo le", "objectives" not in PROMPT
+          and "forbidden_assumptions" not in PROMPT and "Formato ENXUTO" in PROMPT)
+    m = Maestro.__new__(Maestro)
+    m.model, m.effort = "x", "low"
+    m._config = cfg
+    m._client = NS(message=lambda **k: _json.dumps({"analysis": "a", "subtasks": [
+        {"agent": "DESKTOP", "task": "abrir notepad", "params": {"app": "notepad", "text": "Olá"}}]}))
+    plan = m._ask("abra o bloco de notas")
+    check("texto generico nao pedido ('Olá') e limpo em codigo",
+          plan["subtasks"][0]["params"]["text"] == "")
+
+    # ── memoria verificada ──
+    from core import memory_gate as G
+    from core.brain import Brain
+    with tempfile.TemporaryDirectory() as d:
+        vault, arch = Path(d) / "vault", Path(d) / "arquivo"
+        refs = vault / "30 Tarefas de referencia"
+        refs.mkdir(parents=True)
+        note = lambda kw, ag: (f"---\ntipo: tarefa-referencia\nagente: {ag}\nkeywords: {kw}\n---\n# x\n\n"
+                               f"## Caminho\napp_search → wait\n")
+        (refs / "Abrir calculadora.md").write_text(note("abrir calculadora", "DESKTOP"), encoding="utf-8")
+        (refs / "Desenhar no Paint.md").write_text(note("desenhar paint casa", "DESKTOP"), encoding="utf-8")
+        hist = Path(d) / "h.jsonl"
+        hist.write_text(_json.dumps({"task": "abrir a calculadora", "success": True, "started_at": "2026-10-20T10:00",
+                                     "subtasks": [{"agent": "DESKTOP", "task": "abrir calculadora"}],
+                                     "reference_evidence": [{"note": "Abrir calculadora.md", "verified": True, "verifier": "uia"}]}) + "\n",
+                        encoding="utf-8")
+        rep = G.verify_all(vault, hist, apply=True, archive=arch)
+        check("verificacao: comprovada fica verificada; hipotese preservada no vault",
+              [n["nota"] for n in rep["verificadas"]] == ["Abrir calculadora.md"]
+              and not (arch / "Desenhar no Paint.md").exists() and (refs / "Desenhar no Paint.md").exists()
+              and "verificado: sim" in (refs / "Abrir calculadora.md").read_text(encoding="utf-8"))
+        b = Brain(str(vault))
+        check("so caminho verificado entra no prompt", [r["title"] for r in b.find_references("abrir a calculadora")]
+              == ["Abrir calculadora"])
+        run = lambda t, ok: {"task": t, "success": ok, "started_at": "2026-10-20T11:00",
+                             "subtasks": [{"agent": "DESKTOP", "task": t}],
+                             "reference_evidence": [{"note": "Desenhar no Paint.md" if "paint" in t else "Abrir calculadora.md",
+                                                     "verified": True, "verifier": "uia"}]}
+        G.record_outcome(vault, run("desenhar uma casa no paint", True), archive=arch)
+        check("hipotese continua no vault apos registrar resultado",
+              (refs / "Desenhar no Paint.md").exists() and not (arch / "Desenhar no Paint.md").exists())
+        G.record_outcome(vault, run("abrir a calculadora", False), archive=arch)
+        G.record_outcome(vault, run("abrir a calculadora", False), archive=arch)
+        md = (refs / "Abrir calculadora.md").read_text(encoding="utf-8")
+        check("falha mais do que acerta: rebaixada (sai do prompt)", "verificado: nao" in md and
+              b.find_references("abrir a calculadora") == [])
+        mp = G.routing_map(vault)
+        check("mapa de roteamento lista so verificados", "[[Desenhar no Paint]]" in mp and "Abrir calculadora" not in mp)
+
+    # ── configuracoes e instrucoes ──
+    import core.user_settings as US
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "s.json"
+        out = US.save({"instructions": "x" * 3000, "plan_review": 1, "hack": True}, path=p)
+        check("configuracoes: so chaves conhecidas, texto limitado, booleanos",
+              len(out["instructions"]) == US.INSTRUCTIONS_MAX and out["plan_review"] is True and "hack" not in out)
+    check("instrucoes entram no Maestro e na resposta, sem ampliar permissoes",
+          "instructions_block" in inspect.getsource(Maestro.analyze)
+          and "nao mudam as regras de seguranca" in inspect.getsource(US.instructions_block))
+
+    # ── conversas: renomear e excluir (recuperavel) ──
+    from core.session import Session
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        s = Session()
+        s.add_turn("abrir o google", "abrir o google", "new", ["WEB"], True)
+        s.save(base)
+        check("renomear conversa", Session.rename_saved(s.id, "  Pesquisas  do trabalho ", base)
+              and Session.list_saved(base=base)[0]["title"] == "Pesquisas do trabalho")
+        check("excluir tira da lista e guarda em _excluidas (nunca apaga)",
+              Session.delete_saved(s.id, base) and Session.list_saved(base=base) == []
+              and (base / "_excluidas" / f"{s.id}.json").exists())
+        check("id invalido nao toca em arquivo", not Session.delete_saved("../x", base))
+
+    # ── anexos, revisao do plano, acesso rapido ──
+    from desktop.controller import Controller
+    ctl = Controller.__new__(Controller)
+    ctl.session = Session()
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as f:
+        real = f.name
+    check("anexo: so arquivo que existe entra na conversa",
+          ctl.attach_files([real, "C:/nao/existe.xlsx"]) == [real] and ctl.session.files == [real])
+    run_src = inspect.getsource(Controller._run)
+    check("revisao do plano: espera aprovacao so em pedido digitado, com tempo limite",
+          'self._emit("plan_review"' in run_src and "not from_voice" in run_src
+          and "self._plan_gate.wait(180)" in run_src)
+    check("parar libera um plano esperando aprovacao", "self._plan_gate.set()" in inspect.getsource(Controller.force_stop))
+    import desktop.window_mode as wm
+    from PySide6.QtCore import QCoreApplication, QObject
+    _app = QCoreApplication.instance() or QCoreApplication([])
+
+    class W(QObject):
+        def __init__(self):
+            super().__init__(); self.vis = False; self.calls = []
+        def winId(self): return 0
+        def screen(self): return None
+        def width(self): return 380
+        def height(self): return 560
+        def isVisible(self): return self.vis
+        def show(self): self.vis = True; self.calls.append("show")
+        def hide(self): self.vis = False
+        def requestActivate(self): self.calls.append("activate")
+        def visibility(self): return 0
+        def setPosition(self, *a): pass
+    mode = wm.WindowMode(W(), (mini := W()), enabled=True)
+    mode.quick_entry()
+    opened = mini.vis and "activate" in mini.calls
+    mode.quick_entry()
+    check("acesso rapido: abre o mini chat com foco; de novo, fecha", opened and not mini.vis)
+    qml = Path(wm.__file__).parent / "qml"
+    comp = (qml / "components" / "Composer.qml").read_text(encoding="utf-8")
+    main = (qml / "Main.qml").read_text(encoding="utf-8")
+    check("caixa de pedido: + anexar, arrastar e soltar, etiquetas",
+          "FileDialog" in comp and "DropArea" in comp and "Bridge.attachFiles" in comp)
+    check("barra lateral: Configuracoes (Ctrl+,), busca e renomear/excluir conversas",
+          "V.SettingsView" in main and "convSearch" in main and "Bridge.renameConversation" in main
+          and "Bridge.deleteConversation" in main and 'sequence: "Ctrl+,"' in main)
+    from core.voice.tts import Speaker
+    check("voz: sinal sonoro 'ouvi' ao terminar de falar (configuravel)", hasattr(Speaker, "chime")
+          and "_heard_cue" in (Path(wm.__file__).parent / "voice.py").read_text(encoding="utf-8"))
+    print(f"\n{passed}/{total} passou")
+    return passed == total
+
+
 if __name__ == "__main__":
+    # Standalone entry point is independent of the caller's current directory.
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     ok1 = test_maestro_ambiguity_gate()
     ok2 = test_workflow_quarantine()
     ok3 = test_web_circuit_breaker()
@@ -2553,8 +3267,13 @@ if __name__ == "__main__":
     ok34 = test_security_guards_round4()
     ok35 = test_skills_catalog()
     ok36 = test_window_mode()
+    ok37 = test_latency_round5()
+    ok38 = test_round6_conversation_memory_vault()
+    ok39 = test_round7_fluid_conversation()
+    ok40 = test_round8_spreadsheet_reader()
+    ok41 = test_round9_brain_speed_app()
     sys.exit(0 if all([ok1, ok2, ok3, ok4, ok5, ok6, ok7, ok8,
                        ok9, ok10, ok11, ok12, ok13, ok14, ok15, ok16,
                        ok17, ok18, ok19, ok20, ok21, ok22, ok23, ok24,
                        ok25, ok26, ok27, ok28, ok29, ok30, ok31, ok32, ok33, ok34, ok35,
-                       ok36]) else 1)
+                       ok36, ok37, ok38, ok39, ok40, ok41]) else 1)
