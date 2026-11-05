@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: WEB
+estado: curado
+verificado: nao
 keywords: youtube video pesquisar assistir primeiro
+revisado_em: 2026-10-31
 tags: [playbook, web]
-cssclasses: [agent-web]
 ---
 # Pesquisa no YouTube
 
 Agente: [[Web Agent]]
 
-## Exemplo de pedido
-> Abra o YouTube e pesquise vídeos de skate e abra o primeiro
-
 ## Caminho
-1. `web_goto` → `https://www.youtube.com/results?search_query=videos+de+skate`
-2. `wait` 2s
-3. `web_click` em `ytd-video-renderer a#video-title`
+open_url/web_goto com termo codificado -> browser_task para selecionar resultado na janela correta -> observar destino/reproducao.
 
-## Armadilhas
-- Sem Playwright não é possível clicar no primeiro vídeo: abrir os resultados já cumpre a busca.
+## Limites e aceite
+Anuncio nao e resultado. Se apenas a lista abrir, resultado parcial. Nao afirmar reproducao nem pular barreiras sem evidencia.

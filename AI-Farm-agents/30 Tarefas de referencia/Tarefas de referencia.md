@@ -5,17 +5,42 @@ cssclasses: [ref-note]
 ---
 # Tarefas de referência
 
-← [[Início]]
+← [[Início]] · [[Como usar o cerebro]] · [[Mapa de roteamento]]
 
-> [!route] 251 caminhos prontos
-> [[Web Agent|Web]] 50 · [[Desktop Agent|Desktop]] 51 · [[Code Agent|Code]] 50 · [[Data Agent|Data]] 50 · [[File Agent|File]] 50
->
-> O [[Maestro]] consulta as mais parecidas com cada pedido (seção **Caminho**). Cada nota traz contexto, forma alternativa, critério de aceite, armadilha e os subagentes envolvidos.
+Quinze procedimentos canônicos. Variações de assunto ou conteúdo pertencem à mesma nota.
+Os caminhos modificados estão revisados, mas aguardam revalidação (`verificado: nao`).
+Não são anunciados como execuções comprovadas. Playbooks curados em 10 Agentes continuam orientando.
 
-## Por agente
-![[Referencias.base#Todas]]
+## CODE
 
-## Gerais (cadeias entre agentes)
-```query
-path:"30 Tarefas de referencia" -path:"30 Tarefas de referencia/Web" -path:"30 Tarefas de referencia/Desktop" -path:"30 Tarefas de referencia/Code" -path:"30 Tarefas de referencia/Data" -path:"30 Tarefas de referencia/File" -file:"Tarefas de referencia"
-```
+- [[022 - Editar arquivo existente]]
+- [[Criar script Python]]
+- [[Criar site sobre um tema]]
+
+## DATA
+
+- [[Criar planilha de gastos com grafico]]
+
+## FILE
+
+- [[001 - Organizar Downloads por tipo]]
+- [[009 - Encontrar arquivo por nome]]
+
+## DESKTOP
+
+- [[001 - Abrir o Bloco de Notas]]
+- [[010 - Abrir Excel em branco]]
+- [[018 - Calcular na calculadora]]
+- [[030 - Fechar aplicativo]]
+- [[032 - Abrir configurações do Windows]]
+- [[Escrever conteúdo gerado no Bloco de Notas]]
+- [[Escrever texto ditado no Bloco de Notas]]
+
+## WEB
+
+- [[Pesquisar no Google]]
+- [[Pesquisar no YouTube e abrir o primeiro]]
+
+## Limites
+
+[[Cobertura e lacunas]] registra capacidades ausentes, sem criar receitas fictícias.

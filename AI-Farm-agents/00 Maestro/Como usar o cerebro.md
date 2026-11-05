@@ -1,36 +1,57 @@
 ---
 tipo: guia
-tags: [guia]
+tags: [guia, curadoria]
 cssclasses: [agent-maestro]
 ---
 # Como usar o cérebro
 
-## Estrutura
-| Pasta | Conteúdo | Quem escreve |
-|---|---|---|
-| `00 Maestro` | orquestração, validação, roteamento | humano |
-| `10 Agentes` | nota de cada agente + playbooks | humano |
-| `20 Politicas` | políticas de aceite (espelham o código) | humano |
-| `30 Skills` | skills do catálogo AIWorkbench por agente | humano |
-| `30 Tarefas de referencia` | caminhos prontos para consulta | humano |
-| `40 Execucoes` | planos, sucessos e falhas | **o app** |
-| `90 Sistema` | templates | humano |
+O vault orienta; permissões e bloqueios vivem no código. Notas não autorizam ferramentas.
 
-## Como os agentes usam
-Todo agente que precisa do modelo (Data, Web, Code, Desktop, File, piloto do navegador e piloto de apps) recebe, **para aquele pedido**:
-1. **Regras de execução**, **Como navegar e executar** e **Falhas conhecidas** da nota do agente;
-2. **Skills** do catálogo AIWorkbench que se aplicam ao pedido ([[Skills]]): o que fazer e o que conferir antes de concluir;
-3. [[Tarefas de referencia]], playbooks e execuções com sucesso parecidas (seção **Caminho**) — playbook curado vale mais que execução registrada;
-4. [[Licoes aprendidas]] que tocam no pedido (cada falha real virou regra);
-5. linhas do [[Dicionario de voz]] citadas no pedido: [[Termos de computador]], [[Formas de pedir]], [[Configuracoes do Windows]], [[Atalhos de teclado]], [[Apps e sites]].
+## Organização
 
-O [[Maestro]] recebe referências e lições; a voz usa o dicionário e a [[Persona do assistente]]. Cada plano em `40 Execucoes/Planos` mostra **Consultou:** com as notas e skills usadas, e o log do app mostra "Skills aplicadas".
-Tudo é **referência**: nada no vault amplia permissões (as políticas vivem em código).
-- Cada execução cria um plano em `40 Execucoes/Planos` e uma nota em `Sucesso` ou `Falhas`.
+| Pasta | Função |
+| --- | --- |
+| 00 Maestro | Intenção, conversa, roteamento e curadoria |
+| 10 Agentes | Contratos atuais e playbooks reutilizáveis |
+| 20 Politicas | Regras documentadas, implementadas em código |
+| 30 Skills | Engenharia selecionada por agente e pedido |
+| 30 Tarefas de referencia | Procedimentos canônicos e estado de validação |
+| 40 Execucoes / 50 Diario | Registros locais; não são receitas nem prova automática |
+| 60 Aprendizados | Lições e restrições curadas |
+| 70 Dicionario | Vocabulário, aplicativos, atalhos e interpretação de fala |
+| 90 Sistema | Templates e lacunas; fora do grafo operacional padrão |
 
-## Para ensinar algo novo
-1. Crie uma nota em `30 Tarefas de referencia` com o template [[Template - Tarefa de referencia]].
-2. Preencha `keywords` no topo e a seção **Caminho**.
-3. Pronto: pedidos parecidos passam a receber esse caminho como referência.
+## Recuperação
 
-> Não coloque senhas, chaves ou dados pessoais nas notas.
+Brain.context_for combina regras do agente, skills, playbooks curados, referências verificadas,
+lições e termos do dicionário dentro de um orçamento. Manter as seções que o código lê:
+Regras de execução, Como navegar e executar, Falhas conhecidas e Caminho.
+
+- **Curado:** revisado contra o código; orientação sem prova da execução completa.
+- **Verificado:** procedimento usado e identificado por evidência independente, com escopo e ambiente.
+- **Planejado/experimental:** capacidade sem validação suficiente; não recuperar como receita.
+- **Retirado:** duplicata ou rota obsoleta; não restaurar de arquivos locais automaticamente.
+
+Referências em 30 Tarefas de referencia só são recuperadas com `verificado: sim`.
+Os caminhos alterados nesta curadoria estão como `verificado: nao`: contagens antigas não validam
+um procedimento novo. Regras e playbooks atuais em 10 Agentes continuam orientando os agentes.
+Sucesso declarado ou similaridade de texto não comprovam procedimento; falta de histórico não elimina curadoria.
+
+## Acrescentar conhecimento
+
+1. Procurar uma nota existente antes de criar outra.
+2. Atualizar o procedimento canônico para variações de assunto, formato ou conteúdo.
+3. Usar [[Template - Tarefa de referencia]] quando mudar método, precondição ou aceite.
+4. Registrar agente, palavras-chave, limites, origem e evidência; começar sem verificação.
+5. Validar com fixture e resultado observado antes de promover a procedimento comprovado.
+
+Não guardar senhas, contatos, dados pessoais ou caminhos de uma máquina como rotas universais.
+Capacidades ausentes pertencem a [[Cobertura e lacunas]], sem receita executável inventada.
+
+## Manutenção
+
+[[Tarefas de referencia]] · [[Mapa de roteamento]]
+
+Decisões por nota: docs/research/vault-curation.json, fora do grafo. Originais desta revisão:
+backup local ignorado pelo Git e histórico da base anterior. Não reintroduzir cartões retirados
+com restauração ampla. Mudar um procedimento exige nova validação.

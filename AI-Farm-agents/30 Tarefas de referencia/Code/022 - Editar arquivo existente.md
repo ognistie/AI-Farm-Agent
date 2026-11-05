@@ -1,34 +1,22 @@
 ---
 tipo: tarefa-referencia
 agente: CODE
-contexto: "edit_existing"
-keywords: editar arquivo existente app projeto adicione rota health
+keywords: editar mudar corrigir refatorar projeto arquivo desfazer
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, code]
 cssclasses: [ref-note]
 ---
 # Editar arquivo existente
 
-> [!route] Pedido exemplo
-> no app.py do meu projeto adicione uma rota /health
-
-**Agente:** [[Code Agent]] · **Contexto:** edit_existing
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. Ler arquivo
-2. inserir rota mantendo estilo
-3. Reviewer
-4. abrir no VS Code
+CODE -> read_project do projeto da sessao -> edit_project com files e expected_hashes -> backup e publicacao -> conferir conteudo. revert_project apenas sem conflitos.
 
-## Forma alternativa
-Mostrar o diff antes de salvar
-
-## Critério de aceite
-Rota adicionada sem quebrar o resto
-
-## Armadilha
-Não reescrever o arquivo inteiro
-
-## Subagentes
-- [[Architect]] — 1 · Entender
-- [[Builder]] — 2 · Montar
-- [[Reviewer]] — 3 · Conferir
+## Aceite e limites
+- Usar somente a pasta confiavel da sessao; nao aceitar uma pasta arbitraria sugerida pelo modelo.
+- Recusar snapshot desatualizado. Rollback em falha detectada; backup preservado.
+- Desfazer recusa arquivo alterado pelo usuario ou backup corrompido. Versoes antigas sem hashes exigem recuperacao manual.

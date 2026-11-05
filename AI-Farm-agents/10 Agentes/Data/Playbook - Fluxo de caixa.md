@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: DATA
-keywords: fluxo caixa financeiro empresa entradas saidas saldo
+estado: curado
+verificado: nao
+keywords: fluxo caixa financeiro entradas saidas saldo orcamento
+revisado_em: 2026-10-31
 tags: [playbook, data]
-cssclasses: [agent-data]
 ---
 # Fluxo de caixa
 
 Agente: [[Data Agent]]
 
-## Exemplo de pedido
-> Crie uma planilha profissional de fluxo de caixa
-
 ## Caminho
-1. Abas: Lançamentos, Resumo mensal
-2. Saldo acumulado com fórmula
-3. Formatação monetária R$
+create_workbook com Data, Descricao, Entrada, Saida e Saldo; manter formulas e referencias na propria aba.
 
-## Armadilhas
-- Separar entradas e saídas; saldo = anterior + entradas − saídas.
+## Limites e aceite
+Saldo = anterior + entrada - saida. Separar dados reais de exemplos. Resumo em outra aba precisa de dados explicitos, sem vinculo/formula entre abas. Nao inventar juros, impostos ou saldos.

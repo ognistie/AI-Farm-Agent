@@ -1,22 +1,18 @@
 ---
 tipo: playbook
 agente: WEB
-keywords: pesquisar google termo busca
+estado: curado
+verificado: nao
+keywords: pesquisar google termo busca noticias aspas filtro cotacao dolar clima
+revisado_em: 2026-10-31
 tags: [playbook, web]
-cssclasses: [agent-web]
 ---
 # Pesquisa no Google
 
 Agente: [[Web Agent]]
 
-## Exemplo de pedido
-> Pesquise no Google sobre eleições 2026 no Brasil
-
 ## Caminho
-1. `web_goto` → `https://www.google.com/search?q=eleições+2026+brasil`
-2. `wait` 2s
-3. `web_read` para capturar os resultados
+Codificar o termo completo na URL de resultados -> open_url/web_goto -> ler o resultado quando o pedido exigir resposta.
 
-## Armadilhas
-- Termo com acentos: use URL encoding (o código já faz).
-- Pedido 'na aba de procura' não muda nada: continua sendo a URL de busca.
+## Limites e aceite
+Sem termo, perguntar. Aspas e filtros devem sobreviver. Clima, preco e cotacao exigem fonte atual; nao guardar o valor como conhecimento duravel.

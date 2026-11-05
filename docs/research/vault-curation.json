@@ -1,0 +1,1756 @@
+{
+  "schema": 1,
+  "date": "2026-10-31",
+  "baseline_commit": "d6d95cf20fead0521d4030446b5fcb741f8edaaa",
+  "authorization": "User requested retaining useful knowledge, removing useless notes and organizing the second brain without clutter.",
+  "restored": [
+    "30 Tarefas de referencia/Code/022 - Editar arquivo existente.md",
+    "30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+    "30 Tarefas de referencia/Pesquisar no Google.md"
+  ],
+  "retired": [
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Abrir aplicativo.md",
+      "source_sha256": "49ed5d704e91d5b74b6697441f5b3de1fb17104448c52f845d835e1b3f977da4",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/001 - Site estático institucional.md",
+      "source_sha256": "9f7e428d206f84b8369acff6f8e0d514c0cce496d6e40d45d7ed57d89ff55ea9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/002 - Landing page de produto.md",
+      "source_sha256": "b2fcbff4a29473dfbb8b662265f58976497391a4ca4ec410e65088526b754cb1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/003 - Portfólio pessoal.md",
+      "source_sha256": "7cf9fe16cd828045bdc1ebe4ca779b0e9ca42ca4cbb8342feba45bdc58703a66",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/004 - Site interativo com JS.md",
+      "source_sha256": "44fa82b84249d7b35744e5a0b48520902dfcffa2a82b6bf296d2c2c7d4013ae3",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/005 - Calculadora web.md",
+      "source_sha256": "acc2d2c3a3423413b22557cda1d35ea8044ccfc704847b7c7e4d3da55faed8f5",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/006 - To-do list web com localStorage.md",
+      "source_sha256": "403b35b5aeac3e076b19457545ea23d092ae42dcae1629c7fcac11aa035d0280",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/007 - Dashboard web com gráficos.md",
+      "source_sha256": "a1c5c765373528af4eeb2ef530144c3277e43b807077f167490b5164cbb815fa",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/008 - API REST com FastAPI.md",
+      "source_sha256": "47dc007aa9d4fbfd91ec7e5aee98427c1a99787b447ad3925d8f6748f559f8b3",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/009 - API com Flask.md",
+      "source_sha256": "e9962ade1f5dd2a029ecb9d22098820f0b943d64c206fd4e9378628976d31980",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/010 - Fullstack simples.md",
+      "source_sha256": "6c164e682d08c56110fe4af4d82d081949cc9dd5d48ac56d4154d67ab1c2b389",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/011 - Script de renomear arquivos.md",
+      "source_sha256": "0b0141c0eea595ee36bc126ddbed6889409f49f5a47553091c90a457dbb0f0ef",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/012 - Script de backup.md",
+      "source_sha256": "d6f0d05b699a98be1ae073c44f1a71f4cfa240944ee8da4068b4b3256d3be379",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/013 - Web scraping.md",
+      "source_sha256": "49d0c033a5ab67fb1bdcaeb3e667794a238a635ac17642ba6f99d65b2060de29",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/014 - Automação de planilha.md",
+      "source_sha256": "554c0383b24658484eb173ec2706479eacd567a7dc7481a779b1457f3efd193a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/015 - Análise de dados CSV.md",
+      "source_sha256": "e69e13b255a3d1e179740df7a2dda4dafe883bfcce95084686d745d23dd5a2f6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/016 - CLI interativa.md",
+      "source_sha256": "dafde9a0dafb18ea0bb9ff68111228f0811ba819d815740e9f4ca8113eb392f6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/017 - App desktop Tkinter.md",
+      "source_sha256": "41ba44d58bd60cb941554fd45f959afb13375d05cc7979d76ee582b005653d79",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/018 - Jogo em pygame.md",
+      "source_sha256": "6f69843e4aa0c3906eab5441b37cd85d75627bddc444b2736986b5ca82c582d9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/019 - Jogo web em canvas.md",
+      "source_sha256": "2ab2cbdcd11860422147ebc8a6b951b06b008a04f9835f714e0d1f11cc7091c6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/020 - Bot do Telegram.md",
+      "source_sha256": "f41a808d47b5af729291ee40999413fd2bf2f9be19e3e59ab171345dee77e2c0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/021 - Bot do Discord.md",
+      "source_sha256": "ccf62bde6fcc0249f925fe6cabe15e071743af2c0fb893e39c8da408f99e29b9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/023 - Abrir projeto no VS Code.md",
+      "source_sha256": "83d6774c211108d6708f26d74f7abb7bcfdf0ece5551556ce2b7765d5dcae7b3",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/024 - Página HTML única.md",
+      "source_sha256": "d67f9711a4a6d3b48c13e7d06a0541c9495ecd543eb069c33d9d2aa0280d081f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/025 - Currículo em HTML.md",
+      "source_sha256": "4be04c5a311f16131235ca2b6aa8f762e4ec0f40f457329370911555bcfbee97",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/026 - Formulário com validação.md",
+      "source_sha256": "f85ffee3e0c641ca8aba353f7bba8cc6713230a88170f38d0f1fe658ca119e72",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/027 - Gerador de senhas.md",
+      "source_sha256": "ad529e1bdccf5f52695077c9efafee0b8ab1a3985e111d97bb87bf7aa8fb4dbb",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/028 - Conversor de moedas.md",
+      "source_sha256": "7e3cf31e6a3e81e698e142d016022d93fd1a9edf425fb87316e5048bac1e0d35",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/029 - Organizador de downloads (script).md",
+      "source_sha256": "954d0a2588c33c24bfe3ca9afd99bf40f9019d7355af942dadf72976799275a6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/030 - Testes automatizados.md",
+      "source_sha256": "5e2cfaa2234cfa4b07e315368b5ab392ba6f0b36300bf1ee5b48205e71f4729b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/031 - Componente de UI.md",
+      "source_sha256": "28eeb6a6111a592af0e000c58df5fd571a2b913452052a7306f942dafe9ac953",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/032 - Projeto React.md",
+      "source_sha256": "56e67193d743ec599e5a4ad35874f16426921227bdc7adc95c666c305df5d7e7",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/033 - Banco SQLite.md",
+      "source_sha256": "18007fbf3c1cc2bd061f1420cb2a1dc56837f8ed0345d3f1db6b1fa7b4f7d2c7",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/034 - Relatório automático em PDF.md",
+      "source_sha256": "7695b1ccb0beacc87902b61febc3eacca8259ff12c8dc869fac8cd6b4ee24cb2",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/035 - Script com agendamento.md",
+      "source_sha256": "7c316e61504f98f718b388f84b3de6b580acafdfea60c4fecaa547b33f8878c9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/036 - Extensão de navegador.md",
+      "source_sha256": "fa9d03fbb4c6b2acfe33866125099cf5648b0b66892f953577b23296dc250d1c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/037 - Site multi-página.md",
+      "source_sha256": "22a4980bb848d6afbebf125c86cfe198f9c61bdd73348ba416290b600b19cb22",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/038 - Tema escuro.md",
+      "source_sha256": "61ffb06429a95b382f397f2bbcbce588cb93af3e6d5dcaf87af214706d21bb60",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/039 - Refatorar código.md",
+      "source_sha256": "2594d86eef87d6400742edfc46eabab3d8f8840d8ef4c5ab993c91de39267b0f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Code/022 - Editar arquivo existente.md",
+      "reason": "Edicao/refatoracao consolidada com snapshot, backup e desfazer com conflito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/040 - Corrigir bug.md",
+      "source_sha256": "272500665b2baa76a9e8aeecfce27dd1a2a5dccaed077bf7681021fea86f2700",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Code/022 - Editar arquivo existente.md",
+      "reason": "Edicao/refatoracao consolidada com snapshot, backup e desfazer com conflito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/041 - Documentação README.md",
+      "source_sha256": "adcfd3884fd1c5d6c58369bc8f1a1fad5fea8b28875f1edd931adac2fcd8ca88",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/042 - Dockerfile.md",
+      "source_sha256": "b11ce183bfb5da186af51058516c9672d3c12fe2c36ec79a46fee807b5d816ff",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/043 - Script PowerShell.md",
+      "source_sha256": "0736da19e6c7d04c620dc54988b9540017b26da130930c06b9d1269d9e2faa5f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/044 - Automação com Selenium-Playwright.md",
+      "source_sha256": "1f10fad07b7b8bcad7254c6b7ff6332fd98749be9637fbc5c3c2acf4d60ce52b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/045 - Chat simples com IA.md",
+      "source_sha256": "3cfbc2b11ca9d087673c3200aa7a9a2ee484351e26be8abdbaa5a2f2af9006e6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/046 - Página de erro 404.md",
+      "source_sha256": "7e869ec96fe2f90e9109f34bdd94eccfb7e29ff8fcf5f49e2d185e9628ee957b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/047 - Timer Pomodoro.md",
+      "source_sha256": "e0ba681a34881ab80bdb62e32a9fba85dbd7458c1faa99e2d2cfc75ca18bda45",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar site sobre um tema.md",
+      "reason": "Variacao de site ou componente; mesmo contrato de manifesto, sem rota propria."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/048 - Gerador de QR code.md",
+      "source_sha256": "3d02efa3fe2be84b0ac8ddcbcf66b4dfbe75e753e41b1e85e53ad00d2c619ce1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/049 - Validador de CPF.md",
+      "source_sha256": "50aa23f3c265c317a6a190798004347f4552e673f6411bbfaca231fb23dadab1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar script Python.md",
+      "reason": "Entrega de fontes consolidada; abertura/execucao automatica e instrucoes legadas retiradas. Casos nao suportados constam na matriz de lacunas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Code/050 - Projeto ambíguo.md",
+      "source_sha256": "a763e2e4cd5482853ac97ece387fb76c0e7230a33064d8907240de0485dc145e",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/00 Maestro/Maestro.md",
+      "reason": "Pedido ambiguo pertence ao esclarecimento do Maestro, nao a uma rota de codigo."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/001 - Planilha de gastos mensais.md",
+      "source_sha256": "732f5f8e19e63e795c080e48493dd4e0e264d8c71c4d1d500dc7a9a74feffa1b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/002 - Gastos com gráfico.md",
+      "source_sha256": "d3e9c24e4ea8f5d241881363a45e60562ff9be650d38b31e6ed5b067de912b29",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/003 - Orçamento doméstico anual.md",
+      "source_sha256": "c8c21a12cabf1c67cef719605394a44fc94917d90411aa58ecc1b411e42e1016",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/004 - Fluxo de caixa empresarial.md",
+      "source_sha256": "f99e5dce87892a7d1d0140b3b1e76b7acafd631baeac5b6976fa2407cef7cf0c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/005 - Controle de vendas.md",
+      "source_sha256": "81491beb0346676ae6386731bca6b28b2b021788d0f275c62676cebea7def66d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/006 - Metas de vendas.md",
+      "source_sha256": "c3ca3053b1129477c20a782ea6cf63421759f3083ce2d7958449075c18464191",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/007 - Controle de estoque.md",
+      "source_sha256": "dae5d94773bf08fd3f01f1368da852f8e8e75f0a57ab6e0c6f7bb28c9668a501",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/008 - Entrada e saída de estoque.md",
+      "source_sha256": "4fb5d165437393ec4089aa09d874ee39baba560ca77f7f5a087dd701d688ffce",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/009 - Lista de contatos.md",
+      "source_sha256": "3352bc3e478fc1f38bf5fcd6383aaa2a8d7cf11b08449e24ac92a8df6cdfa9bb",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/010 - Cadastro de fornecedores.md",
+      "source_sha256": "97f7b1766f09eddc21a1e35cf0e8f045d80d5dc44ce2b947392f3c887cb69b6e",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/011 - Boletim escolar.md",
+      "source_sha256": "06d5581b8b633e726d0a6f0f0eb75d016a1772cb3b5adabeee57e811351a6111",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/012 - Lista de presença.md",
+      "source_sha256": "c3eaf43e9814e4f3d0d3b4d7f7ed3fd0bd1da47e6cfce74e0eb10109023a0df0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/013 - Agenda de consultas.md",
+      "source_sha256": "cbd0f2944ce6791f6d6010995dee7b7ca5ac43a24b1c468ed3e8cf1e821c9684",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/014 - Cronograma de projeto.md",
+      "source_sha256": "6bfa26bb21b48ec3def93b783082a38ef26bdba6666218ad4d1f872d1fee665b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/015 - Calendário de eventos.md",
+      "source_sha256": "498eaedb4b47613433d894aaa85f25057012b2e5cd36723f47b31dfbc6619f0b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/016 - Controle de horas trabalhadas.md",
+      "source_sha256": "a1beffd17aa9076198c8c5da0f9d8c3ddeecea9f897a3c2e73bfc0162ba9e1db",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/017 - Folha de pagamento simplificada.md",
+      "source_sha256": "188a9cdd5fc7373322a47e30945d0485a96f104087522cd3cf1747c733663e02",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/018 - Controle de despesas de viagem.md",
+      "source_sha256": "4073349edf1055d173dcb5b60141c835af0d5cab3ba3322abe7e735395ce0c1c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/019 - Comparativo de preços.md",
+      "source_sha256": "a1196b51b79a4154362344dfa99a0dd03445e47611d6dc99e76275dda8b6be08",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/020 - Dados de pesquisa web.md",
+      "source_sha256": "6a80c684227671c597e6a6c4ef62afc260ba7c4df372e00ac2630df075bf3db2",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/021 - Importar CSV.md",
+      "source_sha256": "c5a8cce1c255ed72f323ed0e733082855a25431f62404f8576d2d6c8e8dea214",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/022 - Consolidar planilhas.md",
+      "source_sha256": "7419c4a05a47506dc6de2955f030afce0b27058271048e7e8fe210855dddd8b6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/023 - Tabela de amortização.md",
+      "source_sha256": "02b1e9f443ff6c308b089231b10c91148c05424ae5ed6cdf9e4a7e5718f07a7b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/024 - Simulador de investimentos.md",
+      "source_sha256": "5815d59e971160afda8c21830975230107559790f36b4c887a135bc1d76db024",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/025 - Controle de assinaturas.md",
+      "source_sha256": "4a515a0c5288df13cd13e59b12292bf226e68ed41c0571e0c6984ec0c8e2f2d0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/026 - Lista de compras com preços.md",
+      "source_sha256": "3fde6110489c2571d06d1d8e9ebe6cebaf65e1b41c76df63ae810d7cefc8e107",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/027 - Controle de treinos.md",
+      "source_sha256": "89ec339bd8b044aabc9300911b63248165aaec4a735395d396553ffb7f68611a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/028 - Controle de peso.md",
+      "source_sha256": "7ac0285d27c5a1e750b0d897c7f76c8e4078aa6df75bc2c8275e3720964e9475",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/029 - Inventário patrimonial.md",
+      "source_sha256": "8550c23c584d8645d30abd260ea7bb21745ab6b8c2669d2583644a2f2c50d31a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/030 - Controle de chamados.md",
+      "source_sha256": "b71166d687723fc560eb0d9ddd4190b09a21450b05ece24394258a78cc58d643",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/031 - Pipeline de vendas (CRM).md",
+      "source_sha256": "367f59d9a0850b3fdd2814d995b0b8b06eaa45dc72fe1608970cdef6ddd0dc78",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/032 - Escala de trabalho.md",
+      "source_sha256": "99439bdf32606a3e06da7ea859eee4a12dbd7c6e32144479b282693cff5fdf59",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/033 - Plano de estudos.md",
+      "source_sha256": "a761e67a76addee1eb618f9223d8c531c01225c5ba1ea474d087ace60e0ce86f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/034 - Controle de notas fiscais.md",
+      "source_sha256": "e0557243e31ad1a0120458db604fffdd88e97815ccfa53f993d9e8cf43237701",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/035 - Dashboard de KPIs.md",
+      "source_sha256": "ef615689baae2ee7280dd926de5aa51373e2fb93107cbfd623f7d6fd92d7d181",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/036 - Pesquisa de satisfação.md",
+      "source_sha256": "eba5989f6ce1b861df64c510e26b842c5f8462b2d5c41412a40192cf27c925bb",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/037 - Controle de empréstimos de livros.md",
+      "source_sha256": "c239cc5ed2536ca767416ef89c8970d725fa95b8fd20529e647b8eac81bdfd54",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/038 - Tabela de preços com margem.md",
+      "source_sha256": "ffb7b010e07c7c75350689ac0a2aac1d14ae8d8fe68c90ddec91d1b21bcbcf07",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/039 - Controle de frota.md",
+      "source_sha256": "2677845ab470a14e1200bfcbc1bf663f998e1df7c8ee504c6abfbe3fdda6f8da",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/040 - Controle de metas pessoais.md",
+      "source_sha256": "5885d451e37228700dffcd804a2a21faa60d5a7bf41481e79949ceea5c74631c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/041 - Gráfico de linha simples.md",
+      "source_sha256": "b63557d4c13625a106b376836a9a75168c861cd7d822bebe5db04c2930419c3f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/042 - Tabela dinâmica.md",
+      "source_sha256": "b9805885bf9084e5e5beae957ea0f8aaeeec56206023cbc5ea5b266693d2ec04",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/043 - Limpar dados duplicados.md",
+      "source_sha256": "b956395746b0af56fd2624f21909830c13a9f62086c2d54f2cfd0b75bbfefc89",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/044 - Padronizar dados.md",
+      "source_sha256": "1233425797b485753bc41b335bb2e13f29123cf08533fdd9463f76a28efc31c0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/045 - Planilha com validação.md",
+      "source_sha256": "88265318f6a9306c2c8fe4fb4b79b07ade1af94d23599776e7ff0d613af1b4ec",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/046 - Múltiplas abas.md",
+      "source_sha256": "5bb7308c11faf2d819814b60251e08c178a0211d01f8253d1280c4b1c0990057",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/047 - Planilha protegida.md",
+      "source_sha256": "d409749551ec59e9438ac56f066744a0f9d0e666f37de50e846add1aa74ac97f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/048 - Exportar para CSV.md",
+      "source_sha256": "ec721fef2ddbf09b80b49579f951b543e3295d352630fbb478c1fb6cbe684bd8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/049 - Planilha a partir de texto.md",
+      "source_sha256": "b625fca27212d62adeb40e511a5988093facb14fd353cde882f0b76f72a1de43",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Data/050 - Pedido vago de planilha.md",
+      "source_sha256": "0833057dc1bf97487cc02f6fb7473fb9dd0d3f800e540a118fc4bb52cf472ef8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Criar planilha de gastos com grafico.md",
+      "reason": "Schema de planilha consolidado; recursos ausentes do manifesto nao sao anunciados como suporte."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/002 - Escrever frase ditada.md",
+      "source_sha256": "d7ce68ba11c47465ac41dc76ca0f1cc3b5b18c39d0a3eb210af1ccc17c3d5802",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever texto ditado no Bloco de Notas.md",
+      "reason": "Entrada literal consolidada com documento e janela confirmados."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/003 - Escrever lista gerada.md",
+      "source_sha256": "b8514235863e6b47cf8001f386213e09e49a662c084cae3e5f94c81bab227f05",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever conteúdo gerado no Bloco de Notas.md",
+      "reason": "Variacoes de conteudo consolidam-se na mesma rotina de editor."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/004 - Escrever poema original.md",
+      "source_sha256": "565d3f5e9a47a21f378b6674876163bde6d026fddc2ca7d2e7c0c9014165cbfd",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever conteúdo gerado no Bloco de Notas.md",
+      "reason": "Variacoes de conteudo consolidam-se na mesma rotina de editor."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/005 - Números em sequência.md",
+      "source_sha256": "b4e2839ff8ab453e1948c900b26df08fd85886a29048698af5355a4f07b34a6c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever conteúdo gerado no Bloco de Notas.md",
+      "reason": "Variacoes de conteudo consolidam-se na mesma rotina de editor."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/006 - Texto longo.md",
+      "source_sha256": "ddb37fcefe94da625c0c7d5546e0a78c390296e67c935af68182ab56e61f34bc",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever conteúdo gerado no Bloco de Notas.md",
+      "reason": "Variacoes de conteudo consolidam-se na mesma rotina de editor."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/007 - Salvar arquivo do Bloco de Notas.md",
+      "source_sha256": "9966ea5fc93332b6409eff3ba931c283139b5d842a023ce264a0e6affec1c428",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/008 - Abrir Word em branco.md",
+      "source_sha256": "09c035a6b1d5987173480e9cca76fdbd5fcc997265e9498c8803bddbb9c7fa44",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/009 - Escrever carta no Word.md",
+      "source_sha256": "d15be1caf75d0fd227f8310d44382f1d05a4ef82f72593c1d36cde49901b72db",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/011 - Mensagem no Teams.md",
+      "source_sha256": "7c5d3f67c33e43ffaeb03e1e1d929a837bd865f8eeaea44da64c4ded8b2994d3",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/012 - Mensagem gerada no Teams.md",
+      "source_sha256": "ddf3fd9db3ccff4e5d6d7c3a69ece6fa4ea0e8e31e79acaaf7e0d54b56f11cd5",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/013 - Ligação no Teams.md",
+      "source_sha256": "a6e491601864969f58cb13bf489021fa4f8b75bd8bdb96e921ff0b0e0632bf21",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/014 - Mensagem no WhatsApp.md",
+      "source_sha256": "2f5f40a5bc8394038c68a579e9bda3cc6eae629299b1daf39be7dd22eb6a320a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/015 - E-mail no Outlook.md",
+      "source_sha256": "58728915e16e566a07228b725192c986dbf15a6288db809c3d38fde488f3ed61",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/016 - Rascunho de e-mail sem enviar.md",
+      "source_sha256": "afd76b4102293dbae36366d1fc1d382d88c072b1e5c66dfd17d70050a5bf4138",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/017 - Abrir calculadora.md",
+      "source_sha256": "469433e081045248d938e063a4cb84ff4ed0797efeff91399f38a8690ab09c46",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/018 - Calcular na calculadora.md",
+      "reason": "Abertura e calculo consolidados; nao precisa de duas micro-notas."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/019 - Desenhar no Paint.md",
+      "source_sha256": "e0d7886ef03b66dbc66c51ed26bebbb5c104d94f7fe55ba4881ab5e48c75dc64",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Fallback visual ou receita fixa obsoleta; capacidade pendente de validacao nativa."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/020 - Tocar música no Spotify.md",
+      "source_sha256": "0f9e23a91bf7dbe2d1d84bc1d3196f1f73784816d7bd7f12539e6c00a31fd411",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Fallback visual ou receita fixa obsoleta; capacidade pendente de validacao nativa."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/021 - Abrir VS Code vazio.md",
+      "source_sha256": "182fb06191b305a126008adb22cb7df148ccaf9621a0da2d855f4d93d306115e",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/022 - Abrir Explorador de Arquivos.md",
+      "source_sha256": "6666a2c10f63e750763aa1a69b20336502f68ad64f2c5b970324b87015b418a8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/023 - Minimizar tudo.md",
+      "source_sha256": "485541a7ec34ecc77d07abfd314a555646cf3252354bd81a428ba3d0c78b7822",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/024 - Print da tela.md",
+      "source_sha256": "6c4cf13fc256b510152abbb602ea84cc38b24e53710ef1fea08a4f5735fc9e48",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/025 - Bloquear o computador.md",
+      "source_sha256": "d95c362452e01a41d8e0230d9f29ab81c31680937a2ae2c00fb26620bade202a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/026 - Aumentar volume.md",
+      "source_sha256": "2a73476e5e80085df5961dfbce3d06972249ef215e0b59df69d1b67cc7104ca5",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/027 - Silenciar.md",
+      "source_sha256": "ac9c48af3aa755bb72e7e4f8ac35c86c0c3ef5c15a960ca87c4304a85f325073",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/028 - Alternar janela.md",
+      "source_sha256": "8569261b1e6f52e1acfb6eb57ea5d5c947fb646b2c3c2b973a9805dcaade7399",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/029 - Focar janela específica.md",
+      "source_sha256": "783a7bdddfe2a15af707b126ed349bc9da9cd840f8297be3023156f5fa6d4295",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/031 - Fechar todas as janelas.md",
+      "source_sha256": "9040c90c2313382f04d9e02b19276e05c6d4ec73f09dfc2bab713ba241e61546",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/033 - Abrir gerenciador de tarefas.md",
+      "source_sha256": "e699313417d76b4b713d99b617a7101809b8fba94e1b8b0e8aa04e415b2a9884",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/034 - Abrir pasta específica.md",
+      "source_sha256": "a9bc3a8f2c1e804a46cae435992298dc30d6cfc65aaf7839622d436f366edae7",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/035 - Abrir arquivo com app padrão.md",
+      "source_sha256": "d06a06fd3f32382a493f331aaa60ee66480c4bef27528519d2cbf74f3e86e219",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/036 - Escrever em app já aberto.md",
+      "source_sha256": "00b6c7bb11427c5632d4498a11b83da6cd42c82371adf42cc2406b377c836367",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Escrever texto ditado no Bloco de Notas.md",
+      "reason": "Entrada literal consolidada com documento e janela confirmados."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/037 - Copiar e colar texto.md",
+      "source_sha256": "65e19e1a6095db703d2d5c13121626343149a665741d4a88a2c4734e808bff16",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/038 - Atalho de teclado.md",
+      "source_sha256": "c971a21071887e8a320111abe19b976d1990d7e20994ed69c7277d322325e027",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/039 - Desfazer ação.md",
+      "source_sha256": "0c1bfbee37bf3b51f632de07195b5c02c1b9d0598f00583794f91d80fad91c6c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/040 - Zoom.md",
+      "source_sha256": "2e1a21cf34b9a2c528404bdb45b3b897f75fa08f61601edb3e6658de13f808e8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/041 - Abrir câmera.md",
+      "source_sha256": "5fd240d2c88022da993f9c5ed7e9ea8866aab0ddc8a80f5abcab1514fa73c369",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/042 - Agendar lembrete.md",
+      "source_sha256": "d755634b8dd926f90e0343a4bba0001f0a45259f1ea84d60e24dbc3fe148b269",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/043 - Abrir app não conhecido.md",
+      "source_sha256": "af86f4ef10207cb9faeb686308ad16b48056fb35d12a47dea471ac33cf857184",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/044 - App não instalado.md",
+      "source_sha256": "5a9e61772c9f4f388992980a9ea7c9c0938c0da652974e3ed1cfbbe9cfd4ffc6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Desktop/001 - Abrir o Bloco de Notas.md",
+      "reason": "Abertura e uso de utilitarios consolidados; nao usar comandos arbitrarios ou alvo implicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/045 - Texto vazio pedido.md",
+      "source_sha256": "d7870a777abe32c1929682bb1e0375e1aae6d6dfb770575c5b1e49c031e7596b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/00 Maestro/Maestro.md",
+      "reason": "Pedido incompleto ou limitacao de conteudo pertence ao contrato do Maestro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/046 - Pedido de obra protegida.md",
+      "source_sha256": "eb1cac5355752ec787de59593c7a6fa4cfaa7ba79f858e5660571357f4ebc83f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/00 Maestro/Maestro.md",
+      "reason": "Pedido incompleto ou limitacao de conteudo pertence ao contrato do Maestro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/047 - Janela lenta para abrir.md",
+      "source_sha256": "0cec006ebf0e54b6d0b87713bc852357598189c99120bb0d78552dc5e1a58a55",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/048 - Clique por visão falhou.md",
+      "source_sha256": "c0666bc9eb4594c016ee30e52871fbb850651cfc72390fca126e200255054246",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Fallback visual ou receita fixa obsoleta; capacidade pendente de validacao nativa."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/049 - Mensagem no WhatsApp com resultado de pesquisa.md",
+      "source_sha256": "f35ee23a979023b3c0d3e6f4e2c0983b433454d4a025ae4eedd51f606de9157b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Efeito externo/persistente sem autorizacao e validacao suficientes; sequencia antiga de cliques retirada."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/050 - Abrir app e navegar em menu.md",
+      "source_sha256": "4f2c823e18bd01d4e567809d754fbf34e37cb52c491b7d49da611afc3887b9ac",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Fallback visual ou receita fixa obsoleta; capacidade pendente de validacao nativa."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Desktop/051 - Várias ações no mesmo app.md",
+      "source_sha256": "dc1014279c6595b47e0b2d49c69062f09356710cac257df506040cf3e9a2ef45",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Desktop/Desktop Agent.md",
+      "reason": "Foco, precondicoes, atalhos e sequencia sao invariantes do agente, nao rotas independentes."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Enviar mensagem no WhatsApp.md",
+      "source_sha256": "063f1f8c72ed62eedfab7bb730d87c05b2ef96c79c729be98bc184c520b8689f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/002 - Organizar área de trabalho.md",
+      "source_sha256": "4c1779abadc2cdaa9bcf9a4b4c26f9671e4b805f898b72ff2f70d819f1810b5f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/003 - Organizar por data.md",
+      "source_sha256": "e1c9a3e1aad750f1b5123b7f5ce29a5edc2b6d2ba2f378a8ca74e32e2b8d10e5",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/004 - Organizar por extensão específica.md",
+      "source_sha256": "f8630903f4ba97a123302d611f45647ce5180bcecfbb655b8090148bc23a6aaf",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/005 - Copiar pasta.md",
+      "source_sha256": "e9c3ac07d2c4a7537440c798e14fbbb638c8d467c2a991cdbc5e7d9068603c87",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/006 - Backup em zip.md",
+      "source_sha256": "558b5a09135091b03bf8286fb6c618a07f30ae575bb7d9923648c8bbd44781ae",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/007 - Descompactar arquivo.md",
+      "source_sha256": "efca4556c18700a901166f6ebc69165414e5e2f61de37c0ae4ee6e29f6053060",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/008 - Compactar arquivos selecionados.md",
+      "source_sha256": "a9a472ec15698e4dcb0e99d3f2f59a81c801fb4ef71e0220bd491a2f48957762",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/010 - Encontrar por extensão.md",
+      "source_sha256": "eab39af10f948d778480bd5e0dfed339ab88755a0e83d2753bb05b5bf5873796",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/011 - Encontrar arquivos grandes.md",
+      "source_sha256": "2de199813194879bc8fc674038aa543b2f41f79ef105d0c97222adbd0ab93645",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/012 - Encontrar arquivos antigos.md",
+      "source_sha256": "c62161fc1660788158a4374c6570715beff7f3401d6b945da11951f758b7ecb0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/013 - Encontrar duplicados.md",
+      "source_sha256": "9b2eb8d1523c68e137c21c72d4ded44046bcbc08046938d60e5b44ae0ba7d5ad",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/014 - Remover duplicados com confirmação.md",
+      "source_sha256": "fdf52640eb602d67646919198f8a5eabca8bc1b02c7727aa324781c95ab07ff1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/015 - Apagar sem confirmação.md",
+      "source_sha256": "f698a5c2b52fce6be6a42ceb50ba9ff1456b82623155768f1bc9d4d3faee9e0b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/016 - Limpar pasta temporária.md",
+      "source_sha256": "6231d19fdd02ca48f0c973a0515e939c355f1e024e9fc381781d5221a183bcd9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/017 - Caminho sensível bloqueado.md",
+      "source_sha256": "87954b4b8e7ea3207ca738a615ffd59ffffab5c5230234cfeb623349d72467ef",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/018 - Renomear em massa.md",
+      "source_sha256": "c25628c74a1a98cff1cf5402b48efd4340fdaad9d540dfcb70a3a157b52726be",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/019 - Renomear trocando texto.md",
+      "source_sha256": "10b4e1e6058302875ee8d264d4aa5dbb8d1db20ac8bac097687a181feeb1d915",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/020 - Criar estrutura de pastas.md",
+      "source_sha256": "1b332ed7d68b1fcfce1fc15c7f6741a8bb5382716e15bed2127ca51f383134a8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/021 - Criar pastas por mês.md",
+      "source_sha256": "19e84f5ee475eba3adc30c418b3c62e05de46998d73ebfaa6ff8e5bba72e0362",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/022 - Mover arquivos por palavra no nome.md",
+      "source_sha256": "e79798f0cb8c0f86edb23a0e6652240e7f87059a654c7cb2980d7e6eca83dc4b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/023 - Espaço em disco.md",
+      "source_sha256": "b80960c169e9c691463d0c0cbcbbdf3579dc52c9d1c283461ec5de538ffeebc8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/024 - Tamanho de pasta.md",
+      "source_sha256": "6eca65c3e52702bbd382859395403343eae71b15d64e7da0815d22b9556dc1fb",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/025 - Listar conteúdo de pasta.md",
+      "source_sha256": "19ac23be8c93c663904556913b69ee24f2859f6af03a941bd30c99fa01171875",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/026 - Ler arquivo de texto.md",
+      "source_sha256": "683bf2a4d0caa22a44f8197ce48dff0c64db89deac12dd59d17c57fd72d741a4",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/027 - Escrever arquivo de texto.md",
+      "source_sha256": "5eaf9535f13fdf770d3fd4b83b918e27bd8d6b5d5bb2b913ecbc46d41b57136a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/028 - Converter imagens.md",
+      "source_sha256": "e1834d17fdd4b871202744ecb527e91c49cc755ea606cf3d22e5a5821068f1c8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/029 - Redimensionar imagens.md",
+      "source_sha256": "1ef8a6be31a6d3f3fa06dcf1fb47135e93cb01bacf385a8a4df4a1333f09358a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/030 - Juntar PDFs.md",
+      "source_sha256": "80b4ba62d489ccc5d07ccf3f90d229e8f9ec86256cc642bdc853241685aa4b61",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/031 - Separar páginas de PDF.md",
+      "source_sha256": "4e1971be4612ca24393ac85981c494d0d6f361e9eb6b7cfcd4e06c1540d70ae7",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/032 - Sincronizar pastas.md",
+      "source_sha256": "5b20fbf15d5d03f656e498aaf4ae269f6cc327f83730388863b43ccb403b6ba6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/033 - Mover para lixeira.md",
+      "source_sha256": "ffcc54189d6a2d5977884216cf30c2fc5df090e43bd4def1612fd349ecc0f9e3",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/034 - Esvaziar lixeira.md",
+      "source_sha256": "f024bbeb279fb02b9f309cd18b08973f2f4b67d31383b4e9f778dae30306fdad",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/035 - Organizar projetos de código.md",
+      "source_sha256": "fb84d70e0ff684ed7801fa9ac57fc38d07b068eb11c05498ce9a27c6f82a9dc9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/036 - Arquivos sem extensão.md",
+      "source_sha256": "e1b66c2d0698f2424b89ff7a6ca8913ff4868c6909a88b41cec868a354296c80",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/037 - Verificar arquivo existe.md",
+      "source_sha256": "8640e83f5024fa4eb713381c78d9f2faafae058c30b38615d0769c81b2e818bd",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/009 - Encontrar arquivo por nome.md",
+      "reason": "Inspecao e busca consolidadas com raiz explicita e limites."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/038 - Abrir pasta resultante.md",
+      "source_sha256": "fe4d2c8708ea7ac79bbd85dc8ff55f2a53a07c352c3b804ac3680f1eec362750",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/039 - Arquivos compartilhados com outro agente.md",
+      "source_sha256": "feeaffa2b94f1efdd8adc312f70c4d0b42350029fb5f86aa4221dd44d3f0fb80",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/040 - Log de operações.md",
+      "source_sha256": "7e82d9dcbb771a90de05654e5ac01a0662ad433b340634941ef43466093cbbd6",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/041 - Desfazer organização.md",
+      "source_sha256": "c839315361693d83867a80cc377929645baf90d4d01c06ecd2087b3e1586229a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/042 - Permissão negada.md",
+      "source_sha256": "41085ebf30444629ad99fe2c6ced963b018edabf1cc9cb36ceb2e813d5153d6b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/043 - Caminho com espaços e acentos.md",
+      "source_sha256": "9c432af68ad1d2f6099dfea97c0cbd8ae8a8bcdf0b84e38fd7f256fd1fa4d61d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/044 - OneDrive redirecionado.md",
+      "source_sha256": "1b7d258d1b9de3773028eefaec1eca8f7e533f5c0af3ca82fde3147746aaa556",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/045 - Arquivos em uso.md",
+      "source_sha256": "cca24a7377b3870d53385c6c5625c4251af1ef693a0404aecad84ba53882a8ef",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/046 - Contar arquivos por tipo.md",
+      "source_sha256": "abc19b42a118c2a6ac032593a7b389dc1f2c951a158fd12692a320def1e24a4e",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/047 - Hash de verificação.md",
+      "source_sha256": "66b66d053276267f29a3ccd5189e52636190500e3d648ec18fb7576558b17fd9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/048 - Pedido vago de arquivos.md",
+      "source_sha256": "aab3acad06e8d2673e919cbd77b90d7add52c6c7d021dbeeaf9c325c0dd73438",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/049 - Mover pasta inteira.md",
+      "source_sha256": "f0a333011ef8400c6cbf193a896e95b492bc820388459c2473bf3e0b1559786d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Operacoes de arquivos consolidadas sob escopo, colisao e lixeira; sem Python ou shell."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/File/050 - Separar por tamanho.md",
+      "source_sha256": "b7f665abbc81c28db273a05b579d80433d495bc368090983332e9ae1e1be511a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Operacao composta/transformacao sem ferramenta atual; mantida como lacuna, sem receita executavel."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Organizar Downloads por tipo.md",
+      "source_sha256": "20506485855edc75a4184c179ee6541149e0eea3d8f84f9e25c4aa23c67451d0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/File/001 - Organizar Downloads por tipo.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Pedido ambiguo.md",
+      "source_sha256": "08ca672a6ea04e250185e9be912f43812189b0e7af40f9cd9f65dbe8b7e7ab6e",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/00 Maestro/Maestro.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Pedido de letra de musica.md",
+      "source_sha256": "515dcd2c75d5b276da7598633486474a94fbbe2d63d7917df77751c250c13b52",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/00 Maestro/Maestro.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar e enviar resumo no Teams.md",
+      "source_sha256": "2089a3988469139e9b7e4b17a1852ae4e6b6d297ca95c9f519b45f03d547ea00",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/90 Sistema/Cobertura e lacunas.md",
+      "reason": "Conhecimento consolidado no procedimento ou limite do dominio; exemplo isolado retirado."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/001 - Pesquisa simples no Google.md",
+      "source_sha256": "fa2bf1033ceaabd601b09fcf02dffc260224b058ea4a6dc98c69c0fc9cf39b43",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/002 - Pesquisa com termo entre aspas.md",
+      "source_sha256": "2c6168a7edef1d863b9ef3dd36163ecfe0cff49e6494518c6572fffd8dd66103",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/003 - Pesquisa com filtro de site.md",
+      "source_sha256": "a2951ebe1f401d7867afa0f639f7642a7ca6d5414cfcfcf6521d1a7ba8e86807",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/004 - Pesquisa de notícias recentes.md",
+      "source_sha256": "0ce1a09f83ce9ffcf412f1184664b6f932655cfb076f947843996f7b0c22d8a0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/005 - Pesquisa de imagens.md",
+      "source_sha256": "5f4a27c2c1f34412d0ced1e5e905d52ea330ae710c1ba3ba437f11cc9b967b60",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/006 - Pesquisa de vídeos no YouTube.md",
+      "source_sha256": "d77f9e8f21d9f95657719a125d0ee3d1b73b739165d0c51b8d404e217df8689d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no YouTube e abrir o primeiro.md",
+      "reason": "Busca e selecao de video consolidadas com resultado parcial explicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/007 - Abrir primeiro vídeo do YouTube.md",
+      "source_sha256": "3e7bb4fb4b6e6a64a81860f2b5aef883648e25d41ca49c6beab6bc6bf7781cf9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no YouTube e abrir o primeiro.md",
+      "reason": "Busca e selecao de video consolidadas com resultado parcial explicito."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/008 - Abrir primeiro resultado do Google.md",
+      "source_sha256": "e11291e4123849b4b5f95f9db25dc404266f9a749dfa7094a3e7510f49f3893d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/009 - Abrir site conhecido pelo nome.md",
+      "source_sha256": "b2f95948c8152fd290b25789df57742c4b200052fd70c7794fa948d668eb89f1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/010 - Abrir URL digitada.md",
+      "source_sha256": "b0ba5acec536e99a65befe82d298040292ce1beea0c0a1a77b2db4ab3ddb0ea8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/011 - Abrir site em nova aba.md",
+      "source_sha256": "f4b8b0298db1820c56ce23132182602b3ba1b7e1b97ad548f7abb4600a7ac739",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/012 - Pesquisar em nova aba.md",
+      "source_sha256": "0bd2a98dacc0d37285825abdf415f27e21f00b71aeb8572afcbd87362215caf0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/013 - Previsão do tempo.md",
+      "source_sha256": "9f7ba07d76e591d6212f1a24b927521b5c829e7d0211569ec3af67692b11b07a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/014 - Cotação de moeda.md",
+      "source_sha256": "98d43464edb2122795e227aba4771b6085c43fb86d3d99ecbe87011de2ea5b2c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/015 - Horário de funcionamento.md",
+      "source_sha256": "46d4aa24a65ada2581f0dbe47039ee6fc97c42d1ecd0b88b0c884be38b19ccf8",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/016 - Rota no mapa.md",
+      "source_sha256": "3c703a81520117a2513fed0ad9b43eddb990480188f16d2651a244363fd8936b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/017 - Endereço de um lugar.md",
+      "source_sha256": "5afe280f75cf93d8c48c9b62d76d9908935449bd93ee1685d79813812ac5ffb0",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/018 - Definição de termo.md",
+      "source_sha256": "05274ab987ae22ab8e2e08e8a36b893d8249b79f4d8aba2413f8eb08930c632f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/019 - Wikipedia de um tema.md",
+      "source_sha256": "fa4bb66088184d3b9d37c172eb7ea0b6583a4472c63146e93c9822ad63dc884c",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/020 - Comparar preços.md",
+      "source_sha256": "2b29eb624ecbac76978ca2f98387e0218b56136ccccc5823f6b3ad30719d3925",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/021 - Buscar produto em marketplace.md",
+      "source_sha256": "0a7116168dedb05baab874b07ee7779a6c5f9966656fa3d2746c25ccb4efc475",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/022 - Vagas de emprego.md",
+      "source_sha256": "54e0bed169a34a383f47fd94a5087883314a8c6de928b0976ed2361695326452",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/023 - Documentação técnica.md",
+      "source_sha256": "d4956068b6a6375c871f76566520cea555f7ea314c8390885f1e527513370d51",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/024 - Erro de programação.md",
+      "source_sha256": "5190d9907cbf8d85c5c40cbcf596b3dadbe5a444dbb763bb9b6c085d4d7bdaef",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/025 - Tradução.md",
+      "source_sha256": "7badb389b15fc57cc880277d5414e96108c4dd6981818fbc340542aa2b0acc63",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/026 - Converter unidades.md",
+      "source_sha256": "439b7d3a4985471fb2a0791c901d9f56fece5e4df729db241cd248c169170f0a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/027 - Resultado de jogo.md",
+      "source_sha256": "b62f38d884ea3bf358013c72c84134669788e8af462f0c2e597ebd569f2012b9",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/028 - Tabela de campeonato.md",
+      "source_sha256": "6502d6a1b4337403a9b905c4d53c97121d1abdb668f0727da11f2cfe4643c25d",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/029 - Horário de filme no cinema.md",
+      "source_sha256": "8cb043240cbecec16d55ad649236eed3c83c9d5eb92c16b520661584a0538d1b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/030 - Receita culinária.md",
+      "source_sha256": "c1d60a6da37675ad1dd58ae79c1e7d503de48a0e877c510c3fc0e0812d42d767",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/031 - Pesquisa acadêmica.md",
+      "source_sha256": "59e8b4c015879f3b0426e7600494f7fb3999fb8f1570f199c37a5fa81c26cd94",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/032 - Arquivo PDF específico.md",
+      "source_sha256": "51c4bb3e9510d88cbe0dbe3dc95239681815642e3292cd7d0e7b73b48c641d1a",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/033 - Status de serviço.md",
+      "source_sha256": "f2a4b4a3802de6d99f640283a0172f53de5d6b5d6f744caee24ef91f0d51a65b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/034 - Pesquisar e resumir para outro agente.md",
+      "source_sha256": "cb8e5f272c569f82cab95b4882a7cdeccb97a1c78020aa4bf8870b1b8d5f4faf",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/035 - Pesquisar e mandar no Teams.md",
+      "source_sha256": "2f4058eb392edb383199af06c42529676ff9cc568b9d7300cbe1232763d8e7ad",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/036 - Pesquisar e salvar em planilha.md",
+      "source_sha256": "4f58d80b30d5af92bd8773606469060cf34c92c230fa4ce25729f74bd08e9484",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/037 - Pesquisar e anotar no bloco de notas.md",
+      "source_sha256": "433424978c0ddd4b9c9a5897dae32a2c35b37d77f84afa389649c45eceb8c1d5",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/038 - Abrir rede social.md",
+      "source_sha256": "5a7360dc555d4ec9cf0fef7cb8d51aad0c5db5c791e22d079e43ee5b212c7b03",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/039 - Perfil público.md",
+      "source_sha256": "a05f7db4e698a20ce9a988003a38e4e0ca51a70307190580d2107d59fb1892c7",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/040 - Página de login.md",
+      "source_sha256": "d4b866de92f9a9e07fe31746e0d17a26247afcd4db4f6c1615e647b1b33ba93b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/041 - Formulário web.md",
+      "source_sha256": "7710396eed7df61f1286365d4eb9d7afe988da93fe692a964aa5f8dab0dd2851",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/042 - Baixar arquivo.md",
+      "source_sha256": "c98cbfae47ca8f96d34c7489964d07dbdccecb06c5039a265ba64ad3cb078604",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/043 - Ler conteúdo de página aberta.md",
+      "source_sha256": "f6965a1119981078d536889d2e5a091f31f559b18cdb5c5852d689493c81caf4",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/044 - Busca em inglês.md",
+      "source_sha256": "9aedda8c1248d098660f97e3598ab30eeffb6f5099c3f0616d7f3f4c375efbfa",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/045 - Busca com período.md",
+      "source_sha256": "6ff6e6d1ef737e7d122d53f4a9274a02738dfb5412629dd97257aa0dd21ddf4b",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/046 - Pesquisa sem termo.md",
+      "source_sha256": "a198dc13bdc56a0adcb2d2cd6fe000fbe5a6f5e4ba0e1265afcefe791ac9c09f",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/047 - Site bloqueado ou fora do ar.md",
+      "source_sha256": "78a02dec126a446e97f9f657ceddaa252099ffe7f2ce175c64f9e9fe042e3300",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/048 - Captcha na página.md",
+      "source_sha256": "122e034963d1ba39de21256ff5bf690d55ef3ccce274a329b8198d46f73943cd",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/049 - Página com prompt injection.md",
+      "source_sha256": "56941cdc14f01547488184c22983a8ac2cb13d9a97583f170f609364b3ad85b1",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/10 Agentes/Web/Playbook - Ler e resumir pagina.md",
+      "reason": "Leitura, origem, dependencias e barreiras consolidadas; seletores fixos e efeitos externos nao viram caminho seguro."
+    },
+    {
+      "path": "AI-Farm-agents/30 Tarefas de referencia/Web/050 - Pesquisa com vários termos.md",
+      "source_sha256": "c857ffc918ab7c68ca80d399c99f297bc6a728d0760a7702518d753e45f5a8ba",
+      "decision": "consolidated",
+      "replacement": "AI-Farm-agents/30 Tarefas de referencia/Pesquisar no Google.md",
+      "reason": "Variacao de tema/filtro da mesma busca; URLs e dados volateis nao requerem uma nota por assunto."
+    }
+  ]
+}

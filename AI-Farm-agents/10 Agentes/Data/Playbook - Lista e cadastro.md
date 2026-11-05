@@ -1,20 +1,18 @@
 ---
 tipo: playbook
 agente: DATA
-keywords: lista cadastro contatos clientes estoque tabela
+estado: curado
+verificado: nao
+keywords: lista cadastro contatos clientes estoque tabela planilha controle
+revisado_em: 2026-10-31
 tags: [playbook, data]
-cssclasses: [agent-data]
 ---
 # Lista e cadastro
 
 Agente: [[Data Agent]]
 
-## Exemplo de pedido
-> Crie uma lista de clientes
-
 ## Caminho
-1. Tabela com filtro automático
-2. Validação de dados quando fizer sentido
+create_workbook com cabecalhos definidos pelo pedido e rows de valores escalares; ler novamente as celulas para conferir.
 
-## Armadilhas
-- Dados fictícios; nunca inventar CPF/e-mail reais.
+## Limites e aceite
+Sem dados pessoais inventados; exemplos identificados. Nao prometer validacao de dados, checkbox, protecao ou pivot nativa: o manifesto atual nao expoe essas operacoes.

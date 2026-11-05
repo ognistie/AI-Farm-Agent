@@ -1,19 +1,18 @@
 ---
 tipo: playbook
 agente: DESKTOP
-keywords: volume print screenshot minimizar bloquear
+estado: curado
+verificado: nao
+keywords: volume minimizar screenshot bloquear utilitarios
+revisado_em: 2026-10-31
 tags: [playbook, desktop]
-cssclasses: [agent-desktop]
 ---
 # Utilitarios do Windows
 
 Agente: [[Desktop Agent]]
 
-## Exemplo de pedido
-> Tire um print da tela
-
 ## Caminho
-1. Rotinas prontas: Win+D (minimizar), Win+L (bloquear), teclas de volume, screenshot salvo na Área de Trabalho
+Identificar o alvo e a rotina app_search/hotkey apropriada para o pedido explicito; observar resultado quando disponivel.
 
-## Armadilhas
-- 'Feche tudo' fecha janelas com Alt+F4: ação destrutiva, confirme antes.
+## Limites e aceite
+Nao executar atalhos no alvo errado. Capturas so quando necessarias e com cuidado de privacidade; nao alegar destino de screenshot que nao foi produzido. Fechar todas as janelas, bloquear e alterar estado exigem tratamento proprio.

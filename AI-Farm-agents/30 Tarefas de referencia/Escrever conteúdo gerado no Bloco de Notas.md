@@ -1,19 +1,22 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-keywords: bloco notas escrever poema texto lista criar conteudo
-tags: [referencia]
+keywords: bloco notas gerar escrever poema lista texto conteudo
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
+tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
-# Escrever conteúdo gerado no Bloco de Notas
+# Escrever conteudo gerado no Bloco de Notas
 
-**Agentes:** [[Desktop Agent]]
-
-## Pedido exemplo
-> abra o bloco de notas e escreva um poema sobre o mar
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-Maestro ESCREVE o poema completo em params.text → DESKTOP(notepad/write_text) → app_type
+Maestro prepara o conteudo completo -> DESKTOP app_search -> blank_document -> app_type(require_untitled) com params.text.
 
-## Armadilha
-Reprovado por POL-002 se o texto for só 'poema sobre o mar'.
+## Aceite e limites
+- Lista, poema e paragrafos sao variacoes de conteudo, nao rotas separadas.
+- Nao usar o titulo ou o pedido como se fossem o texto produzido.
+- Confirmar documento vazio e janela correta; informar se nao foi possivel verificar a escrita.

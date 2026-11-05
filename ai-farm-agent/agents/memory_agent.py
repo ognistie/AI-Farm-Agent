@@ -156,8 +156,8 @@ class MemoryAgent:
         # Marcadores de prompt de debug. Palavra inteira: "teste" sozinho
         # bloquearia tarefas reais como "crie testes unitarios".
         t = task.lower()
-        debug_patterns = (r"test", r"debug", r"lorem ipsum",
-                          r"hello world", r"asdf")
+        debug_patterns = (r"\btest\b", r"\bdebug\b", r"lorem ipsum",
+                          r"hello world", r"\basdf\b")
         if any(re.search(p, t) for p in debug_patterns):
             return False, "parece prompt de teste/debug"
 

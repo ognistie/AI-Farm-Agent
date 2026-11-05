@@ -22,6 +22,7 @@ skills: 3
 - utilitários (volume, print, minimizar)
 
 ## Regras de execução
+- Confirmar janela e foco antes da entrada; perder o alvo exige parar. Login/CAPTCHA e efeitos externos exigem intervencao. Autorizacao universal por efeito ainda nao esta implementada; nao anunciar suporte autonomo seguro.
 - Use a rotina pronta do app sempre que existir (custo zero, mais estável). LLM só para apps/ações sem rotina.
 - Texto a digitar vem de `params.text`/`params.message`. Se o pedido é para escrever e o texto está vazio, NÃO abra o app vazio: o Maestro precisa gerar o conteúdo.
 - Conteúdo ditado pelo usuário (entre aspas) é digitado exatamente como está.
@@ -66,6 +67,6 @@ Três ajudantes executam junto com o agente — entender, montar, conferir:
 - **3 · Conferir** — [[ScreenGuard]]: Revisa os passos: espera apos abrir app, cliques nunca na barra de tarefas, limite de passos.
 
 ## Tarefas de referência
-51 caminhos prontos para consulta:
+Procedimentos consolidados em [[Tarefas de referencia]]:
 
-![[Referencias.base#Desktop]]
+[[Tarefas de referencia]]

@@ -1,34 +1,21 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-contexto: "Abrir app vazio"
-keywords: abrir bloco notas abra
+keywords: abrir bloco notas notepad aplicativo janela
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
 # Abrir o Bloco de Notas
 
-> [!route] Pedido exemplo
-> abra o bloco de notas
-
-**Agente:** [[Desktop Agent]] · **Contexto:** Abrir app vazio
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. AppResolver: notepad
-2. rotina: app_search 'Bloco de Notas'
-3. wait 3
-4. ScreenGuard ok
+DESKTOP -> app_search Bloco de Notas -> aguardar janela correspondente -> confirmar identidade e foco; nao digitar neste pedido.
 
-## Forma alternativa
-Win+R 'notepad'
-
-## Critério de aceite
-Janela do Bloco de Notas aberta
-
-## Armadilha
-Não escrever nada que não foi pedido
-
-## Subagentes
-- [[AppResolver]] — 1 · Entender
-- [[ContentComposer]] — 2 · Montar
-- [[ScreenGuard]] — 3 · Conferir
+## Aceite e limites
+- Nao usar a primeira janela que aparecer. App ausente, titulo ambiguo e timeout sao falhas distintas.
+- Abrir nao autoriza escrever, fechar ou salvar. Para texto: [[Escrever texto ditado no Bloco de Notas]].

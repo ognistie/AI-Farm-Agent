@@ -43,6 +43,13 @@ GUIDE_MAX_CHARS = 1200
 REFERENCE_MAX_CHARS = 450
 CONTEXT_MAX_CHARS = 4400
 LESSONS_DIR = "60 Aprendizados"
+# Registros automaticos de execucao: ficam so os mais recentes no vault (o grafo mostra o
+# sistema aprendendo); os antigos vao para fora dele, em memory/vault_arquivo (recuperaveis).
+# Eles NAO entram no prompt dos agentes: sao log, nao orientacao (e um "sucesso" automatico
+# pode ter sido falso). Orientacao vem das notas curadas e das licoes aprendidas.
+EXEC_KEEP = 40
+EXEC_FOLDERS = ("40 Execucoes/Planos", "40 Execucoes/Sucesso", "40 Execucoes/Falhas")
+EXEC_ARCHIVE = Path(__file__).resolve().parent.parent / "memory" / "vault_arquivo"
 # Notas do dicionario que ajudam a EXECUTAR (nao so a entender a fala)
 AGENT_DICT = ("Termos de computador", "Atalhos de teclado", "Configuracoes do Windows", "Formas de pedir",
               "Apps e sites")
@@ -169,32 +176,58 @@ class Brain:
         rules = _section(self._read(f"{folder}/{name}.md"), "Regras de execucao")
         return rules[:GUIDE_MAX_CHARS]
 
-    def find_references(self, task: str, k: int = 2) -> list[dict]:
-        """Tarefas de referencia parecidas (curadas + sucessos registrados)."""
-        if not self.enabled:
+    def find_references(self, task: str, k: int = 2, agent: str = "") -> list[dict]:
+        """Playbooks curados e referencias verificadas; registros nao sao receitas."""
+        if not self.enabled or k <= 0:
             return []
         want = _tokens(task)
         if not want:
             return []
+        from core.vault_curation import retired_reference_paths
+        try:
+            retired = retired_reference_paths(self.root)
+        except (OSError, ValueError):
+            logger.warning('Curadoria inconsistente; recuperacao de procedimentos suspensa.')
+            return []
         scored = []
-        for folder in ("30 Tarefas de referencia", "10 Agentes", "40 Execucoes/Sucesso"):
+        for folder in ("30 Tarefas de referencia", "10 Agentes"):
             base = self.root / folder
             if not base.is_dir():
                 continue
             for f in base.rglob("*.md"):
+                if folder == '30 Tarefas de referencia' and f.relative_to(base).as_posix() in retired:
+                    continue
                 rel = f.relative_to(self.root).as_posix()
                 md = self._read(rel)
                 fm = _frontmatter(md)
+                if fm.get('estado') in ('retirado', 'planejado', 'experimental'):
+                    continue
+                owners = {a.strip().strip("'\"").upper() for a in fm.get("agente", "").split(",") if a.strip()}
+                if not owners and folder == "10 Agentes":
+                    owners = {a for a, (path, _) in AGENT_FOLDERS.items() if rel.startswith(path + "/")}
+                if agent and agent.upper() != "MAESTRO" and agent.upper() not in owners:
+                    continue
                 have = _tokens(f.stem + " " + fm.get("keywords", "") + " " + fm.get("tarefa", ""))
                 if not have:
                     continue
-                score = len(want & have) / len(want | have)
-                if folder.startswith("40"):
-                    # execucao registrada vale menos que playbook curado: um "sucesso" automatico
-                    # pode ter sido falso (ex.: abriu a pagina errada e declarou concluido)
-                    score *= 0.75
+                if folder.startswith("30") and fm.get("verificado") != "sim":
+                    continue      # so caminho comprovado por execucao real orienta (core/memory_gate.py)
+                overlap = len(want & have)
+                score = overlap / len(want | have)
+                # A consolidated playbook has more keywords than a tiny example card.
+                # Require two matching terms and half the query, rather than penalizing
+                # the useful procedure merely for covering additional valid cases.
+                coverage = overlap / len(want)
+                if overlap >= 2 and coverage >= 0.5:
+                    score = max(score, 0.6 * coverage)
+                try:
+                    score *= min(1.3, 1 + 0.05 * int(fm.get("sucessos") or 0))   # mais comprovado, mais peso
+                except ValueError:
+                    pass
                 if score >= 0.2:
                     path = _section(md, "Caminho") or _section(md, "Plano executado")
+                    if not path:
+                        continue
                     scored.append((score, {"title": f.stem, "agent": fm.get("agente", ""),
                                            "path": path[:REFERENCE_MAX_CHARS], "note": rel}))
         scored.sort(key=lambda x: x[0], reverse=True)
@@ -259,9 +292,9 @@ class Brain:
         sk_text, sk_names = skills_for(agent, task, compact=compact)
         if sk_text:
             blocks.append(("Skills (catálogo AIWorkbench — aplique neste pedido):\n" + sk_text, sk_names))
-        refs = [r for r in self.find_references(task, k=2) if r.get("path")]
+        refs = self.find_references(task, k=2, agent=agent)
         if refs:
-            blocks.append(("Playbooks e execuções parecidas:\n" + "\n".join(
+            blocks.append(("Playbooks curados e referências verificadas:\n" + "\n".join(
                 f"- {r['title']}: {r['path'][:300 if compact else REFERENCE_MAX_CHARS]}" for r in refs),
                 [r["title"] for r in refs]))
         lessons = self.find_lessons(task, k=2 if compact else 3)
@@ -410,7 +443,40 @@ class Brain:
         written = self._write(note, "\n".join(lines) + "\n")
         if written:
             self._log_daily(entry, Path(written).stem, ok, agents)
+            self.prune_executions()
+        # Ciclo de vida da memoria: a referencia que bate com esta execucao ganha (ou perde) prova
+        try:
+            from core.memory_gate import record_outcome
+            change = record_outcome(self.root, entry)
+            if change:
+                logger.info(f"Segundo cerebro: {change}")
+        except Exception as e:
+            logger.warning(f"Porteiro da memoria falhou: {e}")
         return written
+
+    def prune_executions(self, keep: int = EXEC_KEEP) -> int:
+        """Deixa no vault so os `keep` registros mais recentes de cada pasta de execucao;
+        os mais antigos vao para memory/vault_arquivo (fora do Obsidian). Devolve quantos moveu."""
+        if not self.enabled:
+            return 0
+        import shutil
+        moved = 0
+        for folder in EXEC_FOLDERS:
+            base = self.root / folder
+            if not base.is_dir():
+                continue
+            notes = sorted(base.glob("*.md"), key=lambda f: f.name)   # o nome comeca com a data
+            for f in notes[:-keep] if len(notes) > keep else []:
+                dest = EXEC_ARCHIVE / folder / f.name
+                try:
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    with self._lock:
+                        shutil.move(str(f), str(dest))
+                    self._cache.pop(f.relative_to(self.root).as_posix(), None)
+                    moved += 1
+                except OSError as e:
+                    logger.warning(f"Nao arquivou {f.name}: {e}")
+        return moved
 
     def _log_daily(self, entry: dict, note_stem: str, ok: bool, agents: list) -> None:
         """Diario de operacoes: uma linha por execucao em 50 Diario/AAAA-MM-DD."""

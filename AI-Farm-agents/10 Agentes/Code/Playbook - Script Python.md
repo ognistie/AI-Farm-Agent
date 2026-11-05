@@ -1,20 +1,18 @@
 ---
 tipo: playbook
 agente: CODE
-keywords: script python automacao utilitario renomear
+estado: curado
+verificado: nao
+keywords: python script cli automacao
+revisado_em: 2026-10-31
 tags: [playbook, code]
-cssclasses: [agent-code]
 ---
 # Script Python
 
 Agente: [[Code Agent]]
 
-## Exemplo de pedido
-> Crie um script Python que renomeia imagens por data
-
 ## Caminho
-1. `run_python`: pasta do projeto + script + README
-2. Abrir no VS Code
+create_project com fontes, dependencias declaradas e README; conferir sintaxe e hashes; nao executar nem instalar pacotes.
 
-## Armadilhas
-- Script que apaga/move arquivos precisa de modo simulação por padrão.
+## Limites e aceite
+Simulacao por padrao quando o programa proposto muda arquivos. Segredos somente como placeholders. Testes entregues devem informar se foram ou nao executados.

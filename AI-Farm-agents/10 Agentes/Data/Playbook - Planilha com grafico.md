@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: DATA
+estado: curado
+verificado: nao
 keywords: planilha excel grafico gastos vendas
+revisado_em: 2026-10-31
 tags: [playbook, data]
-cssclasses: [agent-data]
 ---
 # Planilha com grafico
 
 Agente: [[Data Agent]]
 
-## Exemplo de pedido
-> Crie uma planilha de gastos do mês com gráfico
-
 ## Caminho
-1. `run_python` openpyxl: categorias, valores, total com =SUM
-2. BarChart por categoria
-3. Abrir no Excel
+create_workbook: rows com cabecalho, dados e formulas locais; charts bar/line com column numerica; builder reabre o XLSX e confere as estruturas.
 
-## Armadilhas
-- Gráfico referencia o intervalo de dados real (Reference).
+## Limites e aceite
+Primeira coluna: categorias. Formulas permitidas: SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, COUNTIF, SUMIF, IF, ROUND, ABS. Sem macros, vinculos externos, PieChart ou formulas entre abas. Nao afirmar recalculo.

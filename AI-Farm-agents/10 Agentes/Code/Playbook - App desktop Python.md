@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: CODE
-keywords: app desktop gui tkinter customtkinter interface
+estado: curado
+verificado: nao
+keywords: app desktop gui tkinter interface
+revisado_em: 2026-10-31
 tags: [playbook, code]
-cssclasses: [agent-code]
 ---
 # App desktop Python
 
 Agente: [[Code Agent]]
 
-## Exemplo de pedido
-> Crie um sistema de controle de estoque com interface
-
 ## Caminho
-1. Planner multi-arquivo
-2. `run_python` grava arquivos
-3. Abrir no VS Code (não executar a GUI dentro do agente)
+create_project com fontes e instrucoes de execucao separadas. Nao iniciar GUI gerada nem executa-la dentro do assistente.
 
-## Armadilhas
-- Effort alto: tarefa complexa.
+## Limites e aceite
+Separar estado e interface, documentar dependencias e estados de erro. Validacao de sintaxe nao valida comportamento da GUI.

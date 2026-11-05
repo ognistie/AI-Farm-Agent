@@ -5,7 +5,7 @@ cssclasses: [agent-maestro]
 ---
 # 💬 Conversa contínua
 
-← [[Maestro]] · [[Ciclo de validacao]] · [[Roteiro de testes]]
+← [[Maestro]] · [[Ciclo de validacao de planos]] · [[Roteiro de testes]]
 
 > [!lesson] Ideia
 > Cada pedido pode continuar o anterior. O agente lembra **o que fez** e **o que ficou aberto**, e entende "agora", "esse", "o segundo", "aquela de baixo", "desfaz".

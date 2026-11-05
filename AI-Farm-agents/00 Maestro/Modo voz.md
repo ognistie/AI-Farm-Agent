@@ -18,6 +18,8 @@ cssclasses: [agent-maestro]
 
 Na conversa ao vivo os pedidos entram numa **fila** (um de cada vez, na ordem). Diga **"para"** para interromper e esvaziar a fila; **"para de ouvir"** desliga.
 
+Com `OPENAI_API_KEY` e a opção ligada em Configurações, a conversa ao vivo usa o **GPT-Live**: ele ouve e fala em tempo real, e o microfone vai para a OpenAI enquanto a sessão está aberta. O app continua decidindo o que vira tarefa. Se o GPT-Live falhar, vale o fluxo local abaixo.
+
 ## Como entende
 ```mermaid
 flowchart LR

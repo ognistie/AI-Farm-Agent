@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: FILE
+estado: curado
+verificado: nao
 keywords: organizar pasta downloads tipo extensao
+revisado_em: 2026-10-31
 tags: [playbook, file]
-cssclasses: [agent-file]
 ---
 # Organizar pasta por tipo
 
 Agente: [[File Agent]]
 
-## Exemplo de pedido
-> Organize os arquivos da pasta Downloads por tipo
-
 ## Caminho
-1. Categorias: Imagens, Documentos, Planilhas, Vídeos, Áudio, Compactados, Código, Executáveis
-2. Mover (shutil.move) com renome em conflito
-3. Resumo por categoria
+list_files na raiz autorizada -> inventario -> create_folder -> move_file por arquivo -> relatar sucessos e falhas.
 
-## Armadilhas
-- Não mexer em subpastas existentes sem pedido.
+## Limites e aceite
+Nao operar fora do pedido nem sobrescrever destinos. Classificar por extensao nao implica entrar em subpastas. Em colisao, preservar e informar; nao prometer sufixo automatico.

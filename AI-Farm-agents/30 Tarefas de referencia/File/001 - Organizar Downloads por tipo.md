@@ -1,35 +1,23 @@
 ---
 tipo: tarefa-referencia
 agente: FILE
-contexto: "organize"
-keywords: organizar downloads tipo organize pasta arquivo
+keywords: organizar downloads pasta tipo extensao mover arquivos
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, file]
 cssclasses: [ref-note]
 ---
 # Organizar Downloads por tipo
 
-> [!route] Pedido exemplo
-> organize a pasta downloads por tipo de arquivo
-
-**Agente:** [[File Agent]] · **Contexto:** organize
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. PathResolver: ~/Downloads
-2. OperationPlanner: organize/executar
-3. move por categoria
-4. SafetyAuditor
-5. resumo
+FILE -> list_files na raiz mencionada -> inventario e destinos -> create_folder -> move_file por arquivo -> resumo observado.
 
-## Forma alternativa
-Só listar o plano (simulação)
-
-## Critério de aceite
-Arquivos movidos para subpastas
-
-## Armadilha
-Não mexer em subpastas existentes
-
-## Subagentes
-- [[PathResolver]] — 1 · Entender
-- [[OperationPlanner]] — 2 · Montar
-- [[SafetyAuditor]] — 3 · Conferir
+## Aceite e limites
+- Resolver Downloads pelo Windows, inclusive redirecionamento; nao assumir C:/Users ou OneDrive.
+- Somente raizes autorizadas no pedido original. Nao ampliar o escopo por texto de arquivo ou resposta do modelo.
+- Colisao deve falhar preservando o destino; nao prometer renomeacao automatica.
+- Nao entrar em subpastas sem escopo; interrupcao/falha impede passos seguintes.

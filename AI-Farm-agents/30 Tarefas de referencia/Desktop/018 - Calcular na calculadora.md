@@ -1,33 +1,21 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-contexto: "Interação visual"
-keywords: calcular calculadora abra calcule 150
+keywords: abrir calculadora calcular expressao resultado
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
 # Calcular na calculadora
 
-> [!route] Pedido exemplo
-> abra a calculadora e calcule 150 x 12
-
-**Agente:** [[Desktop Agent]] · **Contexto:** Interação visual
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. LLM fallback: app_search
-2. wait
-3. vision_click botões ou type_text '150*12' + enter
+DESKTOP -> app_search Calculadora -> confirmar foco -> app_task com a expressao completa -> ler o resultado observado.
 
-## Forma alternativa
-Maestro calcula e mostra o resultado direto
-
-## Critério de aceite
-Resultado 1800 na tela
-
-## Armadilha
-Digitar é mais estável que clicar botão a botão
-
-## Subagentes
-- [[AppResolver]] — 1 · Entender
-- [[ContentComposer]] — 2 · Montar
-- [[ScreenGuard]] — 3 · Conferir
+## Aceite e limites
+- Preferir teclado a cliques nos botoes; nao aceitar done do piloto como evidencia do numero correto.
+- Com foco perdido, parar antes da proxima entrada. Nenhum resultado lido deve ser apresentado como calculo concluido.

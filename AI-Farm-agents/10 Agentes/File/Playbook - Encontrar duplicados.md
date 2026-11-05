@@ -1,18 +1,15 @@
 ---
 tipo: playbook
 agente: FILE
+estado: planejado
+verificado: nao
 keywords: duplicados repetidos iguais hash
+revisado_em: 2026-10-31
 tags: [playbook, file]
-cssclasses: [agent-file]
 ---
 # Encontrar duplicados
 
 Agente: [[File Agent]]
 
-## Exemplo de pedido
-> Encontre arquivos duplicados na pasta Documentos
-
-## Caminho
-1. Hash SHA-256 por tamanho igual
-2. Listar grupos duplicados
-3. Não apagar sem confirmação
+## Limites e aceite
+Funcionalidade pendente de ferramenta deterministica para hash em blocos e manifestos de grupos. find_files busca nomes; nao prova duplicacao. Nao gerar Python para contornar a limitacao nem remover arquivos com base apenas no nome.

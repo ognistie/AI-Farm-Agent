@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: CODE
-keywords: site html css pagina landing tema
+estado: curado
+verificado: nao
+keywords: site html css javascript landing componente
+revisado_em: 2026-10-31
 tags: [playbook, code]
-cssclasses: [agent-code]
 ---
 # Site estatico
 
 Agente: [[Code Agent]]
 
-## Exemplo de pedido
-> Crie um site sobre uma cafeteria artesanal
-
 ## Caminho
-1. `run_python`: pasta `site_cafeteria_artesanal` com index.html + style.css
-2. Paleta e fontes do tema
-3. `webbrowser.open` no index
+create_project com HTML/CSS/JS completos e caminhos relativos; conferir gravacao, sem executar ou abrir automaticamente.
 
-## Armadilhas
-- Mínimo 100 linhas reais de CSS; conteúdo temático real, não placeholder.
+## Limites e aceite
+Tema e conteudo do pedido; layout responsivo, semantica, teclado e foco. Nao usar contagem de linhas como criterio de qualidade. Portfolios, landing pages e componentes seguem o mesmo contrato.

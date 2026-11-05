@@ -30,7 +30,7 @@ atualizado: 2026-10-05
 
 | Chave | Quando | Variações |
 |---|---|---|
-| `listening_on` | liga a conversa ao vivo | Tô ouvindo. Pode falar. / Pode mandar, tô aqui. / Ouvindo. Manda. / Pronto, pode falar. |
+| `listening_on` | liga a conversa ao vivo | Como posso ajudar? / Oi! Como posso ajudar? / Tô aqui. Como posso ajudar? / Pode falar. Como posso ajudar? |
 | `listening_off` | desliga a escuta | Beleza, parei de ouvir. / Microfone desligado. / Fechado, saí da escuta. |
 | `ack` | confirmação curta | Beleza. / Feito. / Certo. / Pode deixar. / Fechado. |
 | `retry` | usuário disse que o palpite estava errado | Tá, fala de novo do seu jeito. / Sem problema, me diz de novo. / Ok, repete pra mim? |

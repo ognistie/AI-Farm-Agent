@@ -1,19 +1,22 @@
 ---
 tipo: tarefa-referencia
 agente: WEB
-keywords: youtube video pesquisar primeiro assistir
-tags: [referencia]
+keywords: youtube video pesquisar primeiro assistir tocar
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
+tags: [referencia, web]
 cssclasses: [ref-note]
 ---
 # Pesquisar no YouTube e abrir o primeiro
 
-**Agentes:** [[Web Agent]]
-
-## Pedido exemplo
-> abra o youtube, pesquise lofi e abra o primeiro vídeo
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-WEB(search, url youtube) → web_goto results?search_query=lofi → wait → web_click primeiro vídeo
+WEB -> open_url/web_goto com results?search_query=<termo> -> browser_task para selecionar o video na janela/aba correta -> observar destino e reproducao.
 
-## Armadilha
-Sem Playwright: abrir os resultados já conta como busca.
+## Aceite e limites
+- Preservar o termo e diferenciar anuncio de resultado.
+- Se apenas a busca abrir, informar resultado parcial; nao afirmar que o video tocou.
+- Sem elemento identificavel, login ou CAPTCHA: parar e pedir intervencao, sem cliques por coordenadas memorizadas.

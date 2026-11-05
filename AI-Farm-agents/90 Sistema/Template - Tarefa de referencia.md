@@ -1,16 +1,33 @@
 ---
+tipo: template
+tags: [template]
+---
+# Template - Tarefa de referencia
+
+Criar um procedimento somente se não houver equivalente. Substituir todos os campos; não copiar contagens.
+
+```markdown
+---
 tipo: tarefa-referencia
 agente: WEB
-keywords: palavras chave do pedido
+keywords: termos reais de recuperacao
+estado: curado
+verificado: nao
+revisado_em: AAAA-MM-DD
 tags: [referencia]
 ---
-# Título da tarefa
+# Nome do procedimento
 
-## Pedido exemplo
-> ...
+## Precondicoes
+Ambiente, alvo, fixture e efeitos permitidos.
 
 ## Caminho
-AGENTE(action_type) → passo 1 → passo 2
+Ferramentas atuais e etapas delimitadas, sem alvos particulares.
 
-## Armadilha
-...
+## Aceite e limites
+Resultado observável e falhas que exigem parar.
+
+## Evidencia
+Execução identificada, origem/verificador independente, versões e escopo exato.
+Manter não verificado até haver prova do uso e resultado deste procedimento.
+```

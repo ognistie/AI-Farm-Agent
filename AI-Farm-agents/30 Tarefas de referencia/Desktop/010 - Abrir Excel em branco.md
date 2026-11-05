@@ -1,33 +1,21 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-contexto: "App Office"
-keywords: abrir excel branco abra
+keywords: abrir excel branco documento pasta trabalho
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
 # Abrir Excel em branco
 
-> [!route] Pedido exemplo
-> abra o excel
-
-**Agente:** [[Desktop Agent]] · **Contexto:** App Office
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. rotina: app_search Excel
-2. wait 5
-3. vision_click 'Pasta de trabalho em branco'
+DESKTOP -> app_search Excel -> confirmar janela -> blank_document quando o pedido exigir uma nova pasta de trabalho; nao sobrescrever documento existente.
 
-## Forma alternativa
-DATA se houver dados
-
-## Critério de aceite
-Pasta em branco aberta
-
-## Armadilha
-Planilha com dados é do Data Agent
-
-## Subagentes
-- [[AppResolver]] — 1 · Entender
-- [[ContentComposer]] — 2 · Montar
-- [[ScreenGuard]] — 3 · Conferir
+## Aceite e limites
+- Considerar tela inicial, app ja aberto e idioma. Ctrl+N pode significar negrito em Office portugues.
+- Um pedido de planilha pronta com calculos/grafico vai ao DATA; editar uma pasta existente exige alvo confirmado.

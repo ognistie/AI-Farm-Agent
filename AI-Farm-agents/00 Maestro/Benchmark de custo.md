@@ -59,7 +59,7 @@ cssclasses: [agent-maestro]
 | c01 | cria um site simples para a padaria Pão Dourado com html e c | 2/2 | 1 | 4 | US$ 0.0806 (0.0717–0.0895) | US$ 0.1351 | US$ 0.0700 |
 | c02 | muda a cor do título para roxo | 2/2 | 1 | 4 | US$ 0.0496 (0.0444–0.0548) | US$ 0.0666 | US$ 0.0358 |
 | c03 | cria um script python que conta quantas palavras tem num tex | 2/2 | 1 | 4 | US$ 0.0425 (0.0422–0.0429) | US$ 0.0634 | US$ 0.0342 |
-| f01 | organiza a pasta C:\Users\Guilherme\Documents\bench_ai_farm_ | 2/2 | 1 | 5 | US$ 0.0606 (0.0597–0.0615) | US$ 0.0313 | US$ 0.0181 |
+| f01 | organiza a pasta %USERPROFILE%\Documents\bench_ai_farm_ | 2/2 | 1 | 5 | US$ 0.0606 (0.0597–0.0615) | US$ 0.0313 | US$ 0.0181 |
 | t01 | faz uma planilha de gastos mensais com 5 categorias e o tota | 2/2 | 1 | 4 | US$ 0.0347 (0.0344–0.0351) | US$ 0.0583 | US$ 0.0316 |
 | q01 | que horas são | 2/2 | 0 | 0 | US$ 0.0000 (0.0000–0.0000) | US$ 0.0104 | US$ 0.0060 |
 | q02 | quanto é 15% de 320 | 2/2 | 0 | 1 | US$ 0.0016 (0.0016–0.0016) | US$ 0.0104 | US$ 0.0060 |

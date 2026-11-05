@@ -3,7 +3,7 @@ tipo: template
 ---
 # Nome do playbook
 
-Agente: [[... Agent]]
+Agente: preencher com a nota do agente correspondente.
 
 ## Exemplo de pedido
 > ...

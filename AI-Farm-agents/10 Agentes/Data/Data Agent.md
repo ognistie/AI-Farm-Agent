@@ -21,14 +21,14 @@ skills: 3
 - fluxo de caixa, orçamento, cadastro, estoque
 
 ## Regras de execução
-- Um passo `run_python` com o código completo; salva `.xlsx` na Área de Trabalho e abre no Excel.
-- Nome do arquivo derivado da tarefa; nunca sobrescrever (sufixo _2).
-- Colunas sugeridas são ponto de partida: adapte ao pedido.
-- Fórmulas reais (=SUM, =AVERAGE) em vez de valores calculados no Python quando o usuário vai editar.
-- Dados de exemplo variados e realistas; nunca dados pessoais reais.
+- Gerar manifesto para create_workbook; nunca Python, macro ou comando.
+- Ate 6 abas, 5000 linhas/aba, 100 colunas e 1 MiB; graficos bar/line e formulas locais permitidas.
+- Dados do usuario ou exemplos identificados; nao inventar informacao pessoal, financeira ou fiscal.
 
 ## Como navegar e executar
-- openpyxl: Workbook → cabeçalho formatado → dados → fórmulas → gráfico (BarChart/LineChart) → auto-largura → save → `start` no arquivo.
+- create_workbook -> XLSX novo -> reabrir e conferir abas, celulas, formulas e graficos.
+- Sem referencias externas ou entre abas; sem instalacao durante tarefas.
+- Formula gravada nao e formula recalculada, e estrutura de grafico nao e QA visual no Excel.
 
 ## Playbooks
 - [[Playbook - Planilha com grafico]]
@@ -42,15 +42,14 @@ Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[S
 - [[ai-product-strategist]] — quando o pedido fala de ideia, negocio, startup, produto, estrategia, plano de negocio…
 
 ## Falhas conhecidas (e correção)
-- Planilhas saíam sempre com o mesmo visual (cor #1F4E79 fixa). Agora a cor segue o tema.
+- Rotas antigas com run_python, PieChart, 12 abas e SUMIFS nao correspondem ao manifesto atual.
+- Nao prometer pivot nativa, validacao de dados, checkbox ou protecao sem ferramenta propria.
 
-## Subagentes
-Três ajudantes executam junto com o agente — entender, montar, conferir:
-- **1 · Entender** — [[SchemaDesigner]]: Descobre o tipo de planilha e sugere colunas iniciais.
-- **2 · Montar** — [[FormulaChartDesigner]]: Decide formulas (SUM, AVERAGE...) e grafico conforme o pedido e o tipo.
-- **3 · Conferir** — [[SheetReviewer]]: Revisa o codigo da planilha: sintaxe, salva .xlsx, nao sobrescreve, abre no Excel.
+## Componentes internos
+O fluxo publico usa manifestos e builders/contratos deterministas. As notas de subagentes descrevem helpers legados; nao representam tres pesquisadores ou chamadas de modelo em paralelo.
+
 
 ## Tarefas de referência
-50 caminhos prontos para consulta:
+Procedimentos consolidados em [[Tarefas de referencia]]:
 
-![[Referencias.base#Data]]
+[[Tarefas de referencia]]

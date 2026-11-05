@@ -135,7 +135,8 @@ def _write_atomic(path: Path, data: dict) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, ensure_ascii=False)
-        os.replace(tmp, path)
+        from core.atomic_io import replace_file
+        replace_file(tmp, path)
     except BaseException:
         try:
             os.unlink(tmp)

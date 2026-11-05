@@ -1,31 +1,22 @@
 ---
 tipo: tarefa-referencia
 agente: FILE
-contexto: "search"
-keywords: encontrar arquivo nome encontre contrato pdf computador
+keywords: encontrar buscar arquivo nome extensao listar ler pasta
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, file]
 cssclasses: [ref-note]
 ---
 # Encontrar arquivo por nome
 
-> [!route] Pedido exemplo
-> encontre o arquivo contrato.pdf no meu computador
-
-**Agente:** [[File Agent]] · **Contexto:** search
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. Buscar em pastas do usuário (Desktop, Documents, Downloads) → listar caminhos
+FILE -> find_files(path, pattern) ou list_files(path) na raiz autorizada -> listar caminhos observados; read_file somente no escopo.
 
-## Forma alternativa
-Busca em todo C:/Users/<eu>
-
-## Critério de aceite
-Caminho(s) listado(s)
-
-## Armadilha
-Não varrer C:/Windows
-
-## Subagentes
-- [[PathResolver]] — 1 · Entender
-- [[OperationPlanner]] — 2 · Montar
-- [[SafetyAuditor]] — 3 · Conferir
+## Aceite e limites
+- Solicitar a pasta quando faltar alvo suficiente. Nao varrer o disco inteiro.
+- Distinguir nenhum resultado, acesso negado e limite de busca.
+- Nao chamar busca por nome de deteccao de duplicatas: identidade por hash exige ferramenta propria.

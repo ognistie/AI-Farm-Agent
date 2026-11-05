@@ -1,31 +1,21 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-contexto: "Sistema"
-keywords: abrir configuracoes windows abra bluetooth
+keywords: abrir configuracoes windows bluetooth pagina ajustes
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
-# Abrir configurações do Windows
+# Abrir configuracoes do Windows
 
-> [!route] Pedido exemplo
-> abra as configurações de bluetooth
-
-**Agente:** [[Desktop Agent]] · **Contexto:** Sistema
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. run_command 'start ms-settings:bluetooth'
+DESKTOP -> open_path ms-settings:<pagina do dicionario> -> confirmar janela das Configuracoes. app_task apenas para acao explicita no alvo.
 
-## Forma alternativa
-Win+I e navegar
-
-## Critério de aceite
-Tela de Bluetooth aberta
-
-## Armadilha
-Não alterar configurações sem pedido
-
-## Subagentes
-- [[AppResolver]] — 1 · Entender
-- [[ContentComposer]] — 2 · Montar
-- [[ScreenGuard]] — 3 · Conferir
+## Aceite e limites
+- Abrir uma pagina nao autoriza ativar, desativar, instalar ou alterar configuracoes.
+- Consultar [[Configuracoes do Windows]]; pagina ausente ou interface diferente exige diagnostico, nao cliques inventados.

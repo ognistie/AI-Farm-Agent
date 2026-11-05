@@ -1,25 +1,15 @@
 ---
 tipo: playbook
 agente: DESKTOP
+estado: planejado
+verificado: nao
 keywords: teams mensagem enviar chat conversa
+revisado_em: 2026-10-31
 tags: [playbook, desktop]
-cssclasses: [agent-desktop]
 ---
 # Teams
 
 Agente: [[Desktop Agent]]
 
-## Exemplo de pedido
-> Envie 'bom dia' para João no Teams
-
-## Caminho
-1. `app_search` Microsoft Teams
-2. `wait_for_window` Teams
-3. `uia_click` Chat
-4. `uia_click` conversa com a pessoa
-5. `uia_type` mensagem
-6. `hotkey` Enter
-
-## Armadilhas
-- Sem destinatário ou sem mensagem → pedir esclarecimento.
-- Nome ambíguo (dois 'João') → parar e perguntar.
+## Limites e aceite
+Envio e chamada sao efeitos externos. O fluxo autonomo ainda carece de autorizacao por efeito e validacao por conta/destinatario. Nao recuperar uma sequencia antiga de cliques como caminho seguro. Exigir destinatario, conteudo e verificacao humana antes de liberar suporte.

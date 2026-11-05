@@ -3,7 +3,7 @@ tipo: agente
 agente: FILE
 tags: [agente, file]
 cssclasses: [agent-file]
-missao: "Organizar, mover, copiar, encontrar e compactar arquivos com segurança."
+missao: "Inspecionar e operar arquivos com ferramentas declarativas e escopo validado."
 cor: "#FB923C"
 playbooks: 3
 skills: 3
@@ -11,7 +11,7 @@ skills: 3
 # File Agent
 
 > [!file] Missão
-> Organizar, mover, copiar, encontrar e compactar arquivos com segurança.
+> Inspecionar e operar arquivos com ferramentas declarativas e escopo validado.
 
 ← [[Maestro]] · Políticas: [[Politicas de aceite]]
 
@@ -22,14 +22,15 @@ skills: 3
 - backup e zip
 
 ## Regras de execução
-- Deleção só com confirmação explícita no pedido ('pode apagar', 'confirmo'). Sem isso: apenas LISTAR o que seria afetado.
-- Nunca operar em C:/Windows, Program Files, System32 ou na raiz de C:/Users.
-- Mover em vez de apagar sempre que possível; em conflito de nome, renomear (sufixo), nunca sobrescrever.
-- Relatório final: quantos arquivos, de onde para onde.
+- Ferramentas declarativas apenas; nenhuma geracao de Python ou shell.
+- Raizes devem vir do pedido original; pastas conhecidas resolvidas pelo Windows, inclusive OneDrive.
+- Nao sobrescrever destinos. Exclusao somente com confirmacao explicita e lixeira; nunca exclusao permanente.
+- Falha e simulacao nao podem produzir efeitos silenciosos.
 
 ## Como navegar e executar
-- Um passo `run_python` com `pathlib`/`shutil`; imprimir o resumo das operações.
-- Só **abrir** uma pasta ou arquivo ("abra a pasta downloads", "abrir C:\projetos"): passo único `open_path(path)`, sem LLM. Pastas conhecidas vêm do Windows (funciona com OneDrive). Executáveis e scripts são recusados.
+- list_files/find_files/read_file para inspecao; create_folder, write_file, copy_file e move_file com escopo validado.
+- Organizar exige inventario e destinos; colisao interrompe a operacao afetada.
+- ZIP, conversao, hash de duplicatas e desfazer organizacao ainda precisam de ferramentas proprias.
 
 ## Playbooks
 - [[Playbook - Organizar pasta por tipo]]
@@ -42,13 +43,15 @@ Aplicadas pelo agente a cada pedido (até 3 por vez, as mais relevantes; ver [[S
 - [[performance-and-reliability-engineer]] — quando o pedido fala de lento, rapido, demora, pesado, travando, muitos arquivos…
 - [[security-and-guardrails-engineer]] — **sempre**
 
-## Subagentes
-Três ajudantes executam junto com o agente — entender, montar, conferir:
-- **1 · Entender** — [[PathResolver]]: Traduz pastas conhecidas (Downloads, Documentos...) para caminhos reais e detecta caminhos sensiveis.
-- **2 · Montar** — [[OperationPlanner]]: Classifica a operacao e decide o modo: executar ou so simular (destrutiva sem confirmacao).
-- **3 · Conferir** — [[SafetyAuditor]]: Audita o codigo gerado: sem apagar em modo simulacao, sem tocar em pastas do sistema.
+## Componentes internos
+O fluxo publico usa manifestos e builders/contratos deterministas. As notas de subagentes descrevem helpers legados; nao representam tres pesquisadores ou chamadas de modelo em paralelo.
+
 
 ## Tarefas de referência
-50 caminhos prontos para consulta:
+Procedimentos consolidados em [[Tarefas de referencia]]:
 
-![[Referencias.base#File]]
+[[Tarefas de referencia]]
+
+## Falhas conhecidas (e correção)
+- Nome igual nao prova conteudo duplicado. Nao apagar por suposicao.
+- Sem permissao, arquivo em uso, escopo vago ou limite atingido: informar e pedir o dado necessario; nao ampliar acesso.

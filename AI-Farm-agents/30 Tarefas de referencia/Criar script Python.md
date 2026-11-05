@@ -1,19 +1,22 @@
 ---
 tipo: tarefa-referencia
 agente: CODE
-keywords: script python criar automacao programa
-tags: [referencia]
+keywords: script python automacao programa cli testes
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
+tags: [referencia, code]
 cssclasses: [ref-note]
 ---
 # Criar script Python
 
-**Agentes:** [[Code Agent]]
-
-## Pedido exemplo
-> crie um script python que renomeia imagens pela data
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-CODE(python_script) → run_python grava pasta + script + README → abre no VS Code
+CODE -> create_project com fontes .py, README e dependencias declaradas -> conferir sintaxe e hashes; nao executar o script.
 
-## Armadilha
-Operações destrutivas em modo simulação por padrão.
+## Aceite e limites
+- Instrucoes de uso e efeitos explicitos; scripts de arquivos devem propor simulacao por padrao.
+- Nao instalar dependencias durante a tarefa nem inserir credenciais reais.
+- Gerar testes proporcionais; a entrega de um teste nao significa que ele foi executado.

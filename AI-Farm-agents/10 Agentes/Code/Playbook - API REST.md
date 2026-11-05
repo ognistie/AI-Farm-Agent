@@ -1,21 +1,18 @@
 ---
 tipo: playbook
 agente: CODE
+estado: curado
+verificado: nao
 keywords: api rest backend fastapi flask endpoints
+revisado_em: 2026-10-31
 tags: [playbook, code]
-cssclasses: [agent-code]
 ---
 # API REST
 
 Agente: [[Code Agent]]
 
-## Exemplo de pedido
-> Crie uma API de tarefas com FastAPI
-
 ## Caminho
-1. Planner gera esqueleto (main, routes, models, database)
-2. `run_python` grava arquivos + requirements.txt + README com curl
-3. Abrir no VS Code
+create_project com modulos, dependencias, README e exemplos de requisicao. Entrega de fontes; servidor nao e iniciado pelo agente.
 
-## Armadilhas
-- Status codes corretos; validação com Pydantic.
+## Limites e aceite
+Validacao de entradas, codigos de resposta e erros explicitos. Nao anunciar autenticacao segura ou API funcional sem testes reais; bibliotecas extras sao instaladas pelo operador em ambiente separado.

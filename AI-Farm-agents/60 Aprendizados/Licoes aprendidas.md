@@ -91,6 +91,22 @@ Cada falha real vira uma regra. ← [[Início]] · [[Tarefas com falha]]
 > "Voltar para o Excel" é trazer a janela; "voltar para a tela anterior" é navegar dentro do app. O atalho tratava os dois como trazer a janela — apareceu quando o Maestro mudou a redação.
 > **Regra:** trazer pra frente só quando o resto da frase não fala de página/tela/aba/item; a avaliação de conversas pega mudanças de redação · [[Desktop Agent]] · [[Avaliacao de conversas]]
 
+> [!lesson] Esperar o app certo, não qualquer janela
+> "Abra o Obsidian" falhou: o app abre pelo menu Iniciar e, quando o menu fecha, outra janela volta para a frente por um instante. A espera de 4 s achou que estava pronto em 0,4 s e o foco procurou o Obsidian antes de ele existir.
+> **Regra:** depois de abrir um app, a espera só termina com a janela DELE na frente; `focus_window` espera até 8 s (Obsidian, Teams e Spotify demoram) · [[Desktop Agent]]
+
+> [!lesson] Nunca digitar sem a janela certa na frente
+> "Escreva no Bloco de Notas" deu "Pronto" com o documento vazio: o Windows negou o foco (a pessoa falava pela voz com outro app na frente) e o Ctrl+V caiu em outro lugar.
+> **Regra:** confirmar que a janela-alvo está em primeiro plano antes de colar; se o Windows negar o foco, falhar avisando — nunca digitar no escuro · [[Desktop Agent]]
+
+> [!lesson] Conteúdo retomado vai inteiro no pedido
+> "Tenta de novo com a mesma mensagem, mas com bom dia no começo" chegou ao navegador sem a mensagem: a conversa guardava cada pedido cortado em 160 letras, e o executor não vê a conversa.
+> **Regra:** cada pedido guarda o conteúdo literal (mensagem, texto, busca); "a mesma mensagem" vira o texto copiado no pedido, já com a mudança pedida · [[Desktop Agent]] · [[Web Agent]]
+
+> [!lesson] Escrever SOBRE um tema não é ditar a palavra
+> "Agora escreve sobre Aristóteles" virou digitar a palavra "Aristotelista".
+> **Regra:** "escreva/fale sobre X" = compor um texto sobre X; ditado literal só com "escreve: ..." ou entre aspas · [[Desktop Agent]]
+
 ## Como revisar uma falha
 1. Abra a nota em [[Tarefas com falha]].
 2. Descubra a causa (plano? passo? ambiente?).

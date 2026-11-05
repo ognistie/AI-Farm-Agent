@@ -1,31 +1,21 @@
 ---
 tipo: tarefa-referencia
 agente: DESKTOP
-contexto: "Encerrar"
-keywords: fechar aplicativo feche bloco notas
+keywords: fechar aplicativo janela encerrar
+estado: curado
+verificado: nao
+revisado_em: 2026-10-31
 tags: [referencia, desktop]
 cssclasses: [ref-note]
 ---
 # Fechar aplicativo
 
-> [!route] Pedido exemplo
-> feche o bloco de notas
-
-**Agente:** [[Desktop Agent]] · **Contexto:** Encerrar
+Procedimento revisado contra o codigo atual. Exige validacao desta versao antes de ser
+promovido a caminho comprovado; contagens historicas nao validam um procedimento modificado.
 
 ## Caminho
-1. close_app 'notepad'
+DESKTOP -> close_app com nome explicito -> confirmar a janela correspondente -> Alt+F4; preservar dialogos de salvamento.
 
-## Forma alternativa
-alt+f4 com a janela focada
-
-## Critério de aceite
-Processo encerrado
-
-## Armadilha
-Texto não salvo é perdido: avisar
-
-## Subagentes
-- [[AppResolver]] — 1 · Entender
-- [[ContentComposer]] — 2 · Montar
-- [[ScreenGuard]] — 3 · Conferir
+## Aceite e limites
+- Nome vazio, janela ambigua ou foco nao confirmado: recusar.
+- Nao terminar processos por nome, nao usar Alt+F4 repetido para fechar tudo e nao descartar documento automaticamente.
