@@ -2,3 +2,4 @@ module views
 TaskView 1.0 TaskView.qml
 HistoryView 1.0 HistoryView.qml
 AboutView 1.0 AboutView.qml
+SettingsView 1.0 SettingsView.qml

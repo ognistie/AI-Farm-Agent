@@ -19,8 +19,10 @@ ApplicationWindow {
     minimumHeight: 600
     title: "AI Farm Agent"
     color: C.Theme.bgBase
+    // Fechar a janela principal encerra o app, mesmo com o mini chat ou outra janela aberta
+    onClosing: Qt.quit()
 
-    // 0 = tarefa, 1 = historico, 2 = sobre
+    // 0 = tarefa, 1 = historico, 2 = sobre, 3 = configuracoes
     property int page: 0
     // Conversas salvas (barra lateral): clicar reabre a conversa com o contexto
     property var conversations: []
@@ -74,6 +76,7 @@ ApplicationWindow {
 
     Shortcut { sequence: "Ctrl+N"; onActivated: { win.page = 0; taskView.newTask() } }
     Shortcut { sequence: "Ctrl+H"; onActivated: win.page = 1 }
+    Shortcut { sequence: "Ctrl+,"; onActivated: win.page = 3 }
     Shortcut { sequence: "Esc"; enabled: taskView.running; onActivated: Bridge.forceStop() }
 
     RowLayout {
@@ -134,10 +137,48 @@ ApplicationWindow {
                 }
                 C.NavItem {
                     Layout.fillWidth: true
+                    label: "Configurações"
+                    icon: ""
+                    active: win.page === 3
+                    onClicked: win.page = 3
+                }
+                C.NavItem {
+                    Layout.fillWidth: true
                     label: "Sobre"
                     icon: ""
                     active: win.page === 2
                     onClicked: win.page = 2
+                }
+
+                // Busca nas conversas
+                Rectangle {
+                    visible: win.conversations.length > 4
+                    Layout.fillWidth: true
+                    Layout.topMargin: 14
+                    implicitHeight: 32
+                    radius: C.Theme.rSm
+                    color: C.Theme.bgSurface
+                    border.width: 1
+                    border.color: convSearch.activeFocus ? C.Theme.alpha(C.Theme.accent, 0.45) : C.Theme.hairline
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 8
+                        spacing: 8
+                        C.Icon { glyph: ""; size: 12; color: C.Theme.textTertiary }
+                        TextField {
+                            id: convSearch
+                            Layout.fillWidth: true
+                            placeholderText: "Buscar conversas"
+                            placeholderTextColor: C.Theme.textTertiary
+                            color: C.Theme.textPrimary
+                            font.family: C.Theme.fontSans
+                            font.pixelSize: C.Theme.sizeSm + 1
+                            background: null
+                            padding: 0
+                            Keys.onEscapePressed: text = ""
+                        }
+                    }
                 }
 
                 // Recentes
@@ -156,12 +197,39 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    model: win.conversations
+                    model: win.conversations.filter(c => !convSearch.text.trim()
+                        || c.title.toLowerCase().indexOf(convSearch.text.trim().toLowerCase()) >= 0)
                     spacing: 1
                     boundsBehavior: Flickable.StopAtBounds
                     delegate: C.NavItem {
                         width: ListView.view.width
                         label: modelData.title
+                        // Botao direito: renomear / excluir
+                        TapHandler {
+                            acceptedButtons: Qt.RightButton
+                            onTapped: convMenu.popup()
+                        }
+                        Menu {
+                            id: convMenu
+                            MenuItem {
+                                text: "Renomear"
+                                onTriggered: {
+                                    renameDialog.sid = modelData.id
+                                    renameField.text = modelData.title
+                                    renameDialog.open()
+                                    renameField.forceActiveFocus()
+                                    renameField.selectAll()
+                                }
+                            }
+                            MenuItem {
+                                text: "Excluir"
+                                onTriggered: {
+                                    deleteDialog.sid = modelData.id
+                                    deleteDialog.convTitle = modelData.title
+                                    deleteDialog.open()
+                                }
+                            }
+                        }
                         muted: modelData.id !== win.currentConversation
                         active: modelData.id === win.currentConversation && win.page === 0
                         onClicked: win.openConversation(modelData.id)
@@ -222,6 +290,7 @@ ApplicationWindow {
             V.TaskView { id: taskView; objectName: "taskView" }
             V.HistoryView { onReuseRequested: (t) => win.openTask(t) }
             V.AboutView {}
+            V.SettingsView {}
         }
     }
 
@@ -238,6 +307,40 @@ ApplicationWindow {
             win.requestActivate()
             taskView.composer.focusInput()
         }
+    }
+
+    // ═══ Conversas: renomear e excluir ══════════════════════════════
+    Dialog {
+        id: renameDialog
+        property string sid: ""
+        title: "Renomear conversa"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        TextField {
+            id: renameField
+            width: 320
+            onAccepted: renameDialog.accept()
+        }
+        onAccepted: if (renameField.text.trim()) Bridge.renameConversation(sid, renameField.text.trim())
+    }
+    Dialog {
+        id: deleteDialog
+        property string sid: ""
+        property string convTitle: ""
+        title: "Excluir conversa"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        Text {
+            width: 340
+            wrapMode: Text.Wrap
+            text: "“" + deleteDialog.convTitle + "” sai da lista. O arquivo vai para memory/sessions/_excluidas (dá para recuperar)."
+            color: C.Theme.textPrimary
+            font.family: C.Theme.fontSans
+            font.pixelSize: C.Theme.sizeMd
+        }
+        onAccepted: Bridge.deleteConversation(sid)
     }
 
     // ═══ Mini chat (canto inferior direito, fora da janela) ═════════

@@ -4,6 +4,7 @@
 // "Conversa" deixa o microfone aberto e cada fala vira pedido.
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 
 Rectangle {
@@ -35,9 +36,45 @@ Rectangle {
 
     readonly property bool canSend: !running && input.text.trim().length > 0
 
+    // Anexos (+ ou arrastar): o pedido leva os caminhos e a conversa passa a "conhecer" os
+    // arquivos — "resume esta planilha" le o arquivo de verdade
+    property var attachments: []
+
+    function addFiles(urls) {
+        const list = attachments.slice()
+        for (let i = 0; i < urls.length; i++) {
+            let p = decodeURIComponent(urls[i].toString().replace(/^file:\/{2,3}/, ""))
+            if (p && list.indexOf(p) < 0) list.push(p)
+        }
+        attachments = list.slice(-6)
+        focusInput()
+    }
+    function removeFile(i) {
+        const list = attachments.slice(); list.splice(i, 1); attachments = list
+    }
+    function baseName(p) { return p.split(/[\\/]/).pop() }
+
     function send() {
         if (!canSend) return
-        submitted(input.text.trim())
+        let text = input.text.trim()
+        if (attachments.length) {
+            const ok = JSON.parse(Bridge.attachFiles(JSON.stringify(attachments)))
+            if (ok.length) text += "\n\nArquivos anexados:\n" + ok.map(p => "- " + p).join("\n")
+            attachments = []
+        }
+        submitted(text)
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: "Anexar arquivos"
+        fileMode: FileDialog.OpenFiles
+        onAccepted: root.addFiles(selectedFiles)
+    }
+
+    DropArea {
+        anchors.fill: parent
+        onDropped: (drop) => { if (drop.hasUrls) root.addFiles(drop.urls) }
     }
 
     property int recSeconds: 0
@@ -71,6 +108,46 @@ Rectangle {
         anchors.margins: 12
         anchors.leftMargin: 16
         spacing: 8
+
+        // Arquivos anexados (etiquetas com x para tirar)
+        Flow {
+            Layout.fillWidth: true
+            visible: root.attachments.length > 0
+            spacing: 6
+            Repeater {
+                model: root.attachments
+                delegate: Rectangle {
+                    width: chipRow.implicitWidth + 16
+                    height: 26
+                    radius: 8
+                    color: Theme.bgSurfaceHi
+                    RowLayout {
+                        id: chipRow
+                        anchors.centerIn: parent
+                        spacing: 6
+                        Icon { glyph: ""; size: 11; color: Theme.textSecondary }
+                        Text {
+                            text: root.baseName(modelData)
+                            color: Theme.textPrimary
+                            font.family: Theme.fontSans
+                            font.pixelSize: Theme.sizeSm
+                            elide: Text.ElideMiddle
+                            Layout.maximumWidth: 180
+                        }
+                        Icon {
+                            glyph: ""; size: 9; color: Theme.textTertiary
+                            MouseArea {
+                                anchors.fill: parent; anchors.margins: -5
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.removeFile(index)
+                            }
+                        }
+                    }
+                    ToolTipHint { text: modelData; shown: chipHover.hovered }
+                    HoverHandler { id: chipHover }
+                }
+            }
+        }
 
         // Texto (ou, gravando, a barra da mensagem de audio)
         Item {
@@ -173,6 +250,28 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
+
+            // + anexar arquivos
+            Rectangle {
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 28
+                radius: 14
+                color: addMouse.containsMouse ? Theme.bgHover : "transparent"
+                border.width: 1
+                border.color: Theme.hairline
+                Icon { anchors.centerIn: parent; glyph: ""; size: 12; color: Theme.textSecondary }
+                MouseArea {
+                    id: addMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    enabled: !root.running
+                    onClicked: fileDialog.open()
+                }
+                ToolTipHint { text: "Anexar arquivos (ou arraste para cá)"; shown: addMouse.containsMouse }
+                Accessible.role: Accessible.Button
+                Accessible.name: "Anexar arquivos"
+            }
 
             TogglePill {
                 id: simulatePill

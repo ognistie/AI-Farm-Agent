@@ -83,7 +83,7 @@ class WindowMode(QObject):
 
     # ── Execucao ────────────────────────────────────────────────────
     def set_running(self, running: bool) -> None:
-        if not self.enabled:
+        if not self.enabled and not self.active:
             return
         if running and not self.active:
             self._timer.start()
@@ -122,6 +122,25 @@ class WindowMode(QObject):
             self.main.showNormal()
         self.main.raise_()
         self.main.requestActivate()
+
+    def quick_entry(self) -> None:
+        """Atalho de acesso rapido: o mini chat aparece no canto JA com foco na caixa de texto
+        (de novo no atalho: some). Funciona com a janela principal aberta ou nao."""
+        if self.mini.isVisible() and self.active:
+            self.close_mini()
+            return
+        self.active = True
+        self._place_mini()
+        self.mini.setProperty("_q_showWithoutActivating", False)
+        self.mini.show()
+        self._style_mini()
+        try:
+            from core.automation import _bring_to_front
+            _bring_to_front(int(self.mini.winId()))
+        except Exception:
+            pass
+        self.mini.requestActivate()
+        self.mini.setProperty("_q_showWithoutActivating", True)
 
     def close_mini(self) -> None:
         """Fecha so o mini chat; a janela principal segue na barra de tarefas."""

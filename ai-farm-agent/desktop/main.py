@@ -13,21 +13,27 @@ from __future__ import annotations
 
 import ctypes
 import os
+import signal
 import sys
+import threading
+import time
 from pathlib import Path
 
 import PySide6
-from PySide6.QtCore import QRectF, QUrl, Qt
+from PySide6.QtCore import QRectF, QTimer, QUrl, Qt
 from PySide6.QtGui import QColor, QFont, QGuiApplication, QIcon, QPainter, QPixmap
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
 from desktop.bridge import Bridge
+from desktop.instance import InstanceServer, notify_running
 
 
 HERE = Path(__file__).parent
 QML_DIR = HERE / "qml"
 QML_ROOT = QML_DIR / "Main.qml"
+APP_ID = "ognistie.AIFarmAgent"       # o atalho (scripts/install_shortcuts.py) usa a mesma identidade
+SHUTDOWN_LIMIT_S = 5.0                # limpeza que travar nao segura o agente vivo
 
 
 def _setup_fonts(app: QGuiApplication) -> None:
@@ -42,25 +48,30 @@ def _setup_fonts(app: QGuiApplication) -> None:
     app.setFont(default)
 
 
+def brand_pixmap(size: int) -> QPixmap:
+    """A marca do app (BrandMark.qml) desenhada num tamanho."""
+    pix = QPixmap(size, size)
+    pix.fill(Qt.transparent)
+    p = QPainter(pix)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.setPen(Qt.NoPen)
+    pad = size * 0.08
+    gap = max(1.0, size * 0.10)
+    cell = (size - 2 * pad - gap) / 2
+    for i in range(4):
+        x = pad + (i % 2) * (cell + gap)
+        y = pad + (i // 2) * (cell + gap)
+        p.setBrush(QColor("#0A7CFF" if i == 3 else "#1D1D1F"))
+        p.drawRoundedRect(QRectF(x, y, cell, cell), cell * 0.28, cell * 0.28)
+    p.end()
+    return pix
+
+
 def _brand_icon() -> QIcon:
-    """Icone da janela/barra de tarefas: a mesma marca do app (BrandMark.qml)."""
+    """Icone da janela/barra de tarefas."""
     icon = QIcon()
     for size in (16, 24, 32, 48, 64, 256):
-        pix = QPixmap(size, size)
-        pix.fill(Qt.transparent)
-        p = QPainter(pix)
-        p.setRenderHint(QPainter.Antialiasing)
-        p.setPen(Qt.NoPen)
-        pad = size * 0.08
-        gap = max(1.0, size * 0.10)
-        cell = (size - 2 * pad - gap) / 2
-        for i in range(4):
-            x = pad + (i % 2) * (cell + gap)
-            y = pad + (i // 2) * (cell + gap)
-            p.setBrush(QColor("#0A7CFF" if i == 3 else "#1D1D1F"))
-            p.drawRoundedRect(QRectF(x, y, cell, cell), cell * 0.28, cell * 0.28)
-        p.end()
-        icon.addPixmap(pix)
+        icon.addPixmap(brand_pixmap(size))
     return icon
 
 
@@ -88,6 +99,30 @@ def _style_title_bar(window) -> None:
         print(f"[desktop] barra de titulo nativa sem personalizacao: {exc}")
 
 
+def _quit_on_signals(app: QGuiApplication) -> None:
+    """Ctrl+C e fechar o terminal encerram o app. O loop do Qt nao devolve o controle ao Python
+    sozinho, entao o timer da a chance de o sinal ser atendido."""
+    for name in ("SIGINT", "SIGTERM", "SIGBREAK"):
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), lambda *_: app.quit())
+    tick = QTimer(app)
+    tick.timeout.connect(lambda: None)
+    tick.start(200)
+
+
+def _shutdown(bridge: Bridge) -> None:
+    """Fechar o app: microfone, voz, sessao paga e tarefa param aqui. Se algo travar, o limite
+    encerra o processo de qualquer jeito."""
+    def give_up() -> None:
+        time.sleep(SHUTDOWN_LIMIT_S)
+        os._exit(0)
+    threading.Thread(target=give_up, daemon=True, name="shutdown-limit").start()
+    try:
+        bridge.shutdown()
+    except Exception as exc:
+        print(f"[desktop] falha ao encerrar: {type(exc).__name__}: {exc}")
+
+
 def run() -> int:
     # Estilo "Basic": o estilo nativo do Windows ignora parte da
     # customizacao (fundo de TextArea, ScrollBar) e gera avisos no console.
@@ -101,7 +136,7 @@ def run() -> int:
     # python.exe e mostra o icone do Python)
     if sys.platform == "win32":
         try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("ognistie.AIFarmAgent")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
         except (AttributeError, OSError):
             pass
 
@@ -110,6 +145,9 @@ def run() -> int:
     app.setOrganizationName("ognistie")
     app.setApplicationDisplayName("AI Farm Agent")
     app.setWindowIcon(_brand_icon())
+
+    if notify_running():
+        return 0                       # ja estava aberto: a janela existente veio para a frente
 
     _setup_fonts(app)
 
@@ -153,6 +191,18 @@ def run() -> int:
                  if w.objectName() == "miniChat"), None)
     if mini is not None:
         bridge.attach_windows(window, mini)
+
+    def show_existing() -> None:
+        if window.visibility() == window.Visibility.Minimized or not window.isVisible():
+            window.showMaximized()
+        window.raise_()
+        window.requestActivate()
+
+    instance = InstanceServer(show_existing, parent=app)
+    if not instance.listening:
+        print("[desktop] sem controle de instancia unica")
+    _quit_on_signals(app)
+    app.aboutToQuit.connect(lambda: _shutdown(bridge))
 
     # Manter referencias vivas
     app._bridge_ref = bridge  # type: ignore[attr-defined]

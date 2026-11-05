@@ -11,6 +11,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
+import "." as Own
 
 Window {
     id: mini
@@ -49,6 +50,13 @@ Window {
         function onCountChanged() { mini.scrollSoon() }
     }
     onVisibleChanged: if (visible) scrollSoon()
+
+    // Acesso rapido (Alt+Espaco): o mini chat aparece ja com o cursor na caixa de pedido
+    Connections {
+        target: Bridge
+        function onQuickEntry() { focusTimer.restart() }
+    }
+    Timer { id: focusTimer; interval: 60; onTriggered: { mini.requestActivate(); miniComposer.focusInput() } }
 
     Rectangle {
         anchors.fill: parent
@@ -205,6 +213,36 @@ Window {
                             maximumLineCount: 2
                             elide: Text.ElideRight
                         }
+                    }
+                }
+
+                // Plano esperando aprovacao
+                ColumnLayout {
+                    visible: !!mini.view && mini.view.reviewing
+                    Layout.fillWidth: true
+                    spacing: 6
+                    Text {
+                        text: "Aprovar o plano?"
+                        color: Theme.textPrimary
+                        font.family: Theme.fontSans
+                        font.pixelSize: 13
+                        font.weight: Font.DemiBold
+                    }
+                    Repeater {
+                        model: mini.view ? mini.view.reviewSteps : []
+                        delegate: Text {
+                            Layout.fillWidth: true
+                            text: (index + 1) + ". " + modelData
+                            color: Theme.textSecondary
+                            font.family: Theme.fontSans
+                            font.pixelSize: Theme.sizeSm
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                    RowLayout {
+                        spacing: 6
+                        Own.Button { text: "Executar"; variant: "primary"; compact: true; onClicked: mini.view.decidePlan(true) }
+                        Own.Button { text: "Cancelar"; variant: "ghost"; compact: true; onClicked: mini.view.decidePlan(false) }
                     }
                 }
 

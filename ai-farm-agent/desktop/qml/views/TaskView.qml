@@ -33,7 +33,18 @@ Item {
     property var artifacts: ({ folder: "", files: [], url: "" })
 
     readonly property bool idle: status === "idle"
-    readonly property bool running: status === "running"
+    // Plano esperando aprovacao (Configuracoes > revisar o plano antes de executar)
+    property var reviewSteps: []
+    property string reviewSummary: ""
+    property string reviewToken: ""
+    readonly property bool reviewing: reviewSteps.length > 0
+    function decidePlan(ok) {
+        reviewSteps = []
+        Bridge.approvePlan(ok, reviewToken)
+        reviewToken = ""
+    }
+    property bool executionBusy: false
+    readonly property bool running: executionBusy
 
     ListModel { id: turnsModel }  // pedidos anteriores da conversa { said, resolved, status, summary }
     ListModel { id: planModel }
@@ -125,7 +136,9 @@ Item {
         artifacts = { folder: "", files: [], url: "" }
         planModel.clear()
         stepModel.clear()
+        reviewSteps = []
         status = "running"
+        executionBusy = true
         composer.text = ""
         Bridge.executeTask(text, composer.dryRun, composer.genReport)
     }
@@ -176,6 +189,7 @@ Item {
         target: Bridge
 
         function onPhaseChanged(json) {
+            root.executionBusy = true
             const p = JSON.parse(json)
             if (p.msg) root.phaseMsg = p.msg
         }
@@ -238,11 +252,25 @@ Item {
             root.progress = 100
             root.phaseMsg = "Finalizando"
         }
+        function onExecutionFinished(json) {
+            root.executionBusy = false
+        }
         function onReportReady(json) {
             const r = JSON.parse(json).report || {}
             root.reportSummary = r.summary || ""
         }
+        function onPlanReview(json) {
+            const event = JSON.parse(json)
+            const p = event.plan || {}
+            root.reviewToken = event.token || ""
+            root.reviewSummary = p.summary || ""
+            root.reviewSteps = p.steps || []
+            root.phaseMsg = "Aguardando sua aprovação"
+            root.scrollSoon()
+        }
         function onCancelled(json) {
+            root.reviewSteps = []
+            root.reviewToken = ""
             if (root.status === "running") root.status = "cancelled"
         }
         function onErrorRaised(json) {
@@ -541,6 +569,47 @@ Item {
                     radius: 1
                     color: C.Theme.textPrimary
                     Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                }
+            }
+        }
+
+        // Plano esperando aprovacao (como o Cowork e o ChatGPT Work: revisar antes de agir)
+        Rectangle {
+            visible: root.reviewing
+            Layout.fillWidth: true
+            implicitHeight: reviewCol.implicitHeight + 28
+            radius: C.Theme.rMd
+            color: C.Theme.alpha(C.Theme.accent, 0.06)
+            border.width: 1
+            border.color: C.Theme.alpha(C.Theme.accent, 0.3)
+            ColumnLayout {
+                id: reviewCol
+                anchors.fill: parent
+                anchors.margins: 14
+                spacing: 8
+                Text {
+                    text: "Plano para aprovar"
+                    color: C.Theme.textPrimary
+                    font.family: C.Theme.fontSans
+                    font.pixelSize: C.Theme.sizeMd
+                    font.weight: Font.DemiBold
+                }
+                Repeater {
+                    model: root.reviewSteps
+                    delegate: Text {
+                        Layout.fillWidth: true
+                        text: (index + 1) + ". " + modelData
+                        color: C.Theme.textSecondary
+                        font.family: C.Theme.fontSans
+                        font.pixelSize: C.Theme.sizeMd
+                        wrapMode: Text.Wrap
+                    }
+                }
+                RowLayout {
+                    spacing: 8
+                    Layout.topMargin: 4
+                    C.Button { text: "Executar"; variant: "primary"; compact: true; onClicked: root.decidePlan(true) }
+                    C.Button { text: "Cancelar"; variant: "ghost"; compact: true; onClicked: root.decidePlan(false) }
                 }
             }
         }
