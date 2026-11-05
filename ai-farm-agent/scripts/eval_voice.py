@@ -48,6 +48,19 @@ def youtube_offer(s):
     s.set_last_reply("Achei vídeos de lofi. Quer que eu toque o primeiro?")
 
 
+GMAIL_MSG = ("Oi Joana, segue o relatório de vendas do trimestre com os números atualizados. "
+             "Qualquer dúvida me chama.")
+
+
+def gmail_retry(s):
+    """Envio que falhou + oferta de tentar de novo (print do usuario, 09/10)."""
+    s.add_turn("manda um email pra joana prado no gmail falando " + GMAIL_MSG,
+               "No Gmail, enviar email para Joana Prado com a mensagem: " + GMAIL_MSG, "new", ["WEB"], False,
+               "não consegui clicar em Enviar", content='person="Joana Prado"')
+    s.remember_web(0, "https://mail.google.com/mail/u/0/#inbox", "Caixa de entrada - Gmail", [])
+    s.set_last_reply("Não consegui enviar pra Joana. Quer que eu tente de novo com essa mensagem?")
+
+
 CMD = {"command"}
 ROBOTIC = re.compile(r"\b(entendido|processando|certamente|tarefa conclu[ií]da|comando recebido|"
                      r"como um modelo|sou uma ia|estou executando a tarefa)\b", re.I)
@@ -138,6 +151,16 @@ CASES = [
      {"kind": CMD, "has": [["powerpoint"]], "not": ["word", "excel"]}),
     ("novo: config misheard", nothing, "abre o note pad e escreve bom dia", 0.8,
      {"kind": CMD, "has": [["bloco de notas", "notepad"], ["bom dia"]]}),
+    # ── rodada 6 (09/10): conteudo retomado e "escrever sobre" (casos novos, nao usados para ajustar) ──
+    ("memoria: mesma mensagem", gmail_retry,
+     "sim, tenta com a mesma mensagem, porém coloca o bom dia tudo bem com você no começo da frase", 0.85,
+     {"kind": CMD, "has": [["bom dia"], ["relatório de vendas", "relatorio de vendas"], ["joana"]]}),
+    ("memoria: manda de novo", gmail_retry, "manda de novo aquela mensagem", 0.85,
+     {"kind": CMD, "has": [["relatório de vendas", "relatorio de vendas"]]}),
+    ("escrever sobre tema", notepad_open, "agora escreve sobre aristóteles", 0.85,
+     {"kind": CMD, "has": [["sobre aristóteles", "sobre aristoteles", "sobre o filósofo"]]}),
+    ("escrever ditado literal", notepad_open, "escreve: comprar pão e leite", 0.88,
+     {"kind": CMD, "has": [["comprar pão", "comprar pao"], ["leite"]], "not": ["sobre"]}),
 ]
 
 

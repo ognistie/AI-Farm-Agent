@@ -32,7 +32,7 @@ STYLE = """- Você é um assistente pessoal no PC, no estilo de um mordomo digit
 
 # situacao -> variacoes. {obj}, {q}, {cmd}, {where}, {msg}, {guess} sao preenchidos na hora.
 LINES = {
-    "listening_on": ["Tô ouvindo. Pode falar.", "Pode mandar, tô aqui.", "Ouvindo. Manda.", "Pronto, pode falar."],
+    "listening_on": ["Como posso ajudar?", "Oi! Como posso ajudar?", "Tô aqui. Como posso ajudar?", "Pode falar. Como posso ajudar?"],
     "listening_off": ["Beleza, parei de ouvir.", "Microfone desligado.", "Fechado, saí da escuta."],
     "ack": ["Beleza.", "Feito.", "Certo.", "Pode deixar.", "Fechado."],
     "retry": ["Tá, fala de novo do seu jeito.", "Sem problema, me diz de novo.", "Ok, repete pra mim?"],

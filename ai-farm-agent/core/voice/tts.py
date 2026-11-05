@@ -57,6 +57,20 @@ class _Piper:
         return np.concatenate(chunks) if chunks else None
 
 
+def create_speaker(cfg):
+    """Auto selects Live only with a real configured key; never probes the API at startup."""
+    import os
+    engine = cfg.get('tts', 'auto')
+    key = os.getenv('OPENAI_API_KEY', '').strip()
+    live_key = bool(key) and not any(x in key.upper() for x in ('COLE_SUA', 'PLACEHOLDER'))
+    if engine == 'gpt_live' or (engine == 'auto' and live_key):
+        from core.voice.demand import DemandSpeaker
+        return DemandSpeaker(cfg.get('live', {}), local_factory=lambda: Speaker(
+            'piper', cfg.get('tts_voice', 'cadu'), float(cfg.get('tts_rate', 1.05))))
+    return Speaker('piper' if engine == 'auto' else engine,
+                   cfg.get('tts_voice', 'cadu'), float(cfg.get('tts_rate', 1.05)))
+
+
 class Speaker:
     def __init__(self, engine: str = "piper", voice: str = "cadu", rate: float = 1.05):
         self.engine_name, self.voice_id, self.rate = engine, voice, rate
@@ -66,6 +80,7 @@ class Speaker:
         self.voice_name = ""
         self.error = ""
         self.last_end = 0.0             # quando terminou a ultima fala (eco)
+        self.ready = False              # modelo de voz carregado e aquecido
         threading.Thread(target=self._worker, daemon=True, name="tts").start()
 
     @property
@@ -77,6 +92,23 @@ class Speaker:
         if text:
             self._cut.set()                 # a fala nova substitui a anterior
             self._q.put(("say", text))
+
+    @staticmethod
+    def chime() -> None:
+        """Sinal curto de "ouvi" (dois tons suaves, ~150 ms), como Siri/ChatGPT voz: a pessoa
+        sabe na hora que a fala chegou enquanto a transcricao roda. Nao passa pela fila da voz."""
+        try:
+            import numpy as np
+            import sounddevice as sd
+            sr = 24000
+
+            def tone(freq: float, ms: int) -> "np.ndarray":
+                t = np.arange(int(sr * ms / 1000)) / sr
+                env = np.minimum(1.0, np.minimum(t, t[::-1]) / 0.012)      # sobe/desce sem estalo
+                return (0.12 * np.sin(2 * np.pi * freq * t) * env).astype(np.float32)
+            sd.play(np.concatenate([tone(880, 60), np.zeros(int(sr * 0.015), np.float32), tone(1320, 80)]), sr)
+        except Exception:
+            pass
 
     def stop(self) -> None:
         self._cut.set()
@@ -133,6 +165,12 @@ class Speaker:
             self.error = f"{type(e).__name__}: {e}"
             return
         piper = isinstance(eng, _Piper)
+        if piper:
+            try:
+                eng.audio("Ok.")          # aquece o modelo (a 1a sintese e a mais lenta)
+            except Exception:
+                pass
+        self.ready = True
         while True:
             try:
                 cmd, text = self._q.get(timeout=0.1)

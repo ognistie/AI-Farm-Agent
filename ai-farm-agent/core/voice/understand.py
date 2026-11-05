@@ -49,8 +49,18 @@ COMO ENTENDER
   (frases soltas, "você quer?", conversa de fundo) são ruído: descarte-os.
 - Ditado: o texto a escrever vai entre aspas no command, com a pontuação falada já aplicada
   ("vírgula" → ",", "ponto de interrogação" → "?", "nova linha" → quebra).
+- O executor NÃO vê a conversa: quando a fala aponta para um conteúdo anterior ("a mesma mensagem",
+  "esse texto", "o que eu disse", "aquela busca"), COPIE o conteúdo literal do CONTEXTO (linha
+  "conteudo:") para o pedido, já com as mudanças pedidas (ex.: "coloca bom dia no começo" → a mensagem
+  inteira com "Bom dia" na frente). Nunca deixe "a mesma mensagem" sem o texto.
+- "Escreva/fale/faça um texto SOBRE X" pede um texto composto sobre o tema X (mantenha "sobre X" no
+  pedido); só é ditado literal quando a pessoa dita as palavras ("escreve: X", "escreve X entre aspas").
 - Ações com consequência (enviar, apagar, comprar, pagar, desligar) continuam command; a confirmação
   acontece depois, na execução.
+- Fala incompleta ou que depende de ver a tela ("esse aí", "com o mouse em cima") não é pedido: unclear,
+  sem palpite. Nunca escolha um alvo que a pessoa não citou só porque ele está aberto.
+- Configurações do Windows só quando a pessoa disser "configurações": "rede" sozinho não é rede de internet.
+  Um nome em COFRES DO OBSIDIAN é um cofre: "abre X" → "abrir o cofre X no Obsidian".
 
 ALVO (target)
 - Ações sobre o que está ABERTO (clicar, escrever, preencher, tocar, pausar, rolar, voltar, fechar "esse",
@@ -77,6 +87,52 @@ COMO FALAR (reply)
 {style}
 - command: confirme a ação no gerúndio ou futuro próximo, com o objeto ("Abrindo o Excel.",
   "Procurando fone bluetooth no Mercado Livre."); às vezes, não sempre, emende uma pergunta curta."""
+
+# O modelo acerta quase sempre, mas um erro aqui e o agente mexendo no PC sem ninguem ter pedido.
+# Estas regras nao dependem dele.
+_SYSTEM_AREA = re.compile(r"\b(?:configura\w*|config|ajustes|settings|painel de controle)\b")
+_POINTING = re.compile(r"\b(?:mouse|cursor|em cima|em foco|n?ess[ea] ai|n?ess[ea] aqui|(?:isso|nisso) (?:ai|aqui)|"
+                       r"n?aquel[ea] ali|n?aquilo ali)\b")
+_CLICKS = re.compile(r"\b(?:clic\w*|cliqu\w*|selecion\w*|apert\w*|marc\w*|abr\w*|abre|entr\w*)\b")
+LIVE_MIN_CONFIDENCE = 0.7
+
+
+def _guard(out: dict, heard: str, fixed: str, mode: str) -> dict:
+    """Pedido do modelo so roda se a fala sustenta: Configuracoes do Windows precisam ser citadas
+    pela pessoa, e o agente nao ve para onde ela aponta."""
+    from core.lexicon import norm
+    if out["kind"] != "command":
+        return out
+    said = norm(heard + " " + fixed)
+    command, target = norm(out["command"]), out.get("target") or ""
+    if (_SYSTEM_AREA.search(command) or target.startswith("app:config")) and not _SYSTEM_AREA.search(said):
+        reply = "Não vou mexer nas Configurações do Windows sem você pedir por esse nome. O que você quer fazer?"
+        out.update(kind="unclear", command="", target="", guess="", reply=reply, via="guarda")
+    elif _POINTING.search(said) and _CLICKS.search(command):
+        reply = "Não consigo ver para onde você está apontando. Me diz o nome do item."
+        out.update(kind="unclear", command="", target="", guess="", reply=reply, via="guarda")
+    elif mode == "live" and out["via"] == "llm" and out["confidence"] < LIVE_MIN_CONFIDENCE:
+        reply = f"Foi pra {out['command'][:80]}?"
+        out.update(kind="unclear", guess=out["command"], command="", target="", reply=reply, via="guarda")
+    return out
+
+
+def _fast_vault(heard: str, fixed: str, confidence: float, persona, recent: list) -> Optional[dict]:
+    """Cofre do Obsidian citado: 'rede aurol' e um cofre, nunca uma rede de internet. Sem modelo."""
+    from core.obsidian_vaults import mentioned_vault, parse_request
+    found = parse_request(heard)
+    if found and found.get("open"):
+        obj = "o cofre " + found["open"]
+        return _result("command", fixed, "rapido", command=f"abrir {obj} no Obsidian",
+                       reply=persona.pick("open", recent, obj=obj), confidence=confidence)
+    if found:
+        return _result("unclear", fixed, "local", reply=found["ask"], confidence=confidence)
+    name = mentioned_vault(heard)
+    if name:
+        guess = f"abrir o cofre {name} no Obsidian"
+        return _result("unclear", fixed, "local", guess=guess, reply=f"Quer abrir o cofre {name}?", confidence=confidence)
+    return None
+
 
 LIVE_RULE = ("- MODO CONVERSA AO VIVO: o microfone capta o ambiente. Frase que não é pedido nem fala dirigida ao "
              "assistente (comentário sobre outra coisa, conversa com outra pessoa, TV) → noise.")
@@ -235,7 +291,8 @@ def understand(heard: str, stt_confidence: float = 1.0, context: str = "",
         say = persona.pick("what_open", recent) if re.match(r"^(?:abr|entr|vai|acess)", bare) \
             else persona.pick("not_heard", recent)
         return _result("unclear", fixed, "local", reply=say, guess="", confidence=stt_confidence)
-    for fast in (_local_answer(fixed, persona, recent),
+    for fast in (_fast_vault(heard, fixed, stt_confidence, persona, recent),
+                 _local_answer(fixed, persona, recent),
                  _fast_open(fixed, stt_confidence, lex, recent, persona, session),
                  _fast_search(heard, fixed, stt_confidence, lex, recent, persona, session)):
         if fast:
@@ -245,6 +302,8 @@ def understand(heard: str, stt_confidence: float = 1.0, context: str = "",
     like = lex.sounds_like_app(fixed)
     targets = list(session.targets().keys()) if session is not None else []
     now = datetime.now()
+    from core.obsidian_vaults import known_vaults
+    vaults = known_vaults()
     system = SYSTEM.replace("{style}", persona.style()).replace("{mode_rule}", LIVE_RULE if mode == "live" else "")
     user = (f"OUVIDO: \"{heard}\"\n"
             f"CONFIANÇA DO RECONHECIMENTO: {stt_confidence:.2f}\n"
@@ -254,22 +313,34 @@ def understand(heard: str, stt_confidence: float = 1.0, context: str = "",
             + ("DICIONÁRIO (trechos que aparecem na fala):\n" + "\n".join(rel) + "\n" if rel else "")
             + (f"CONTEXTO DA CONVERSA:\n{context}\n" if context else "")
             + (f"ALVOS ABERTOS: {', '.join(targets)}\n" if targets else "ALVOS ABERTOS: nenhum\n")
+            + (f"COFRES DO OBSIDIAN: {', '.join(vaults)}\n" if vaults else "")
             + ("FALAS RECENTES DO ASSISTENTE (não repita):\n" + "\n".join(f"- {r}" for r in recent[-4:]) + "\n"
                if recent else "")
             + "JSON puro.")
     try:
         d = _parse((llm or _default_llm)(system, user))
     except Exception as e:
-        d = {"kind": "command", "command": heard, "reply": "", "confidence": stt_confidence, "_err": str(e)}
-    kind = str(d.get("kind", "command")).lower()
+        return _result("unclear", fixed, "provider_error", reply="Não consegui entender o pedido agora. Pode repetir?",
+                       confidence=stt_confidence)
+    if not isinstance(d, dict):
+        return _result("unclear", fixed, "invalid_response", reply="Pode repetir o pedido?", confidence=stt_confidence)
+    kind = str(d.get("kind", "")).lower()
     if kind not in KINDS:
-        kind = "command"
+        return _result("unclear", fixed, "invalid_response", reply="Pode repetir o pedido?", confidence=stt_confidence)
+    if any(not isinstance(d.get(key, ""), str) for key in ('command', 'reply', 'guess')):
+        return _result("unclear", fixed, "invalid_response", reply="Pode repetir o pedido?", confidence=stt_confidence)
+    try:
+        confidence = float(d.get('confidence') or 0)
+        if not 0 <= confidence <= 1:
+            raise ValueError('confidence fora do intervalo')
+    except (TypeError, ValueError):
+        return _result("unclear", fixed, "invalid_response", reply="Pode repetir o pedido?", confidence=stt_confidence)
     target = str(d.get("target") or "").strip()
     if target in ("none", "null", "nenhum") or target not in targets:
         target = ""                       # alvo inventado ou fechado: nao continua em nada
     out = _result(kind, fixed, "llm", command=str(d.get("command") or "").strip(),
                   reply=str(d.get("reply") or "").strip(), guess=str(d.get("guess") or "").strip(),
-                  target=target, confidence=float(d.get("confidence") or 0))
+                  target=target, confidence=confidence)
     if kind == "answer" and _LIVE_DATA.search(norm(heard)):
         # dado que muda com o tempo nunca sai "de cabeca": vai buscar
         out.update(kind="command", command=out["command"] or heard, reply="")
@@ -282,12 +353,19 @@ def understand(heard: str, stt_confidence: float = 1.0, context: str = "",
         out["reply"] = persona.pick("confirm_guess", recent, guess=out["guess"] or heard)
     if out["kind"] in ("command", "chat", "answer") and not out["reply"]:
         out["reply"] = persona.pick("ack", recent)
-    return out
+    return _guard(out, heard, fixed, mode)
 
 
 _YES = re.compile(r"^(?:sim|isso|isso mesmo|exato|e isso|e sim|pode|pode ser|pode sim|beleza|fechou|bora|"
                   r"manda|confirmo|certo|correto|aham|uhum|foi|foi isso|positivo|claro|ok|okay|quero)\b")
 _NO = re.compile(r"^(?:nao|nada|negativo|nem|errado|deixa|esquece|cancela|melhor nao)\b")
+
+
+def confirms(text: str) -> bool:
+    """So um "sim" de verdade confirma um palpite. "pode abrir a rede" traz um pedido proprio."""
+    from core.lexicon import norm
+    words = norm(text or "").strip(" .!?…,").split()
+    return len(words) <= 3 and yes_no(text) is True
 
 
 def yes_no(text: str) -> Optional[bool]:

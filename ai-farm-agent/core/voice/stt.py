@@ -42,11 +42,17 @@ def _import_whisper():
 
 
 class Transcriber:
-    def __init__(self, model_size: str = "small", compute_type: str = "int8"):
+    def __init__(self, model_size: str = "small", compute_type: str = "int8", beam_size: int = 5):
         self.model_size = model_size
         self.compute_type = compute_type
+        # 1 = decodificacao gulosa (mais rapida); 5 = busca em feixe (padrao do Whisper)
+        self.beam_size = max(1, int(beam_size or 1))
+        # Janela de audio do Whisper (s). None = 30 s (padrao): o codificador processa a
+        # janela INTEIRA mesmo para uma fala de 2 s; janela menor = codificador mais rapido.
+        self.chunk_length = None
         self._model = None
         self._lock = threading.Lock()
+        self._run_lock = threading.Lock()
         self.error = ""
         self.load_seconds = 0.0
 
@@ -75,17 +81,23 @@ class Transcriber:
         threading.Thread(target=self.load, daemon=True, name="stt-preload").start()
 
     def transcribe(self, audio: np.ndarray) -> dict:
-        """-> {"text", "confidence" (0-1), "seconds"}"""
+        """-> {"text", "confidence" (0-1), "seconds"}. Uma transcricao por vez (a antecipada
+        e a normal disputariam a CPU)."""
         if not self.load():
             return {"text": "", "confidence": 0.0, "seconds": 0.0, "error": self.error}
+        with self._run_lock:
+            return self._transcribe(audio)
+
+    def _transcribe(self, audio: np.ndarray) -> dict:
         t = time.time()
         segments, _info = self._model.transcribe(
-            audio, language="pt", beam_size=5, temperature=0.0,
+            audio, language="pt", beam_size=self.beam_size, temperature=0.0,
             vad_filter=True, vad_parameters={"min_silence_duration_ms": 400, "speech_pad_ms": 250},
             condition_on_previous_text=False, initial_prompt=PROMPT,
             no_repeat_ngram_size=3, repetition_penalty=1.1,
             compression_ratio_threshold=2.2, log_prob_threshold=MIN_SEG_LOGPROB,
-            no_speech_threshold=MAX_NO_SPEECH, without_timestamps=True)
+            no_speech_threshold=MAX_NO_SPEECH, without_timestamps=True,
+            **({"chunk_length": self.chunk_length} if self.chunk_length else {}))
         segs = list(segments)
         kept = [s for s in segs if not (s.no_speech_prob > MAX_NO_SPEECH and s.avg_logprob < MIN_SEG_LOGPROB)
                 and s.avg_logprob > -1.4]
