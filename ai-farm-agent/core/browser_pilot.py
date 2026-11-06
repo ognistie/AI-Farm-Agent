@@ -138,6 +138,11 @@ def local_page_url(url: str) -> str:
     if raw.lower().startswith("file:"):
         from urllib.parse import unquote, urlsplit
         raw = unquote(urlsplit(raw).path).lstrip("/")
+    elif re.match(r"^[a-zA-Z][\\/]\S", raw) and not re.match(r"^[a-zA-Z][\\/](?:users|documents|desktop)\b", raw, re.I):
+        # "d/pasta/x.html": unidade sem os dois-pontos, em qualquer disco. So vale se existir;
+        # senao segue como endereco (antes so C:/Users era reconhecido, e no disco D: falhava)
+        if not os.path.exists(re.sub(r"^([a-zA-Z])[\\/]", r"\1:/", raw)):
+            return raw
     elif not re.match(r"^(?:[a-zA-Z]:)?[\\/]|^[a-zA-Z][\\/](?:users|documents|desktop)\b", raw, re.I):
         return raw
     candidate = re.sub(r"^([a-zA-Z])[\\/]", r"\1:/", raw) if not re.match(r"^[a-zA-Z]:", raw) else raw

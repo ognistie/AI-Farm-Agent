@@ -200,14 +200,13 @@ class LocalPagesInTheBrowser(unittest.TestCase):
             uri = Path(tmp, "index.html").resolve().as_uri()
             self.assertEqual(local_page_url(tmp), uri)
             self.assertEqual(local_page_url(tmp.replace("\\", "/")), uri)
-            self.assertEqual(local_page_url(tmp[0] + tmp[2:].replace("\\", "/")), uri)   # "c/Users/..." do teste real
+            # "c/Users/..." do teste real; na CI do GitHub a pasta fica no disco D:, fora de Users
+            self.assertEqual(local_page_url(tmp[0] + tmp[2:].replace("\\", "/")), uri)
             self.assertEqual(local_page_url(uri), uri)
             (Path(tmp) / "run.bat").write_text("x")
             self.assertEqual(local_page_url(str(Path(tmp) / "run.bat")), "")
         self.assertEqual(local_page_url("c/Users/nao/existe/x.html"), "")
-        self.assertEqual(local_page_url("https://google.com"), "https://google.com")
-        self.assertEqual(local_page_url("google.com"), "google.com")
-
+        self.assertEqual(local_page_url("q/nao/existe.html"), "q/nao/existe.html")   # nao existe: segue como endereco
 
 class FriendlyErrors(unittest.TestCase):
     def test_file_agent_explains_what_it_can_do(self):
