@@ -42,6 +42,24 @@ def source_digest():
     return digest.hexdigest()
 
 
+def failure_excerpt(path, limit=120):
+    """O motivo de uma verificacao reprovada, no proprio log: na CI o arquivo completo so sai com login.
+    Blocos FAIL/ERROR do unittest, ou o fim do log quando nao houver nenhum."""
+    try:
+        lines = path.read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        return '(log indisponivel)'
+    picked, keep = [], False
+    for line in lines:
+        if line.startswith(('FAIL:', 'ERROR:', 'FAIL |')):
+            keep = True
+        elif line.startswith('=' * 20):
+            keep = False
+        if keep or line.startswith('FAIL |'):
+            picked.append(line)
+    return '\n'.join((picked or lines[-40:])[:limit])
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--code-only', action='store_true', help='exit status covers code checks only')
@@ -72,6 +90,8 @@ def main():
         row = {'name': name, 'passed': passed, 'exit_code': code, 'seconds': round(time.monotonic() - started, 2)}
         report['checks'].append(row)
         print(json.dumps(row), flush=True)
+        if not passed:
+            print(failure_excerpt(logs / (name + '.txt')), flush=True)
     deleted = subprocess.check_output(['git', 'diff', 'HEAD', '--name-only', '--diff-filter=D', '-z'], cwd=REPO).decode('utf-8').split('\0')
     deleted = [path for path in deleted if path.startswith('AI-Farm-agents/')]
     report['vault_deletions'] = len(deleted)
