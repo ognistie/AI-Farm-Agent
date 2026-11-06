@@ -122,7 +122,7 @@ class Brain:
         if not root.is_absolute():
             root = Path(__file__).resolve().parent.parent / root
         # resolve() sempre: a checagem "dentro do vault" compara caminhos
-        # resolvidos (no Windows, GUILHE~1 vs Guilherme sao o mesmo lugar).
+        # resolvidos (no Windows, USUARI~1 vs Usuario sao o mesmo lugar).
         self.root = root.resolve()
         self.enabled = bool(enabled) and self.root.is_dir()
         self._lock = threading.Lock()
