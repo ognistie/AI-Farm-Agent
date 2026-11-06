@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import re
 import threading
+import time
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -48,6 +49,7 @@ LESSONS_DIR = "60 Aprendizados"
 # Eles NAO entram no prompt dos agentes: sao log, nao orientacao (e um "sucesso" automatico
 # pode ter sido falso). Orientacao vem das notas curadas e das licoes aprendidas.
 EXEC_KEEP = 40
+RECENT_WRITE_S = 2.0
 EXEC_FOLDERS = ("40 Execucoes/Planos", "40 Execucoes/Sucesso", "40 Execucoes/Falhas")
 EXEC_ARCHIVE = Path(__file__).resolve().parent.parent / "memory" / "vault_arquivo"
 # Notas do dicionario que ajudam a EXECUTAR (nao so a entender a fala)
@@ -142,9 +144,12 @@ class Brain:
     def _read(self, rel: str) -> str:
         try:
             p = self._path(rel)
-            mtime = p.stat().st_mtime
+            stat = p.stat()
+            mtime = (stat.st_mtime_ns, stat.st_size)
             cached = self._cache.get(rel)
-            if cached and cached[0] == mtime:
+            # A data de modificacao do Windows avanca em passos de milissegundos: duas gravacoes
+            # seguidas podem ter a mesma, e o cache devolveria a nota antiga. Recente = reler.
+            if cached and cached[0] == mtime and time.time() - stat.st_mtime > RECENT_WRITE_S:
                 return cached[1]
             text = p.read_text(encoding="utf-8")
             self._cache[rel] = (mtime, text)

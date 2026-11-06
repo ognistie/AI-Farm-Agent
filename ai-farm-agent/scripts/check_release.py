@@ -91,7 +91,12 @@ def main():
         report['checks'].append(row)
         print(json.dumps(row), flush=True)
         if not passed:
-            print(failure_excerpt(logs / (name + '.txt')), flush=True)
+            excerpt = failure_excerpt(logs / (name + '.txt'))
+            print(excerpt, flush=True)
+            if os.environ.get('GITHUB_ACTIONS'):
+                # Anotacao aparece na pagina publica da execucao, sem login
+                body = excerpt[-3500:].replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+                print(f'::error title=Gate: {name}::{body}', flush=True)
     deleted = subprocess.check_output(['git', 'diff', 'HEAD', '--name-only', '--diff-filter=D', '-z'], cwd=REPO).decode('utf-8').split('\0')
     deleted = [path for path in deleted if path.startswith('AI-Farm-agents/')]
     report['vault_deletions'] = len(deleted)
