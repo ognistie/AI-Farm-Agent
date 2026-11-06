@@ -16,6 +16,7 @@ from pathlib import Path
 
 OUTPUT_LIMIT = 1024 * 1024
 WORKSPACE_LIMIT = 256 * 1024
+CREATE_SUSPENDED = 0x00000004  # not exported by subprocess
 
 
 @contextmanager
@@ -35,7 +36,21 @@ def _working_directory():
                 time.sleep(0.05)
 
 
+def _resume(process):
+    # Popen closes the primary thread handle, so ResumeThread is not available here.
+    import ctypes
+    status = ctypes.WinDLL('ntdll').NtResumeProcess(ctypes.c_void_p(int(process._handle)))
+    if status:
+        raise OSError(f'NtResumeProcess falhou: {status & 0xffffffff:#x}')
+
+
 def _attach_job(process):
+    """Assign a process created suspended to a new job, then let it run.
+
+    A venv's python.exe is a launcher that starts the real interpreter. Assigning a job
+    does not move children that already exist, and the launcher's own job allows silent
+    breakaway, so a process assigned after that point leaves the whole tree outside this job.
+    """
     if os.name != 'nt':
         return None
     import win32job
@@ -48,6 +63,7 @@ def _attach_job(process):
         limits['JobMemoryLimit'] = 1024 * 1024 * 1024
         win32job.SetInformationJobObject(job, win32job.JobObjectExtendedLimitInformation, limits)
         win32job.AssignProcessToJobObject(job, int(process._handle))
+        _resume(process)
         return job
     except Exception:
         job.Close()
@@ -106,7 +122,7 @@ def _run(payload, *, cwd=None, timeout=60, should_stop=None):
             environment['PYTHONIOENCODING'] = 'utf-8'
             process = subprocess.Popen([sys.executable, '-u', str(worker)], stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd or tmp,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+                creationflags=subprocess.CREATE_NO_WINDOW | CREATE_SUSPENDED if os.name == 'nt' else 0,
                 start_new_session=os.name != 'nt', env=environment)
             stdout, stderr = _Output(process.stdout), _Output(process.stderr)
             job = _attach_job(process)

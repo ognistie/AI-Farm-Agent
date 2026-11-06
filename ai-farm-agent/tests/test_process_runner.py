@@ -9,6 +9,7 @@ from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from core import process_runner
 from core.process_runner import run_python, run_command
 
 
@@ -39,21 +40,46 @@ class ProcessTests(unittest.TestCase):
         finally:
             timer.cancel()
 
-    def test_cancel_kills_descendant(self):
+    def _assert_cancel_kills_descendant(self):
         with tempfile.TemporaryDirectory() as tmp:
             marker = Path(tmp) / 'descendant.txt'
             gate = Path(tmp) / 'after_cleanup'
             ready = Path(tmp) / 'child_ready'
+            # Must outlive the runner's 10 s pipe wait: a survivor that left by itself first would pass unnoticed.
             child = (f"import time; from pathlib import Path; Path({str(ready)!r}).write_text('ready')\n"
-                     f"deadline=time.monotonic()+10\nwhile not Path({str(gate)!r}).exists() and time.monotonic()<deadline: time.sleep(.02)\n"
+                     f"deadline=time.monotonic()+40\nwhile not Path({str(gate)!r}).exists() and time.monotonic()<deadline: time.sleep(.02)\n"
                      f"if Path({str(gate)!r}).exists(): Path({str(marker)!r}).write_text('escaped')")
             code = f"import subprocess, sys, time\nsubprocess.Popen([sys.executable,'-c',{child!r}])\nprint('started',flush=True)\ntime.sleep(60)"
-            result = run_python(code, timeout=8, should_stop=ready.exists)
+            try:
+                result = run_python(code, timeout=30, should_stop=ready.exists)
+            finally:
+                gate.touch()  # any write from now on proves a survivor, independent of scheduler speed
+                time.sleep(0.5)
             self.assertTrue(ready.exists(), 'fixture child did not start')
             self.assertEqual(result['status'], 'cancelled', result)
-            gate.touch()  # any write from now on proves a survivor, independent of scheduler speed
-            time.sleep(0.5)
             self.assertFalse(marker.exists(), 'descendant survived process cleanup')
+
+    def test_cancel_kills_descendant(self):
+        self._assert_cancel_kills_descendant()
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows Job Objects')
+    def test_slow_job_setup_does_not_leak_descendant(self):
+        # Under load the venv launcher used to start the interpreter before the job was assigned.
+        attach = process_runner._attach_job
+
+        def slow_attach(process):
+            time.sleep(0.5)
+            return attach(process)
+
+        with patch.object(process_runner, '_attach_job', slow_attach):
+            self._assert_cancel_kills_descendant()
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows Job Objects')
+    def test_job_setup_failure_stops_suspended_process(self):
+        with patch.object(process_runner, '_attach_job', side_effect=OSError('fixture')):
+            result = run_python("print('never')", timeout=5)
+        self.assertEqual(result['status'], 'failed', result)
+        self.assertIn('fixture', result['result'])
 
     def test_output_limit(self):
         result = run_python("while True: print('x'*4096)", timeout=5)

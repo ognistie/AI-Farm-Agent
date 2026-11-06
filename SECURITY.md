@@ -18,7 +18,14 @@ Provide the affected commit, relevant module, a minimal reproduction using synth
 - Runtime package installation is disabled. The validated Windows/Python 3.11 environment has a version lock and a repeatable vulnerability audit; the lock does not include package hashes. Zero known advisories in one scan is not proof of vulnerability absence.
 - Browser and desktop actions can use active user sessions. Login/CAPTCHA detection and selected safety rules do not guarantee that every consequential action is gated.
 - Cancellation retains the execution slot until termination is confirmed. Managed workers terminate descendants through a Job Object; native GUI actions and external applications still require end-to-end cancellation testing.
+- A Job Object only contains processes created inside it. Code in a worker can ask a service running elsewhere to start a process: one started through WMI (`Win32_Process.Create`) survived cancellation in testing on 2026-11-05. The `CREATE_BREAKAWAY_FROM_JOB` flag did not escape in the same test. Treat termination of descendants as cleanup of cooperating code, not as containment of hostile code.
 - Tool simulation is enforced centrally before any handler is invoked. The surrounding planning/conversation flow may still call the model and save local history; simulation is not a privacy or offline mode.
+
+## Known defects fixed
+
+**Worker tree outside its Job Object (found 2026-11-05).** The process runner started the worker and assigned it to its Job Object afterwards. In a virtual environment on Windows, `python.exe` is a launcher that starts the real interpreter. If the launcher created the interpreter before the assignment, only the launcher joined the job. The interpreter and its descendants ran without the job's memory and process limits, and were not terminated with it. The interpreter still died with the launcher, through the launcher's own job, but the processes it had started broke away from that job and kept running after cancellation or timeout, holding the worker's output pipes and working directory.
+
+This was reproduced with 48 CPU-bound processes on 12 logical processors, in 7 of 77 runs, and on every run when the assignment was delayed by 500 ms. It affected the internal process-runner utilities, which the task dispatcher does not expose. Workers are now created suspended and only start running after the assignment.
 
 ## Data handling
 
